@@ -1,0 +1,147 @@
+id: date-time-example
+name: Date and Time Example
+description: Shows multiple terminal nodes and different display types
+version: 1.0.0
+
+nodes:
+  - id: terminal-date
+    type: terminal
+    position:
+      x: 100
+      y: 100
+    label: Get Date
+    command: date
+    args:
+      - "+%Y-%m-%d"
+    autoStart: false
+    inputs: []
+    outputs:
+      - id: stdout
+        name: stdout
+        type: output
+
+  - id: terminal-time
+    type: terminal
+    position:
+      x: 100
+      y: 300
+    label: Get Time
+    command: date
+    args:
+      - "+%H:%M:%S"
+    autoStart: false
+    inputs: []
+    outputs:
+      - id: stdout
+        name: stdout
+        type: output
+
+  - id: terminal-ls
+    type: terminal
+    position:
+      x: 100
+      y: 500
+    label: List Files
+    command: ls
+    args:
+      - "-la"
+    autoStart: false
+    inputs: []
+    outputs:
+      - id: stdout
+        name: stdout
+        type: output
+
+  - id: display-date
+    type: display
+    position:
+      x: 500
+      y: 100
+    label: Today's Date
+    displayType: text
+    content: ''
+    inputs:
+      - id: input
+        name: input
+        type: input
+    outputs: []
+
+  - id: display-time
+    type: display
+    position:
+      x: 500
+      y: 300
+    label: Current Time
+    displayType: text
+    content: ''
+    inputs:
+      - id: input
+        name: input
+        type: input
+    outputs: []
+
+  - id: display-files
+    type: display
+    position:
+      x: 500
+      y: 500
+    label: File Listing
+    displayType: text
+    content: ''
+    inputs:
+      - id: input
+        name: input
+        type: input
+    outputs: []
+
+  - id: input-slider
+    type: input
+    position:
+      x: 900
+      y: 200
+    label: Refresh Interval
+    inputType: slider
+    value: 50
+    min: 0
+    max: 100
+    step: 10
+    inputs: []
+    outputs:
+      - id: value
+        name: value
+        type: output
+
+  - id: display-slider
+    type: display
+    position:
+      x: 1200
+      y: 200
+    label: Slider Value
+    displayType: text
+    content: ''
+    inputs:
+      - id: input
+        name: input
+        type: input
+    outputs: []
+
+connections:
+  - from: terminal-date
+    to: display-date
+    fromPort: stdout
+    toPort: input
+  
+  - from: terminal-time
+    to: display-time
+    fromPort: stdout
+    toPort: input
+  
+  - from: terminal-ls
+    to: display-files
+    fromPort: stdout
+    toPort: input
+
+  - from: input-slider
+    to: display-slider
+    fromPort: value
+    toPort: input
