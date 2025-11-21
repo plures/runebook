@@ -1,18 +1,10 @@
 use std::collections::HashMap;
 use std::process::Command;
-use serde::{Deserialize, Serialize};
 
 // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
 #[tauri::command]
 fn greet(name: &str) -> String {
     format!("Hello, {}! You've been greeted from Rust!", name)
-}
-
-#[derive(Debug, Serialize, Deserialize)]
-struct CommandResult {
-    stdout: String,
-    stderr: String,
-    exit_code: i32,
 }
 
 #[tauri::command]
