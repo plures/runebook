@@ -1,0 +1,74 @@
+id: hello-world
+name: Hello World Example
+description: A simple example demonstrating terminal, input, and display nodes
+version: 1.0.0
+
+nodes:
+  - id: terminal-1
+    type: terminal
+    position:
+      x: 100
+      y: 100
+    label: Echo Command
+    command: echo
+    args:
+      - Hello from RuneBook!
+    autoStart: true
+    inputs: []
+    outputs:
+      - id: stdout
+        name: stdout
+        type: output
+
+  - id: input-1
+    type: input
+    position:
+      x: 100
+      y: 300
+    label: User Input
+    inputType: text
+    value: Type something here...
+    inputs: []
+    outputs:
+      - id: value
+        name: value
+        type: output
+
+  - id: display-1
+    type: display
+    position:
+      x: 500
+      y: 100
+    label: Terminal Output
+    displayType: text
+    content: ''
+    inputs:
+      - id: input
+        name: input
+        type: input
+    outputs: []
+
+  - id: display-2
+    type: display
+    position:
+      x: 500
+      y: 300
+    label: Input Display
+    displayType: text
+    content: ''
+    inputs:
+      - id: input
+        name: input
+        type: input
+    outputs: []
+
+connections:
+  - from: terminal-1
+    to: display-1
+    fromPort: stdout
+    toPort: input
+  
+  - from: input-1
+    to: display-2
+    fromPort: value
+    toPort: input
