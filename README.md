@@ -187,6 +187,33 @@ runebook/
 - [ ] Keyboard shortcuts
 - [ ] Undo/redo functionality
 
+## Security
+
+### Command Execution
+
+RuneBook executes terminal commands with the following security measures:
+
+- **Direct Execution**: Commands are executed directly using Rust's `std::process::Command`, not through a shell. This prevents shell injection attacks.
+- **No Shell Interpretation**: Command strings like `ls | grep` won't work as shell pipelines. Each command must be a single executable.
+- **Input Validation**: Commands are validated to prevent common dangerous patterns.
+- **User Permissions**: All commands run with the same permissions as the RuneBook application (your user account).
+- **Environment Variable Validation**: Environment variable names are validated to contain only alphanumeric characters and underscores.
+
+### Best Practices
+
+- Only run terminal nodes with commands you trust
+- Be cautious when loading canvas files from unknown sources
+- Review YAML canvas definitions before loading them
+- Avoid storing sensitive data in canvas files
+- Use environment variables for secrets when possible (and don't commit them to git)
+
+### Future Security Enhancements
+
+- Canvas permission system for sensitive operations
+- Sandboxing for untrusted canvases
+- Command whitelisting/blacklisting
+- Audit logging for executed commands
+
 ## Contributing
 
 Contributions are welcome! Please read our contributing guidelines before submitting PRs.
