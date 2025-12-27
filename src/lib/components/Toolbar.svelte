@@ -1,7 +1,7 @@
 <script lang="ts">
   import { canvasStore } from '../stores/canvas';
   import { loadCanvasFromFile, saveCanvasToYAML } from '../utils/yaml-loader';
-  import type { TerminalNode, InputNode, DisplayNode } from '../types/canvas';
+  import type { TerminalNode, InputNode, DisplayNode, TransformNode } from '../types/canvas';
 
   function addTerminalNode() {
     const node: TerminalNode = {
@@ -42,6 +42,20 @@
       content: '',
       inputs: [{ id: 'input', name: 'input', type: 'input' }],
       outputs: []
+    };
+    canvasStore.addNode(node);
+  }
+
+  function addTransformNode() {
+    const node: TransformNode = {
+      id: `transform-${Date.now()}`,
+      type: 'transform',
+      position: { x: 300, y: 200 },
+      label: 'Transform',
+      transformType: 'map',
+      code: 'item',
+      inputs: [{ id: 'input', name: 'input', type: 'input' }],
+      outputs: [{ id: 'output', name: 'output', type: 'output' }]
     };
     canvasStore.addNode(node);
   }
@@ -88,6 +102,9 @@
     </button>
     <button onclick={addDisplayNode} class="toolbar-btn">
       📊 Display
+    </button>
+    <button onclick={addTransformNode} class="toolbar-btn">
+      🔄 Transform
     </button>
   </div>
   

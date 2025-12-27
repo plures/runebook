@@ -7,10 +7,13 @@ RuneBook is a reactive, canvas-native computing environment that merges terminal
 - **Visual Canvas Interface**: Drag-and-drop nodes on an infinite canvas
 - **Terminal Nodes**: Execute shell commands with reactive output
 - **Input Widgets**: Text inputs, sliders, checkboxes, and number inputs
+- **Transform Nodes**: Process data with map, filter, and reduce operations
 - **Display Components**: Visualize data as text, JSON, tables, or charts
 - **Reactive Data Flow**: Node outputs automatically flow to connected inputs
 - **YAML Canvas Definitions**: Save and load canvas configurations
 - **Cross-Platform**: Built with Tauri for Windows, macOS, and Linux
+
+See [CHANGELOG.md](./CHANGELOG.md) for version history and detailed feature information.
 
 ## Getting Started
 
@@ -54,6 +57,7 @@ Use the toolbar on the left to add nodes to the canvas:
 
 - **⚡ Terminal**: Execute shell commands
 - **📝 Input**: Create user input widgets
+- **🔄 Transform**: Process and transform data
 - **📊 Display**: Show data and outputs
 
 ### Terminal Nodes
@@ -72,6 +76,17 @@ Input nodes provide interactive controls:
 - **Number**: Numeric input with min/max/step
 - **Checkbox**: Boolean toggle
 - **Slider**: Range selector
+
+### Transform Nodes
+
+Transform nodes process data between other nodes:
+
+- **Map**: Transform each item in an array (e.g., `item * 2`)
+- **Filter**: Select items matching criteria (e.g., `item > 10`)
+- **Reduce**: Aggregate data into a single value (e.g., `acc + item`)
+- **Sudolang**: Natural language transformations (planned)
+
+Connect input data, write JavaScript expressions, and output flows automatically.
 
 ### Display Nodes
 
@@ -176,16 +191,35 @@ runebook/
 
 ## Roadmap
 
+### Implemented ✅
+- [x] Visual canvas interface with drag-and-drop
+- [x] Terminal nodes with command execution
+- [x] Input widgets (text, number, checkbox, slider)
+- [x] Display nodes (text, JSON, table)
+- [x] Transform nodes (map, filter, reduce)
+- [x] Reactive data flow between nodes
+- [x] YAML canvas save/load
+- [x] Cross-platform desktop builds
+
+### In Progress 🚧
+- [ ] Interactive connection creation (drag from ports)
+- [ ] Node deletion UI
+- [ ] Canvas zoom and pan
+- [ ] Keyboard shortcuts
+- [ ] Undo/redo functionality
+
+### Planned 📋
 - [ ] PluresDB integration for persistent storage
 - [ ] MCP (Model Context Protocol) integration for AI assistance
 - [ ] Sudolang support for natural language scripting
-- [ ] Transform nodes for data processing
 - [ ] WebSocket support for real-time data
 - [ ] Plugin system for custom nodes
 - [ ] Collaborative editing
 - [ ] Canvas search and filtering
-- [ ] Keyboard shortcuts
-- [ ] Undo/redo functionality
+- [ ] Advanced transform nodes (custom JS, Python, etc.)
+- [ ] More display types (charts, graphs, markdown)
+
+See [CHANGELOG.md](./CHANGELOG.md) for completed features by version.
 
 ## Security
 
