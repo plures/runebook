@@ -30,11 +30,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Version-specific information moved to CHANGELOG.md
 - Toolbar reorganized with save/load options
 
+### Security
+- Added "use strict" mode for JavaScript expression execution in transform nodes
+- Input validation for transform node arrays
+- Canvas data validation in storage layer
+- Fixed reduce operation with proper initial value
+- Documented security considerations for transform nodes
+- CodeQL security scan: 0 alerts
+
 ### Documentation
 - Created CHANGELOG.md for version history tracking
 - Updated IMPLEMENTATION.md to reflect actual completion status
 - Clarified roadmap items in README.md as implemented vs. planned
 - Added storage documentation to README
+- Added security notes for transform nodes
 
 ## [0.1.0] - 2024-11-21
 
