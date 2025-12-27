@@ -1,7 +1,18 @@
 <script lang="ts">
   import { canvasStore } from '../stores/canvas';
   import { loadCanvasFromFile, saveCanvasToYAML } from '../utils/yaml-loader';
+  import { saveCanvas, loadCanvas, listCanvases } from '../utils/storage';
   import type { TerminalNode, InputNode, DisplayNode, TransformNode } from '../types/canvas';
+
+  let savedCanvases = $state<{ id: string; name: string; timestamp: number }[]>([]);
+  let showSavedList = $state(false);
+
+  // Load list of saved canvases on mount
+  $effect(() => {
+    listCanvases().then(list => {
+      savedCanvases = list;
+    });
+  });
 
   function addTerminalNode() {
     const node: TerminalNode = {
@@ -70,7 +81,39 @@
     }
   }
 
-  function saveCanvas() {
+  async function saveCanvasToStorage() {
+    try {
+      const canvas = $canvasStore;
+      await saveCanvas(canvas);
+      // Refresh the list
+      savedCanvases = await listCanvases();
+      alert(`Canvas "${canvas.name}" saved successfully!`);
+    } catch (error) {
+      console.error('Failed to save canvas:', error);
+      alert('Failed to save canvas');
+    }
+  }
+
+  async function loadCanvasFromStorage(id: string) {
+    try {
+      const canvas = await loadCanvas(id);
+      if (canvas) {
+        canvasStore.loadCanvas(canvas);
+        showSavedList = false;
+      } else {
+        alert('Canvas not found');
+      }
+    } catch (error) {
+      console.error('Failed to load canvas:', error);
+      alert('Failed to load canvas');
+    }
+  }
+
+  function toggleSavedList() {
+    showSavedList = !showSavedList;
+  }
+
+  function saveCanvasToFile() {
     const canvas = $canvasStore;
     const yaml = saveCanvasToYAML(canvas);
     
@@ -113,8 +156,33 @@
     <button onclick={loadExample} class="toolbar-btn">
       📂 Load Example
     </button>
-    <button onclick={saveCanvas} class="toolbar-btn">
-      💾 Save
+    <button onclick={saveCanvasToStorage} class="toolbar-btn">
+      💾 Save to Storage
+    </button>
+    <button onclick={toggleSavedList} class="toolbar-btn">
+      📚 Saved Canvases {showSavedList ? '▼' : '▶'}
+    </button>
+    {#if showSavedList}
+      <div class="saved-list">
+        {#if savedCanvases.length === 0}
+          <div class="empty-message">No saved canvases</div>
+        {:else}
+          {#each savedCanvases as saved}
+            <button 
+              onclick={() => loadCanvasFromStorage(saved.id)} 
+              class="saved-item"
+            >
+              {saved.name}
+              <span class="saved-time">
+                {new Date(saved.timestamp).toLocaleDateString()}
+              </span>
+            </button>
+          {/each}
+        {/if}
+      </div>
+    {/if}
+    <button onclick={saveCanvasToFile} class="toolbar-btn">
+      📥 Export YAML
     </button>
     <button onclick={clearCanvas} class="toolbar-btn danger">
       🗑️ Clear
@@ -172,5 +240,51 @@
 
   .toolbar-btn.danger:hover {
     background: #7a2e2e;
+  }
+
+  .saved-list {
+    margin-top: 8px;
+    margin-bottom: 8px;
+    max-height: 200px;
+    overflow-y: auto;
+    border: 1px solid #3e3e42;
+    border-radius: 4px;
+    background: #1e1e1e;
+  }
+
+  .saved-item {
+    width: 100%;
+    padding: 8px 10px;
+    background: transparent;
+    color: #e0e0e0;
+    border: none;
+    border-bottom: 1px solid #3e3e42;
+    cursor: pointer;
+    font-size: 12px;
+    text-align: left;
+    transition: background-color 0.2s;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .saved-item:last-child {
+    border-bottom: none;
+  }
+
+  .saved-item:hover {
+    background: #2a2a2a;
+  }
+
+  .saved-time {
+    font-size: 10px;
+    color: #888;
+  }
+
+  .empty-message {
+    padding: 12px;
+    text-align: center;
+    color: #888;
+    font-size: 12px;
   }
 </style>

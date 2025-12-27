@@ -45,10 +45,18 @@ This document summarizes the current implementation status of RuneBook.
 7. **Toolbar & Controls**
    - Add nodes with one click (Terminal, Input, Transform, Display)
    - Load example canvases
-   - Save current canvas
+   - Save canvas to browser storage
+   - Load saved canvases from storage
+   - Export canvas as YAML file
    - Clear canvas
 
-8. **Comprehensive Documentation**
+8. **Storage System**
+   - LocalStorage adapter for browser-based persistence
+   - Storage abstraction layer for future PluresDB integration
+   - Save/load canvases with metadata
+   - List all saved canvases with timestamps
+
+9. **Comprehensive Documentation**
    - **README.md**: Full user documentation with examples
    - **CHANGELOG.md**: Version history and release notes
    - **QUICKSTART.md**: Tutorial for first-time users
@@ -75,8 +83,10 @@ This document summarizes the current implementation status of RuneBook.
 
 3. **PluresDB Integration**
    - ✅ Dependency installed (v1.3.1)
-   - ❌ No actual integration yet
-   - ❌ No persistent storage
+   - ✅ Storage abstraction layer created
+   - ✅ LocalStorage adapter implemented
+   - ❌ PluresDB adapter implementation (stub only)
+   - ❌ P2P synchronization
    - Planned for future release
 
 ## What Is Not Yet Implemented ❌
@@ -197,8 +207,10 @@ Users can:
 7. ✅ Transform data with map/filter/reduce operations
 8. ✅ View data in display nodes
 9. ✅ Load example canvases
-10. ✅ Save canvases as YAML files
-11. ✅ Clear the canvas
+10. ✅ Save canvases to browser storage
+11. ✅ Load saved canvases from storage list
+12. ✅ Export canvases as YAML files
+13. ✅ Clear the canvas
 
 Users cannot yet:
 1. ❌ Create connections by dragging (must edit YAML)

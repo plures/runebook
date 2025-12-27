@@ -13,20 +13,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Filter transform: Filter array elements based on conditions
   - Reduce transform: Aggregate array data into single values
   - Sudolang transform placeholder (planned for future implementation)
+- **Storage System**: Canvas persistence with localStorage
+  - Save canvases to browser storage
+  - Load saved canvases from list
+  - Export canvases as YAML files
+  - Storage abstraction layer ready for PluresDB integration
 - Transform node button in toolbar
 - Canvas rendering support for transform nodes
 - PluresDB dependency (v1.3.1) prepared for future integration
+- Example canvas file demonstrating transform nodes
 
 ### Changed
 - Updated all dependencies to latest versions
 - Improved documentation structure
 - README.md now focuses on latest features
 - Version-specific information moved to CHANGELOG.md
+- Toolbar reorganized with save/load options
 
 ### Documentation
 - Created CHANGELOG.md for version history tracking
 - Updated IMPLEMENTATION.md to reflect actual completion status
 - Clarified roadmap items in README.md as implemented vs. planned
+- Added storage documentation to README
 
 ## [0.1.0] - 2024-11-21
 

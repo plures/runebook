@@ -113,11 +113,25 @@ Click "📂 Load Example" in the toolbar to load pre-built canvas examples:
 
 ### Saving Canvases
 
-Click "💾 Save" to export your canvas as a YAML file. The file contains:
+RuneBook provides two ways to save your work:
 
-- Node definitions (type, position, configuration)
-- Connection mappings
-- Canvas metadata
+1. **Save to Storage** (💾): Save canvas to browser's local storage for quick access
+2. **Export YAML** (📥): Download canvas as a YAML file for sharing or version control
+
+To save to storage:
+- Click "💾 Save to Storage" in the toolbar
+- Your canvas is saved and can be accessed from "📚 Saved Canvases"
+
+To export as YAML:
+- Click "📥 Export YAML" to download the canvas as a file
+- The file contains node definitions, connections, and canvas metadata
+
+### Loading Canvases
+
+Load previously saved canvases:
+- Click "📚 Saved Canvases" to view your saved work
+- Click on any canvas name to load it
+- Or click "📂 Load Example" to try pre-built demos
 
 ## YAML Canvas Format
 
@@ -199,9 +213,11 @@ runebook/
 - [x] Transform nodes (map, filter, reduce)
 - [x] Reactive data flow between nodes
 - [x] YAML canvas save/load
+- [x] Browser storage for canvas persistence
 - [x] Cross-platform desktop builds
 
 ### In Progress 🚧
+- [ ] PluresDB integration (storage layer prepared)
 - [ ] Interactive connection creation (drag from ports)
 - [ ] Node deletion UI
 - [ ] Canvas zoom and pan
@@ -209,7 +225,7 @@ runebook/
 - [ ] Undo/redo functionality
 
 ### Planned 📋
-- [ ] PluresDB integration for persistent storage
+- [ ] Full PluresDB integration with P2P sync
 - [ ] MCP (Model Context Protocol) integration for AI assistance
 - [ ] Sudolang support for natural language scripting
 - [ ] WebSocket support for real-time data
