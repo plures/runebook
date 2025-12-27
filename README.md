@@ -88,6 +88,8 @@ Transform nodes process data between other nodes:
 
 Connect input data, write JavaScript expressions, and output flows automatically.
 
+**Security Note**: Transform nodes execute user-provided JavaScript code locally. Only use transform nodes with code you trust. This feature is designed for personal use and local workflows.
+
 ### Display Nodes
 
 Display nodes visualize data from connected nodes:
@@ -248,6 +250,16 @@ RuneBook executes terminal commands with the following security measures:
 - **Input Validation**: Commands are validated to prevent common dangerous patterns.
 - **User Permissions**: All commands run with the same permissions as the RuneBook application (your user account).
 - **Environment Variable Validation**: Environment variable names are validated to contain only alphanumeric characters and underscores.
+
+### Transform Nodes
+
+Transform nodes execute user-provided JavaScript expressions:
+
+- **Local Execution Only**: JavaScript code runs in the browser/app context, not on a remote server
+- **Personal Use**: Designed for personal workflows and trusted code only
+- **No Sandboxing**: Code has access to the same permissions as the application
+- **User Responsibility**: Only use transform expressions from trusted sources
+- **Strict Mode**: All code executes in JavaScript strict mode for better error detection
 
 ### Best Practices
 

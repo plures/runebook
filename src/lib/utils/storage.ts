@@ -17,6 +17,22 @@ export interface StorageAdapter {
 export class LocalStorageAdapter implements StorageAdapter {
   private readonly prefix = 'runebook_canvas_';
 
+  private validateCanvas(data: any): data is { canvas: Canvas; timestamp: number } {
+    return (
+      data &&
+      typeof data === 'object' &&
+      'canvas' in data &&
+      'timestamp' in data &&
+      typeof data.timestamp === 'number' &&
+      data.canvas &&
+      typeof data.canvas === 'object' &&
+      'id' in data.canvas &&
+      'name' in data.canvas &&
+      'nodes' in data.canvas &&
+      Array.isArray(data.canvas.nodes)
+    );
+  }
+
   async save(canvas: Canvas): Promise<void> {
     const key = this.prefix + canvas.id;
     const data = {
@@ -33,6 +49,10 @@ export class LocalStorageAdapter implements StorageAdapter {
 
     try {
       const data = JSON.parse(item);
+      if (!this.validateCanvas(data)) {
+        console.error('Invalid canvas data structure');
+        return null;
+      }
       return data.canvas;
     } catch (e) {
       console.error('Failed to parse canvas data:', e);
@@ -50,11 +70,13 @@ export class LocalStorageAdapter implements StorageAdapter {
           const item = localStorage.getItem(key);
           if (item) {
             const data = JSON.parse(item);
-            canvases.push({
-              id: data.canvas.id,
-              name: data.canvas.name,
-              timestamp: data.timestamp,
-            });
+            if (this.validateCanvas(data)) {
+              canvases.push({
+                id: data.canvas.id,
+                name: data.canvas.name,
+                timestamp: data.timestamp,
+              });
+            }
           }
         } catch (e) {
           console.error('Failed to parse canvas metadata:', e);

@@ -18,7 +18,7 @@
     const nodeData = $nodeDataStore;
     
     // Get input data from connected nodes
-    if (node.inputs.length > 0) {
+    if (node.inputs && node.inputs.length > 0) {
       const inputData = getNodeInputData(node.id, node.inputs[0].id, canvas.connections, nodeData);
       if (inputData !== undefined) {
         applyTransform(inputData);
@@ -43,7 +43,9 @@
         case 'map':
           // Execute JavaScript map function
           if (Array.isArray(inputData)) {
-            const mapFn = new Function('item', 'index', `return ${node.code}`);
+            // Note: Using Function constructor allows user-defined transformations
+            // This is intended for local use only. Do not use with untrusted input.
+            const mapFn = new Function('item', 'index', `"use strict"; return (${node.code})`);
             result = inputData.map((item, index) => mapFn(item, index));
           } else {
             error = 'Map transform requires array input';
@@ -54,7 +56,7 @@
         case 'filter':
           // Execute JavaScript filter function
           if (Array.isArray(inputData)) {
-            const filterFn = new Function('item', 'index', `return ${node.code}`);
+            const filterFn = new Function('item', 'index', `"use strict"; return (${node.code})`);
             result = inputData.filter((item, index) => filterFn(item, index));
           } else {
             error = 'Filter transform requires array input';
@@ -65,8 +67,13 @@
         case 'reduce':
           // Execute JavaScript reduce function
           if (Array.isArray(inputData)) {
-            const reduceFn = new Function('acc', 'item', 'index', `return ${node.code}`);
-            result = inputData.reduce((acc, item, index) => reduceFn(acc, item, index));
+            if (inputData.length === 0) {
+              error = 'Reduce transform requires non-empty array';
+              return;
+            }
+            const reduceFn = new Function('acc', 'item', 'index', `"use strict"; return (${node.code})`);
+            // Provide initial value of 0 for safety
+            result = inputData.reduce((acc, item, index) => reduceFn(acc, item, index), 0);
           } else {
             error = 'Reduce transform requires array input';
             return;
@@ -76,7 +83,7 @@
         case 'sudolang':
           // Sudolang is not implemented yet - just pass through
           result = inputData;
-          error = 'Sudolang transform not yet implemented';
+          error = 'Sudolang transform not yet implemented - passing through data';
           break;
 
         default:
