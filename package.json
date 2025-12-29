@@ -1,6 +1,18 @@
 {
-  "name": "runebook",
+  "name": "@plures/runebook",
   "version": "0.2.0",
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/plures/runebook.git"
+  },
+  "bugs": {
+    "url": "https://github.com/plures/runebook/issues"
+  },
+  "homepage": "https://github.com/plures/runebook#readme",
   "description": "A reactive, canvas-native computing environment that merges terminals, notebooks, and web components",
   "type": "module",
   "scripts": {
