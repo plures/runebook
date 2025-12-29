@@ -334,6 +334,11 @@ See [.github/WORKFLOWS.md](./.github/WORKFLOWS.md) for documentation on:
 - CI/CD workflows
 - Publishing to package registries
 
+### For Maintainers
+
+- **Releases**: See [RELEASE.md](./RELEASE.md) for quick start guide on making releases
+- **Workflows**: See [.github/WORKFLOWS.md](./.github/WORKFLOWS.md) for detailed CI/CD documentation
+
 ## License
 
 MIT License - see LICENSE file for details
