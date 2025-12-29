@@ -54,14 +54,14 @@ jobs:
 
       - name: Update version in tauri.conf.json
         run: |
-          VERSION=$(node -p "require('./package.json').version")
           node -e "
             const fs = require('fs');
+            const pkg = require('./package.json');
             const config = JSON.parse(fs.readFileSync('src-tauri/tauri.conf.json', 'utf8'));
-            config.version = '$VERSION';
+            config.version = pkg.version;
             fs.writeFileSync('src-tauri/tauri.conf.json', JSON.stringify(config, null, 2) + '\n');
+            console.log('Updated tauri.conf.json to version:', pkg.version);
           "
-          echo "Updated tauri.conf.json to version: $VERSION"
 
       - name: Update Cargo.lock
         run: |
