@@ -40,7 +40,30 @@ npm run check
 # Build for production
 npm run build
 npm run tauri build
+
+# Check version synchronization
+npm run version:check
 ```
+
+## Version Management
+
+RuneBook maintains version numbers in three files:
+- `package.json` (primary source)
+- `src-tauri/Cargo.toml`
+- `src-tauri/tauri.conf.json`
+
+**Important**: Always use the automated version bump workflow instead of manually updating versions:
+
+1. Go to Actions → Version Bump workflow
+2. Select version type (patch/minor/major)
+3. Run the workflow
+
+To verify versions are synchronized locally:
+```bash
+npm run version:check
+```
+
+See [.github/WORKFLOWS.md](./.github/WORKFLOWS.md) for detailed release process documentation.
 
 ## Project Structure
 

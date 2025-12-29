@@ -1,0 +1,37 @@
+# Development files
+.git
+.github
+.vscode
+src-tauri/target
+node_modules
+
+# Build artifacts
+/build
+/.svelte-kit
+/package
+
+# Environment files
+.env
+.env.*
+!.env.example
+
+# IDE and OS files
+.DS_Store
+*.swp
+*.swo
+*~
+
+# Test files
+*.test.js
+*.test.ts
+*.spec.js
+*.spec.ts
+
+# Documentation (keep essential docs)
+CONTRIBUTING.md
+ARCHITECTURE.md
+IMPLEMENTATION.md
+
+# Temporary files
+vite.config.js.timestamp-*
+vite.config.ts.timestamp-*
