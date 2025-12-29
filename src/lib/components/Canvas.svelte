@@ -3,6 +3,7 @@
   import TerminalNodeComponent from './TerminalNode.svelte';
   import InputNodeComponent from './InputNode.svelte';
   import DisplayNodeComponent from './DisplayNode.svelte';
+  import TransformNodeComponent from './TransformNode.svelte';
   import ConnectionLine from './ConnectionLine.svelte';
   import type { CanvasNode } from '../types/canvas';
   import type { ComponentType, SvelteComponent } from 'svelte';
@@ -70,6 +71,8 @@
           <InputNodeComponent node={node} />
         {:else if node.type === 'display'}
           <DisplayNodeComponent node={node} />
+        {:else if node.type === 'transform'}
+          <TransformNodeComponent node={node} />
         {/if}
       </div>
     {/each}

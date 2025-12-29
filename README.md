@@ -7,10 +7,13 @@ RuneBook is a reactive, canvas-native computing environment that merges terminal
 - **Visual Canvas Interface**: Drag-and-drop nodes on an infinite canvas
 - **Terminal Nodes**: Execute shell commands with reactive output
 - **Input Widgets**: Text inputs, sliders, checkboxes, and number inputs
+- **Transform Nodes**: Process data with map, filter, and reduce operations
 - **Display Components**: Visualize data as text, JSON, tables, or charts
 - **Reactive Data Flow**: Node outputs automatically flow to connected inputs
 - **YAML Canvas Definitions**: Save and load canvas configurations
 - **Cross-Platform**: Built with Tauri for Windows, macOS, and Linux
+
+See [CHANGELOG.md](./CHANGELOG.md) for version history and detailed feature information.
 
 ## Getting Started
 
@@ -54,6 +57,7 @@ Use the toolbar on the left to add nodes to the canvas:
 
 - **⚡ Terminal**: Execute shell commands
 - **📝 Input**: Create user input widgets
+- **🔄 Transform**: Process and transform data
 - **📊 Display**: Show data and outputs
 
 ### Terminal Nodes
@@ -72,6 +76,19 @@ Input nodes provide interactive controls:
 - **Number**: Numeric input with min/max/step
 - **Checkbox**: Boolean toggle
 - **Slider**: Range selector
+
+### Transform Nodes
+
+Transform nodes process data between other nodes:
+
+- **Map**: Transform each item in an array (e.g., `item * 2`)
+- **Filter**: Select items matching criteria (e.g., `item > 10`)
+- **Reduce**: Aggregate data into a single value (e.g., `acc + item`)
+- **Sudolang**: Natural language transformations (planned)
+
+Connect input data, write JavaScript expressions, and output flows automatically.
+
+**Security Note**: Transform nodes execute user-provided JavaScript code locally. Only use transform nodes with code you trust. This feature is designed for personal use and local workflows.
 
 ### Display Nodes
 
@@ -98,11 +115,50 @@ Click "📂 Load Example" in the toolbar to load pre-built canvas examples:
 
 ### Saving Canvases
 
-Click "💾 Save" to export your canvas as a YAML file. The file contains:
+RuneBook provides two storage options and YAML export:
 
-- Node definitions (type, position, configuration)
-- Connection mappings
-- Canvas metadata
+1. **Browser Storage** (💾): Quick save to browser's localStorage (default)
+2. **PluresDB Storage** (💾): P2P-enabled persistent storage with cross-device sync
+3. **Export YAML** (📥): Download canvas as a YAML file
+
+To save to storage:
+- Click "💾 Save to Storage" in the toolbar
+- Your canvas is saved and can be accessed from "📚 Saved Canvases"
+
+To switch storage type:
+- Click "⚙️ Storage Settings" in the toolbar
+- Choose between "Browser Storage" or "PluresDB (P2P)"
+- PluresDB requires PluresDB server running (see [PluresDB documentation](https://github.com/plures/pluresdb))
+
+To export as YAML:
+- Click "📥 Export YAML" to download the canvas as a file
+- The file contains node definitions, connections, and canvas metadata
+
+### Loading Canvases
+
+Load previously saved canvases:
+- Click "📚 Saved Canvases" to view your saved work
+- Click on any canvas name to load it
+- Or click "📂 Load Example" to try pre-built demos
+
+### PluresDB Integration
+
+RuneBook integrates with PluresDB for persistent, P2P-enabled storage:
+
+**Features:**
+- Cross-device synchronization
+- Local-first data storage
+- P2P sharing capabilities
+- SQLite-compatible API
+
+**Setup:**
+1. Install PluresDB: `npm install pluresdb` (already included)
+2. Start PluresDB server on your machine
+3. In RuneBook, click "⚙️ Storage Settings"
+4. Select "PluresDB (P2P)"
+5. Your canvases will now be stored in PluresDB
+
+For more information, visit [PluresDB GitHub](https://github.com/plures/pluresdb).
 
 ## YAML Canvas Format
 
@@ -176,16 +232,37 @@ runebook/
 
 ## Roadmap
 
-- [ ] PluresDB integration for persistent storage
+### Implemented ✅
+- [x] Visual canvas interface with drag-and-drop
+- [x] Terminal nodes with command execution
+- [x] Input widgets (text, number, checkbox, slider)
+- [x] Display nodes (text, JSON, table)
+- [x] Transform nodes (map, filter, reduce)
+- [x] Reactive data flow between nodes
+- [x] YAML canvas save/load
+- [x] Browser storage for canvas persistence
+- [x] **PluresDB integration** for P2P storage
+- [x] Cross-platform desktop builds
+
+### In Progress 🚧
+- [ ] Interactive connection creation (drag from ports)
+- [ ] Node deletion UI
+- [ ] Canvas zoom and pan
+- [ ] Keyboard shortcuts
+- [ ] Undo/redo functionality
+
+### Planned 📋
+- [ ] Advanced PluresDB features (encrypted sharing, device sync)
 - [ ] MCP (Model Context Protocol) integration for AI assistance
 - [ ] Sudolang support for natural language scripting
-- [ ] Transform nodes for data processing
 - [ ] WebSocket support for real-time data
 - [ ] Plugin system for custom nodes
 - [ ] Collaborative editing
 - [ ] Canvas search and filtering
-- [ ] Keyboard shortcuts
-- [ ] Undo/redo functionality
+- [ ] Advanced transform nodes (custom JS, Python, etc.)
+- [ ] More display types (charts, graphs, markdown)
+
+See [CHANGELOG.md](./CHANGELOG.md) for completed features by version.
 
 ## Security
 
@@ -198,6 +275,16 @@ RuneBook executes terminal commands with the following security measures:
 - **Input Validation**: Commands are validated to prevent common dangerous patterns.
 - **User Permissions**: All commands run with the same permissions as the RuneBook application (your user account).
 - **Environment Variable Validation**: Environment variable names are validated to contain only alphanumeric characters and underscores.
+
+### Transform Nodes
+
+Transform nodes execute user-provided JavaScript expressions:
+
+- **Local Execution Only**: JavaScript code runs in the browser/app context, not on a remote server
+- **Personal Use**: Designed for personal workflows and trusted code only
+- **No Sandboxing**: Code has access to the same permissions as the application
+- **User Responsibility**: Only use transform expressions from trusted sources
+- **Strict Mode**: All code executes in JavaScript strict mode for better error detection
 
 ### Best Practices
 
