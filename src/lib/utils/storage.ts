@@ -1,5 +1,5 @@
 // Storage utility for RuneBook canvases
-// Future: Will integrate with PluresDB for persistent storage
+// Integrated with PluresDB for persistent storage
 
 import type { Canvas } from '../types/canvas';
 
@@ -12,7 +12,7 @@ export interface StorageAdapter {
 
 /**
  * LocalStorage adapter for browser-based storage
- * This is a simple implementation that will be replaced with PluresDB
+ * Fallback option when PluresDB is not available
  */
 export class LocalStorageAdapter implements StorageAdapter {
   private readonly prefix = 'runebook_canvas_';
@@ -94,54 +94,217 @@ export class LocalStorageAdapter implements StorageAdapter {
 }
 
 /**
- * PluresDB adapter (planned)
- * This will use PluresDB for persistent, P2P-enabled storage
+ * PluresDB adapter for persistent, P2P-enabled storage
+ * Uses PluresDB's key-value API for storing canvas data
  */
 export class PluresDBAdapter implements StorageAdapter {
+  private db: any = null;
+  private readonly prefix = 'runebook:canvas:';
+  private readonly metaPrefix = 'runebook:meta:';
+  private initialized = false;
+
+  constructor() {
+    // Lazy initialization - will be initialized on first use
+  }
+
+  private async ensureInitialized(): Promise<void> {
+    if (this.initialized && this.db) {
+      return;
+    }
+
+    try {
+      // Dynamic import to avoid bundling issues
+      const { SQLiteCompatibleAPI } = await import('pluresdb');
+      
+      this.db = new SQLiteCompatibleAPI({
+        config: {
+          port: 34567,
+          host: 'localhost',
+          dataDir: './pluresdb-data',
+        },
+        autoStart: true,
+      });
+
+      // Wait for initialization
+      await this.db.start();
+      this.initialized = true;
+      console.log('PluresDB initialized successfully');
+    } catch (error) {
+      console.error('Failed to initialize PluresDB:', error);
+      throw new Error('PluresDB initialization failed. Make sure PluresDB server is running or use LocalStorageAdapter as fallback.');
+    }
+  }
+
+  private validateCanvas(data: any): data is { canvas: Canvas; timestamp: number } {
+    return (
+      data &&
+      typeof data === 'object' &&
+      'canvas' in data &&
+      'timestamp' in data &&
+      typeof data.timestamp === 'number' &&
+      data.canvas &&
+      typeof data.canvas === 'object' &&
+      'id' in data.canvas &&
+      'name' in data.canvas &&
+      'nodes' in data.canvas &&
+      Array.isArray(data.canvas.nodes)
+    );
+  }
+
   async save(canvas: Canvas): Promise<void> {
-    throw new Error('PluresDB integration not yet implemented');
+    await this.ensureInitialized();
+
+    const key = this.prefix + canvas.id;
+    const metaKey = this.metaPrefix + canvas.id;
+    const timestamp = Date.now();
+    
+    const data = {
+      canvas,
+      timestamp,
+    };
+
+    // Save the full canvas data
+    await this.db.put(key, data);
+
+    // Save metadata for efficient listing
+    await this.db.put(metaKey, {
+      id: canvas.id,
+      name: canvas.name,
+      timestamp,
+    });
   }
 
   async load(id: string): Promise<Canvas | null> {
-    throw new Error('PluresDB integration not yet implemented');
+    await this.ensureInitialized();
+
+    const key = this.prefix + id;
+    
+    try {
+      const data = await this.db.getValue(key);
+      
+      if (!data) {
+        return null;
+      }
+
+      if (!this.validateCanvas(data)) {
+        console.error('Invalid canvas data structure in PluresDB');
+        return null;
+      }
+
+      return data.canvas;
+    } catch (error) {
+      console.error('Failed to load canvas from PluresDB:', error);
+      return null;
+    }
   }
 
   async list(): Promise<{ id: string; name: string; timestamp: number }[]> {
-    throw new Error('PluresDB integration not yet implemented');
+    await this.ensureInitialized();
+
+    try {
+      // Get all metadata keys
+      const keys = await this.db.list(this.metaPrefix);
+      const canvases: { id: string; name: string; timestamp: number }[] = [];
+
+      // Fetch each metadata entry
+      for (const key of keys) {
+        try {
+          const meta = await this.db.getValue(key);
+          if (meta && meta.id && meta.name && typeof meta.timestamp === 'number') {
+            canvases.push({
+              id: meta.id,
+              name: meta.name,
+              timestamp: meta.timestamp,
+            });
+          }
+        } catch (error) {
+          console.error('Failed to load canvas metadata:', error);
+        }
+      }
+
+      // Sort by timestamp, newest first
+      return canvases.sort((a, b) => b.timestamp - a.timestamp);
+    } catch (error) {
+      console.error('Failed to list canvases from PluresDB:', error);
+      return [];
+    }
   }
 
   async delete(id: string): Promise<void> {
-    throw new Error('PluresDB integration not yet implemented');
+    await this.ensureInitialized();
+
+    const key = this.prefix + id;
+    const metaKey = this.metaPrefix + id;
+
+    try {
+      // Delete both the canvas data and metadata
+      await this.db.delete(key);
+      await this.db.delete(metaKey);
+    } catch (error) {
+      console.error('Failed to delete canvas from PluresDB:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Stop the PluresDB server (cleanup)
+   */
+  async stop(): Promise<void> {
+    if (this.db && this.initialized) {
+      try {
+        await this.db.stop();
+        this.initialized = false;
+        console.log('PluresDB stopped');
+      } catch (error) {
+        console.error('Failed to stop PluresDB:', error);
+      }
+    }
   }
 }
 
-// Default storage adapter
+// Default storage adapter - use LocalStorage for browser compatibility
+// Users can switch to PluresDBAdapter if they have PluresDB server running
 export const storage: StorageAdapter = new LocalStorageAdapter();
+
+// Export a function to switch to PluresDB
+let currentAdapter: StorageAdapter = storage;
+
+export function useLocalStorage(): void {
+  currentAdapter = new LocalStorageAdapter();
+}
+
+export function usePluresDB(): void {
+  currentAdapter = new PluresDBAdapter();
+}
+
+export function getCurrentAdapter(): StorageAdapter {
+  return currentAdapter;
+}
 
 /**
  * Save canvas to persistent storage
  */
 export async function saveCanvas(canvas: Canvas): Promise<void> {
-  await storage.save(canvas);
+  await currentAdapter.save(canvas);
 }
 
 /**
  * Load canvas from persistent storage
  */
 export async function loadCanvas(id: string): Promise<Canvas | null> {
-  return await storage.load(id);
+  return await currentAdapter.load(id);
 }
 
 /**
  * List all saved canvases
  */
 export async function listCanvases(): Promise<{ id: string; name: string; timestamp: number }[]> {
-  return await storage.list();
+  return await currentAdapter.list();
 }
 
 /**
  * Delete a saved canvas
  */
 export async function deleteCanvas(id: string): Promise<void> {
-  await storage.delete(id);
+  await currentAdapter.delete(id);
 }

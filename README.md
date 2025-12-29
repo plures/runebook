@@ -115,14 +115,20 @@ Click "📂 Load Example" in the toolbar to load pre-built canvas examples:
 
 ### Saving Canvases
 
-RuneBook provides two ways to save your work:
+RuneBook provides two storage options and YAML export:
 
-1. **Save to Storage** (💾): Save canvas to browser's local storage for quick access
-2. **Export YAML** (📥): Download canvas as a YAML file for sharing or version control
+1. **Browser Storage** (💾): Quick save to browser's localStorage (default)
+2. **PluresDB Storage** (💾): P2P-enabled persistent storage with cross-device sync
+3. **Export YAML** (📥): Download canvas as a YAML file
 
 To save to storage:
 - Click "💾 Save to Storage" in the toolbar
 - Your canvas is saved and can be accessed from "📚 Saved Canvases"
+
+To switch storage type:
+- Click "⚙️ Storage Settings" in the toolbar
+- Choose between "Browser Storage" or "PluresDB (P2P)"
+- PluresDB requires PluresDB server running (see [PluresDB documentation](https://github.com/plures/pluresdb))
 
 To export as YAML:
 - Click "📥 Export YAML" to download the canvas as a file
@@ -134,6 +140,25 @@ Load previously saved canvases:
 - Click "📚 Saved Canvases" to view your saved work
 - Click on any canvas name to load it
 - Or click "📂 Load Example" to try pre-built demos
+
+### PluresDB Integration
+
+RuneBook integrates with PluresDB for persistent, P2P-enabled storage:
+
+**Features:**
+- Cross-device synchronization
+- Local-first data storage
+- P2P sharing capabilities
+- SQLite-compatible API
+
+**Setup:**
+1. Install PluresDB: `npm install pluresdb` (already included)
+2. Start PluresDB server on your machine
+3. In RuneBook, click "⚙️ Storage Settings"
+4. Select "PluresDB (P2P)"
+5. Your canvases will now be stored in PluresDB
+
+For more information, visit [PluresDB GitHub](https://github.com/plures/pluresdb).
 
 ## YAML Canvas Format
 
@@ -216,10 +241,10 @@ runebook/
 - [x] Reactive data flow between nodes
 - [x] YAML canvas save/load
 - [x] Browser storage for canvas persistence
+- [x] **PluresDB integration** for P2P storage
 - [x] Cross-platform desktop builds
 
 ### In Progress 🚧
-- [ ] PluresDB integration (storage layer prepared)
 - [ ] Interactive connection creation (drag from ports)
 - [ ] Node deletion UI
 - [ ] Canvas zoom and pan
@@ -227,7 +252,7 @@ runebook/
 - [ ] Undo/redo functionality
 
 ### Planned 📋
-- [ ] Full PluresDB integration with P2P sync
+- [ ] Advanced PluresDB features (encrypted sharing, device sync)
 - [ ] MCP (Model Context Protocol) integration for AI assistance
 - [ ] Sudolang support for natural language scripting
 - [ ] WebSocket support for real-time data

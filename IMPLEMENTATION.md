@@ -52,9 +52,12 @@ This document summarizes the current implementation status of RuneBook.
 
 8. **Storage System**
    - LocalStorage adapter for browser-based persistence
-   - Storage abstraction layer for future PluresDB integration
+   - **PluresDB adapter**: Full implementation using PluresDB key-value API
+   - Storage abstraction layer with pluggable adapters
    - Save/load canvases with metadata
    - List all saved canvases with timestamps
+   - UI to switch between storage adapters
+   - Lazy initialization of PluresDB connection
 
 9. **Comprehensive Documentation**
    - **README.md**: Full user documentation with examples
@@ -85,9 +88,13 @@ This document summarizes the current implementation status of RuneBook.
    - ✅ Dependency installed (v1.3.1)
    - ✅ Storage abstraction layer created
    - ✅ LocalStorage adapter implemented
-   - ❌ PluresDB adapter implementation (stub only)
-   - ❌ P2P synchronization
-   - Planned for future release
+   - ✅ **PluresDB adapter fully implemented**
+   - ✅ Key-value storage using SQLiteCompatibleAPI
+   - ✅ Lazy initialization and error handling
+   - ✅ UI to switch between storage backends
+   - ❌ P2P synchronization (PluresDB feature available, not exposed in UI)
+   - ❌ Encrypted sharing (PluresDB feature available, not exposed in UI)
+   - Advanced P2P features planned for future releases
 
 ## What Is Not Yet Implemented ❌
 
@@ -134,9 +141,9 @@ This document summarizes the current implementation status of RuneBook.
 - Rust compilation: ✅ Code compiles (requires system dependencies to run)
 
 ### Code Statistics
-- 56 files created/modified
-- ~11,000+ lines of code and documentation
-- TypeScript: Canvas logic, stores, utilities
+- 58 files created/modified
+- ~12,000+ lines of code and documentation
+- TypeScript: Canvas logic, stores, utilities, PluresDB integration
 - Svelte: 7 components (Canvas, 4 node types, Toolbar, ConnectionLine)
 - Rust: Terminal execution backend
 - Documentation: 6 markdown files
