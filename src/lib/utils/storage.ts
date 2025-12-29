@@ -102,9 +102,19 @@ export class PluresDBAdapter implements StorageAdapter {
   private readonly prefix = 'runebook:canvas:';
   private readonly metaPrefix = 'runebook:meta:';
   private initialized = false;
+  private config: {
+    port?: number;
+    host?: string;
+    dataDir?: string;
+  };
 
-  constructor() {
-    // Lazy initialization - will be initialized on first use
+  constructor(config?: { port?: number; host?: string; dataDir?: string }) {
+    // Configuration can be provided or will use defaults
+    this.config = {
+      port: config?.port ?? 34567,
+      host: config?.host ?? 'localhost',
+      dataDir: config?.dataDir ?? './pluresdb-data',
+    };
   }
 
   private async ensureInitialized(): Promise<void> {
@@ -117,18 +127,14 @@ export class PluresDBAdapter implements StorageAdapter {
       const { SQLiteCompatibleAPI } = await import('pluresdb');
       
       this.db = new SQLiteCompatibleAPI({
-        config: {
-          port: 34567,
-          host: 'localhost',
-          dataDir: './pluresdb-data',
-        },
+        config: this.config,
         autoStart: true,
       });
 
       // Wait for initialization
       await this.db.start();
       this.initialized = true;
-      console.log('PluresDB initialized successfully');
+      console.log('PluresDB initialized successfully with config:', this.config);
     } catch (error) {
       console.error('Failed to initialize PluresDB:', error);
       throw new Error('PluresDB initialization failed. Make sure PluresDB server is running or use LocalStorageAdapter as fallback.');
@@ -266,17 +272,27 @@ export class PluresDBAdapter implements StorageAdapter {
 // Users can switch to PluresDBAdapter if they have PluresDB server running
 export const storage: StorageAdapter = new LocalStorageAdapter();
 
-// Export a function to switch to PluresDB
+// Storage adapter management
 let currentAdapter: StorageAdapter = storage;
 
+/**
+ * Switch to LocalStorage adapter
+ */
 export function useLocalStorage(): void {
   currentAdapter = new LocalStorageAdapter();
 }
 
-export function usePluresDB(): void {
-  currentAdapter = new PluresDBAdapter();
+/**
+ * Switch to PluresDB adapter
+ * @param config Optional PluresDB configuration
+ */
+export function usePluresDB(config?: { port?: number; host?: string; dataDir?: string }): void {
+  currentAdapter = new PluresDBAdapter(config);
 }
 
+/**
+ * Get the current storage adapter
+ */
 export function getCurrentAdapter(): StorageAdapter {
   return currentAdapter;
 }
