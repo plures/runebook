@@ -73,7 +73,7 @@ npm view @plures/runebook
 1. Go to Settings → Secrets and variables → Actions
 2. Add these secrets:
    - **NPM_TOKEN**: Create at npmjs.com → Access Tokens
-   - **WINGET_TOKEN**: GitHub PAT with `public_repo` scope (optional)
+   - **WINGET_GITHUB_TOKEN**: GitHub PAT with `public_repo` scope (optional)
 
 ### Enable Workflow Permissions
 

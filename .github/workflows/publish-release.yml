@@ -134,5 +134,5 @@ jobs:
           identifier: Plures.RuneBook
           version: ${{ steps.version.outputs.version }}
           installers-regex: '\.msi$'
-          token: ${{ secrets.WINGET_TOKEN }}
+          token: ${{ secrets.WINGET_GITHUB_TOKEN }}
         continue-on-error: true

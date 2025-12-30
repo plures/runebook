@@ -83,7 +83,7 @@ Each build:
 
 #### Publish to winget (`winget-publish`)
 - Submits package to Windows Package Manager (winget)
-- Requires: `WINGET_TOKEN` secret configured
+- Requires: `WINGET_GITHUB_TOKEN` secret configured
 - Automatically detects `.msi` installer from release
 - Only on published releases
 
@@ -117,10 +117,10 @@ To enable full automation, configure these secrets in your GitHub repository set
    - Name: `NPM_TOKEN`
    - Value: Your npm token
 
-2. **WINGET_TOKEN** (Optional, for Windows Package Manager)
+2. **WINGET_GITHUB_TOKEN** (Optional, for Windows Package Manager)
    - Personal Access Token with `public_repo` scope
    - Used to submit to winget-pkgs repository
-   - Name: `WINGET_TOKEN`
+   - Name: `WINGET_GITHUB_TOKEN`
    - Value: Your GitHub PAT
 
 **Note**: `GITHUB_TOKEN` is automatically provided by GitHub Actions and doesn't need to be configured.
@@ -274,7 +274,7 @@ winget upgrade Plures.RuneBook
 **Issue**: winget publish fails
 
 **Solution**:
-1. Verify `WINGET_TOKEN` is configured
+1. Verify `WINGET_GITHUB_TOKEN` is configured
 2. Ensure `.msi` installer is built
 3. Check winget-releaser action logs
 4. Verify package identifier `Plures.RuneBook`
