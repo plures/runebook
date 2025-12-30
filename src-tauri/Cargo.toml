@@ -1,6 +1,6 @@
 [package]
 name = "runebook"
-version = "0.1.0"
+version = "0.2.0"
 description = "RuneBook - A reactive, canvas-native computing environment"
 authors = ["RuneBook Contributors"]
 edition = "2021"

@@ -1,15 +1,41 @@
 {
-  "name": "runebook",
+  "name": "@plures/runebook",
   "version": "0.2.0",
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/plures/runebook.git"
+  },
+  "bugs": {
+    "url": "https://github.com/plures/runebook/issues"
+  },
+  "homepage": "https://github.com/plures/runebook#readme",
   "description": "A reactive, canvas-native computing environment that merges terminals, notebooks, and web components",
   "type": "module",
+  "keywords": [
+    "tauri",
+    "svelte",
+    "desktop-app",
+    "reactive",
+    "canvas",
+    "terminal",
+    "notebook",
+    "workflow",
+    "visual-programming",
+    "node-based"
+  ],
+  "author": "Plures",
   "scripts": {
     "dev": "vite dev",
     "build": "vite build",
     "preview": "vite preview",
     "check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
     "check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
-    "tauri": "tauri"
+    "tauri": "tauri",
+    "version:check": "node scripts/check-versions.cjs"
   },
   "license": "MIT",
   "dependencies": {

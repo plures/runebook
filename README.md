@@ -15,6 +15,28 @@ RuneBook is a reactive, canvas-native computing environment that merges terminal
 
 See [CHANGELOG.md](./CHANGELOG.md) for version history and detailed feature information.
 
+## Installation
+
+### Download Pre-built Binaries
+
+Download the latest release for your platform from [GitHub Releases](https://github.com/plures/runebook/releases):
+
+- **macOS**: Download `.dmg` file (supports Intel and Apple Silicon)
+- **Linux**: Download `.AppImage` or `.deb` file
+- **Windows**: Download `.msi` or `.exe` installer
+
+### Package Managers
+
+**npm**:
+```bash
+npm install -g @plures/runebook
+```
+
+**Windows (winget)**:
+```powershell
+winget install Plures.RuneBook
+```
+
 ## Getting Started
 
 ### Prerequisites
@@ -303,7 +325,19 @@ Transform nodes execute user-provided JavaScript expressions:
 
 ## Contributing
 
-Contributions are welcome! Please read our contributing guidelines before submitting PRs.
+Contributions are welcome! Please read our [contributing guidelines](./CONTRIBUTING.md) before submitting PRs.
+
+### For Maintainers
+
+See [.github/WORKFLOWS.md](./.github/WORKFLOWS.md) for documentation on:
+- Version bumping and release process
+- CI/CD workflows
+- Publishing to package registries
+
+### For Maintainers
+
+- **Releases**: See [RELEASE.md](./RELEASE.md) for quick start guide on making releases
+- **Workflows**: See [.github/WORKFLOWS.md](./.github/WORKFLOWS.md) for detailed CI/CD documentation
 
 ## License
 
