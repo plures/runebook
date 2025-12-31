@@ -246,6 +246,13 @@ winget upgrade Plures.RuneBook
 
 ### Build Failures
 
+**Issue**: All build jobs fail with "invalid action version" or similar error
+
+**Solution**:
+1. Verify the tauri-action version is valid (should be `@v0.5` or specific version like `@v0.5.12`)
+2. Check [tauri-action releases](https://github.com/tauri-apps/tauri-action/releases) for latest versions
+3. Avoid using generic version tags like `@v0` without a minor version
+
 **Issue**: Tauri build fails on specific platform
 
 **Solution**:
