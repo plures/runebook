@@ -229,7 +229,9 @@ connections:
 RuneBook is built with:
 
 - **Frontend**: Svelte 5 with SvelteKit for reactive UI
+- **State Management**: Praxis reactive logic engine for type-safe, testable state
 - **Backend**: Tauri (Rust) for native system access
+- **Data Storage**: PluresDB for P2P-enabled persistent storage
 - **Data Flow**: Reactive stores for automatic prop propagation
 - **Serialization**: YAML for canvas definitions
 

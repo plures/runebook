@@ -82,26 +82,56 @@ Each node type has its own component:
 
 ### State Management
 
-#### Canvas Store
+RuneBook uses **Praxis** reactive logic engine for state management, providing:
+- Type-safe event-driven architecture
+- Declarative rules for state updates
+- Built-in reactivity with Svelte 5 integration
+- Improved testability and maintainability
+
+#### Canvas Context
 ```typescript
-canvasStore = {
-  id: string,
-  name: string,
-  nodes: CanvasNode[],
-  connections: Connection[]
+CanvasContext = {
+  canvas: {
+    id: string,
+    name: string,
+    nodes: CanvasNode[],
+    connections: Connection[]
+  },
+  nodeData: {
+    [nodeId:portId]: any  // Data at each output port
+  }
 }
 ```
 
-Provides methods:
-- `addNode()`, `removeNode()`, `updateNode()`
-- `addConnection()`, `removeConnection()`
-- `loadCanvas()`, `clear()`
+#### Events
+State changes are driven by typed events:
+- `AddNodeEvent`, `RemoveNodeEvent`
+- `UpdateNodeEvent`, `UpdateNodePositionEvent`
+- `AddConnectionEvent`, `RemoveConnectionEvent`
+- `LoadCanvasEvent`, `ClearCanvasEvent`
+- `UpdateNodeDataEvent`
 
-#### Node Data Store
+#### Rules
+Each event is processed by a corresponding rule that updates the context:
 ```typescript
-nodeDataStore = {
-  [nodeId:portId]: any  // Data at each output port
-}
+const addNodeRule = defineRule<CanvasContext>({
+  id: 'canvas.addNode',
+  description: 'Add a new node to the canvas',
+  impl: (state, events) => {
+    const evt = events.find(AddNodeEvent.is);
+    if (!evt) return [];
+    state.context.canvas.nodes.push(evt.payload.node);
+    return [];
+  },
+});
+```
+
+#### Store API
+The Praxis engine is wrapped in a Svelte store for backward compatibility:
+```typescript
+canvasStore.subscribe((canvas) => { /* react to changes */ })
+canvasStore.addNode(node)  // Dispatches AddNodeEvent
+canvasStore.updateNodePosition(id, x, y)  // Dispatches UpdateNodePositionEvent
 ```
 
 Stores runtime data from node outputs. When a node produces output, it's stored here and flows to connected inputs.
@@ -121,18 +151,21 @@ Example flow for terminal execution:
 2. Component calls `invoke('execute_terminal_command', ...)`
 3. Rust backend executes command via `std::process::Command`
 4. Result returns to frontend
-5. Component updates `nodeDataStore` with output
-6. Display nodes connected to this terminal reactively update
+5. Component dispatches `UpdateNodeDataEvent` to Praxis engine
+6. Praxis rule updates nodeData in context
+7. Display nodes connected to this terminal reactively update via Svelte stores
 
 ## Reactive System
 
-RuneBook uses Svelte 5's runes for reactivity:
+RuneBook combines Praxis reactive engine with Svelte 5's runes for reactivity:
 
 ```typescript
-// State
-let output = $state<string[]>([]);
+// Praxis event-driven state
+import { AddNodeEvent } from '../stores/canvas-praxis';
+canvasStore.addNode(newNode);  // Internally dispatches AddNodeEvent
 
-// Derived values
+// Svelte 5 runes for UI reactivity
+let output = $state<string[]>([]);
 const canvasData = $derived($canvasStore);
 
 // Effects (side effects)
@@ -144,10 +177,12 @@ $effect(() => {
 });
 ```
 
-When `nodeDataStore` updates:
-1. Svelte detects the change
-2. Components with `$effect` watching that data re-run
-3. Display nodes update their content automatically
+When Praxis engine processes events:
+1. Events are dispatched to the engine (e.g., `AddNodeEvent.create(...)`)
+2. Praxis rules match events and update the context
+3. Svelte store wrapper detects context changes
+4. Components with `$derived` or subscriptions automatically re-render
+5. UI updates reflect the new state
 4. UI re-renders with new data
 
 ## Backend Architecture
