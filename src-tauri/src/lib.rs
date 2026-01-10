@@ -1,3 +1,9 @@
+pub mod memory;
+pub mod core;
+pub mod orchestrator;
+pub mod agents;
+pub mod execution;
+
 use std::collections::HashMap;
 use std::process::Command;
 
@@ -5,6 +11,77 @@ use std::process::Command;
 #[tauri::command]
 fn greet(name: &str) -> String {
     format!("Hello, {}! You've been greeted from Rust!", name)
+}
+
+#[tauri::command]
+async fn memory_inspect(
+    host: Option<String>,
+    port: Option<u16>,
+    data_dir: Option<String>,
+) -> Result<String, String> {
+    use crate::memory::*;
+    
+    let host = host.as_deref().unwrap_or("localhost");
+    let port = port.unwrap_or(34567);
+    let data_dir = data_dir.as_deref().unwrap_or("./pluresdb-data");
+    
+    match init_memory_store(host, port, data_dir).await {
+        Ok(store) => {
+            let sessions = store.list_sessions().await
+                .map_err(|e| format!("Failed to list sessions: {}", e))?;
+            let errors = store.query_recent_errors(Some(10), None, None).await
+                .map_err(|e| format!("Failed to query errors: {}", e))?;
+            let suggestions = store.get_suggestions(None, Some(10)).await
+                .map_err(|e| format!("Failed to get suggestions: {}", e))?;
+            
+            let mut output = String::new();
+            output.push_str("=== RuneBook Cognitive Memory ===\n\n");
+            output.push_str(&format!("Sessions: {}\n", sessions.len()));
+            output.push_str(&format!("Recent Errors: {}\n", errors.len()));
+            output.push_str(&format!("Active Suggestions: {}\n\n", suggestions.len()));
+            
+            if !sessions.is_empty() {
+                output.push_str("=== Recent Sessions ===\n");
+                for session in sessions.iter().take(5) {
+                    output.push_str(&format!(
+                        "  {} - {} (started: {})\n",
+                        session.id,
+                        session.shell_type,
+                        session.started_at.format("%Y-%m-%d %H:%M:%S")
+                    ));
+                }
+                output.push_str("\n");
+            }
+            
+            if !errors.is_empty() {
+                output.push_str("=== Recent Errors ===\n");
+                for error in errors.iter().take(5) {
+                    output.push_str(&format!(
+                        "  [{}] {} - {}\n",
+                        error.severity,
+                        error.error_type,
+                        error.message
+                    ));
+                }
+                output.push_str("\n");
+            }
+            
+            if !suggestions.is_empty() {
+                output.push_str("=== Top Suggestions ===\n");
+                for suggestion in suggestions.iter().take(5) {
+                    output.push_str(&format!(
+                        "  [{}] {} - {}\n",
+                        suggestion.priority,
+                        suggestion.title,
+                        suggestion.description
+                    ));
+                }
+            }
+            
+            Ok(output)
+        }
+        Err(e) => Err(format!("Failed to initialize memory store: {}", e)),
+    }
 }
 
 #[tauri::command]
@@ -69,7 +146,7 @@ async fn execute_terminal_command(
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
-        .invoke_handler(tauri::generate_handler![greet, execute_terminal_command])
+        .invoke_handler(tauri::generate_handler![greet, execute_terminal_command, memory_inspect])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }

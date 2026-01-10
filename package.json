@@ -35,7 +35,13 @@
     "check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
     "check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
     "tauri": "tauri",
-    "version:check": "node scripts/check-versions.cjs"
+    "version:check": "node scripts/check-versions.cjs",
+    "agent": "tsx src/cli/index.ts",
+    "test": "vitest",
+    "test:coverage": "vitest --coverage"
+  },
+  "bin": {
+    "runebook": "./dist/cli/index.js"
   },
   "license": "MIT",
   "dependencies": {
@@ -51,9 +57,13 @@
     "@sveltejs/kit": "^2.49.2",
     "@sveltejs/vite-plugin-svelte": "^6.2.1",
     "@tauri-apps/cli": "^2.9.6",
+    "@types/node": "^20.0.0",
+    "@vitest/coverage-v8": "^2.0.0",
     "svelte": "^5.46.1",
     "svelte-check": "^4.3.5",
+    "tsx": "^4.7.0",
     "typescript": "~5.6.3",
-    "vite": "^6.4.1"
+    "vite": "^6.4.1",
+    "vitest": "^2.0.0"
   }
 }

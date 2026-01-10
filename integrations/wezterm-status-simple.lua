@@ -1,0 +1,48 @@
+-- RuneBook WezTerm right-status integration (simplified version)
+-- Add this to your ~/.config/wezterm/wezterm.lua:
+--
+--   wezterm.on('update-right-status', function(window, pane)
+--     local status_file = wezterm.home_dir .. '/.runebook/agent-status.json'
+--     local file = io.open(status_file, 'r')
+--     if not file then
+--       window:set_right_status('')
+--       return
+--     end
+--     
+--     local content = file:read('*all')
+--     file:close()
+--     
+--     -- Simple JSON parsing (for status field only)
+--     local status = content:match('"status"%s*:%s*"([^"]*)"')
+--     local high_priority = content:match('"highPriorityCount"%s*:%s*([0-9]+)')
+--     
+--     local symbol = ''
+--     local color = ''
+--     local text = ''
+--     
+--     if status == 'idle' then
+--       symbol = '●'
+--       color = '#00ff00'
+--     elseif status == 'analyzing' then
+--       symbol = '⟳'
+--       color = '#ffff00'
+--     elseif status == 'issues_found' then
+--       symbol = '⚠'
+--       color = '#ff0000'
+--       if high_priority then
+--         text = high_priority
+--       end
+--     end
+--     
+--     if symbol ~= '' then
+--       window:set_right_status(wezterm.format({
+--         { Foreground = { Color = color } },
+--         { Text = symbol .. text },
+--         { Foreground = { Color = '#ffffff' } },
+--         { Text = ' ' },
+--       }))
+--     else
+--       window:set_right_status('')
+--     end
+--   end)
+

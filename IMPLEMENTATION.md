@@ -10,6 +10,25 @@ This document summarizes the current implementation status of RuneBook.
    - Modern build pipeline (Vite)
    - Cross-platform desktop app foundation
 
+1.5. **Ambient Agent Mode (v0.3.0+)**
+   - Event capture system for terminal commands
+   - Storage layer (in-memory and PluresDB adapters)
+   - Analysis engine with pattern detection
+   - Suggestion system with multiple types and priorities
+   - Headless CLI for SSH-friendly access
+   - Opt-in design (disabled by default)
+   - Comprehensive test coverage
+   - NixOS support (flake.nix, shell.nix)
+   - CI/CD integration
+   - **Terminal Observer Layer**: Low-level shell event capture (bash/zsh adapters)
+   - **Analysis Ladder**: 3-layer analysis system (heuristic → local search → optional LLM)
+   - **Cognitive Memory**: PluresDB-based persistent storage with Rust API
+   - **Event Schema**: Canonical event types (command_start, command_end, stdout_chunk, stderr_chunk, exit_status, etc.)
+   - **Memory Schema**: Sessions, commands, outputs, errors, insights, suggestions, provenance
+   - **Security Model**: Secret redaction, opt-in design, local-only storage
+   - **CLI Surface**: Full headless interface (agent, observer, analyze, memory commands)
+   - **Demo Script**: Automated demo walkthrough (scripts/demo.sh)
+
 2. **Canvas UI System**
    - Infinite canvas workspace with grid background
    - Drag-and-drop node positioning
@@ -72,7 +91,21 @@ This document summarizes the current implementation status of RuneBook.
 
 ## What Is Partially Implemented 🚧
 
-1. **Connection System**
+1. **Terminal Observer (Event Capture)**
+   - ✅ Canonical event schema defined (command_start, command_end, stdout_chunk, stderr_chunk, exit_status, etc.)
+   - ✅ Secret redaction utilities (token-like env vars, known patterns)
+   - ✅ Bash/zsh shell adapters with capture hooks
+   - ✅ Event storage layer (PluresDB and local store abstraction)
+   - ✅ CLI command `runebook observer events tail` for verification
+   - ✅ Unit tests for schema validation and redaction
+   - ✅ Integration tests for command capture and persistence
+   - ✅ Headless mode support (no GUI required)
+   - ✅ Opt-in configuration
+   - ❌ Nushell adapter (planned for next phase)
+   - ❌ Shell hook installation automation
+   - ❌ Real-time event streaming (currently polling-based)
+
+2. **Connection System**
    - ✅ Connections can be defined in YAML
    - ✅ Connections render as SVG lines
    - ✅ Data flows through connections automatically
@@ -100,7 +133,14 @@ This document summarizes the current implementation status of RuneBook.
 
 ## What Is Not Yet Implemented ❌
 
-1. **Interactive Connection Creation**
+1. **Terminal Observer Enhancements**
+   - Nushell adapter implementation
+   - Automatic shell hook installation
+   - Real-time event streaming (WebSocket-based)
+   - Event aggregation and summarization
+   - Cross-session pattern analysis
+
+2. **Interactive Connection Creation**
    - Cannot drag from output ports to input ports
    - Must manually edit YAML or load pre-configured canvases
 
@@ -238,6 +278,8 @@ Users cannot yet:
 ## What's Planned (Not Yet Implemented)
 
 ### Near Term (v0.3.x)
+- [x] Terminal observer layer (event capture)
+- [ ] Nushell adapter for terminal observer
 - [ ] Interactive connection creation (drag from ports)
 - [ ] Canvas zoom and pan controls
 - [ ] Node deletion UI

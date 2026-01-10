@@ -97,12 +97,145 @@ Transform nodes will enable data processing between nodes.
 Terminal (ls -l) → Transform (parse file listing) → Display (table view)
 ```
 
+## Ambient Agent Mode (Term-Agent Capabilities)
+
+Ambient Agent Mode provides intelligent command analysis and suggestions, similar to term-agent capabilities.
+
+### Implemented Features ✅
+
+- **Event Capture**: Automatic capture of terminal commands, outputs, and context
+- **Storage/Memory**: Persistent storage of events and patterns (in-memory or PluresDB)
+- **Analysis Engine**: Pattern detection, failure analysis, performance analysis
+- **Suggestion System**: Generate actionable suggestions (shortcuts, optimizations, warnings)
+- **Headless CLI**: SSH-friendly interface for agent management
+- **Opt-in Design**: Disabled by default, requires explicit enable
+- **Terminal Observer**: Low-level shell event capture with bash/zsh adapters
+- **Analysis Ladder**: 3-layer analysis system (heuristic → local search → optional LLM)
+- **Cognitive Memory**: PluresDB-based persistent storage with Rust API
+- **Event Schema**: Canonical event types for all terminal activities
+- **Memory Schema**: Structured storage for sessions, commands, outputs, errors, insights, suggestions
+- **Security Model**: Secret redaction, opt-in design, local-only storage
+- **Demo Script**: Automated walkthrough (scripts/demo.sh)
+
+### Architecture
+
+```
+Terminal Command → Event Capture → Storage → Analysis → Suggestions
+                      ↓              ↓          ↓
+                 Observer Layer  Memory    Analysis Ladder
+                 (bash/zsh)      (PluresDB) (3 layers)
+                                                      ↓
+                                              CLI / UI Display
+```
+
+### Event Schema
+
+The system captures canonical event types:
+- `command_start`: Command begins execution
+- `command_end`: Command completes
+- `stdout_chunk`: Incremental stdout output
+- `stderr_chunk`: Incremental stderr output
+- `exit_status`: Command exit code
+- `cwd_change`: Working directory changed
+- `env_change`: Environment variables changed
+- `session_start`: Terminal session started
+- `session_end`: Terminal session ended
+
+See [ARCHITECTURE.md](./ARCHITECTURE.md) for full event schema details.
+
+### Memory Schema
+
+Cognitive memory storage organizes data into:
+- **Sessions**: Terminal session metadata
+- **Commands**: Normalized command records
+- **Outputs**: Chunked stdout/stderr (optionally compressed)
+- **Errors**: Classified error records
+- **Insights**: AI/heuristic annotations
+- **Suggestions**: Ranked recommendations
+- **Provenance**: Source tracking
+
+See [MEMORY.md](./MEMORY.md) for full memory schema details.
+
+### Analysis Ladder
+
+Three-layer analysis system:
+1. **Layer 1**: Heuristic classifiers (fast, deterministic, high confidence)
+2. **Layer 2**: Local search (context-aware, medium confidence)
+3. **Layer 3**: Optional LLM/MCP (gated, disabled by default)
+
+See [ANALYSIS_LADDER.md](./ANALYSIS_LADDER.md) for full details.
+
+### Usage
+
+**Enable via CLI:**
+```bash
+npm run agent enable
+npm run agent status
+npm run agent suggestions
+npm run analyze last
+npm run memory inspect
+```
+
+**Enable Observer (captures all shell commands):**
+```bash
+npm run observer enable
+npm run observer events tail
+```
+
+**Enable via Code:**
+```typescript
+import { initAgent } from './lib/agent/integration';
+
+initAgent({
+  enabled: true,
+  captureEvents: true,
+  analyzePatterns: true,
+  suggestImprovements: true,
+});
+```
+
+### Data Policy
+
+- **Opt-in by default**: Agent is disabled until explicitly enabled
+- **Local-only storage**: All data stored locally, no external services
+- **Secret redaction**: Automatic detection and redaction of API keys, tokens, passwords
+- **Configurable retention**: Default 30 days, customizable
+- **No background daemon**: Runs only when explicitly enabled
+- **Clear data policy**: User controls what is stored and for how long
+
+### CLI Surface
+
+Full headless interface:
+- `npm run agent <command>`: Agent management (enable, disable, status, suggestions, events, clear)
+- `npm run observer <command>`: Observer management (enable, disable, status, events, tail)
+- `npm run analyze <command>`: Analysis commands (last)
+- `npm run memory <command>`: Memory inspection (inspect)
+
+### Demo
+
+Run the automated demo:
+```bash
+bash scripts/demo.sh
+```
+
+Or follow the walkthrough in [docs/demo.md](./docs/demo.md).
+
+### Future Enhancements
+
+- GUI integration for suggestions display
+- Advanced ML-based pattern analysis
+- Cross-session pattern learning
+- Suggestion action buttons (apply directly)
+- Nushell adapter for terminal observer
+- Real-time event streaming (WebSocket-based)
+
 ## Future Integration Priorities
 
-1. **Phase 1**: Transform nodes with JavaScript
-2. **Phase 2**: PluresDB for persistence
-3. **Phase 3**: MCP for AI assistance
-4. **Phase 4**: Sudolang for natural language workflows
+1. **Phase 1**: Transform nodes with JavaScript ✅
+2. **Phase 2**: PluresDB for persistence ✅
+3. **Phase 2.5**: Ambient Agent Mode ✅
+4. **Phase 3**: MCP for AI assistance
+5. **Phase 4**: Sudolang for natural language workflows
 
 ## Contributing
 

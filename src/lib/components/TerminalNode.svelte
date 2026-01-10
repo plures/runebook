@@ -3,6 +3,8 @@
   import { onMount, onDestroy } from 'svelte';
   import type { TerminalNode } from '../types/canvas';
   import { updateNodeData } from '../stores/canvas';
+  import { captureCommandStart, captureCommandResult, isAgentEnabled } from '../agent/integration';
+  import type { TerminalEvent } from '../types/agent';
 
   interface Props {
     node: TerminalNode;
@@ -21,6 +23,17 @@
     error = null;
     output = [];
 
+    // Capture command start for agent
+    let agentEvent: TerminalEvent | null = null;
+    if (isAgentEnabled()) {
+      agentEvent = await captureCommandStart(
+        node.command,
+        node.args || [],
+        node.env || {},
+        node.cwd || ''
+      );
+    }
+
     try {
       // Call Tauri backend to execute terminal command
       const result = await invoke<string>('execute_terminal_command', {
@@ -32,12 +45,24 @@
 
       output = [...output, result];
       
+      // Capture command result for agent
+      if (agentEvent) {
+        await captureCommandResult(agentEvent, result, '', 0);
+      }
+      
       // Update the node's output data for reactive flow
       if (node.outputs.length > 0) {
         updateNodeData(node.id, node.outputs[0].id, result);
       }
     } catch (e) {
-      error = String(e);
+      const errorMsg = String(e);
+      error = errorMsg;
+      
+      // Capture error result for agent
+      if (agentEvent) {
+        await captureCommandResult(agentEvent, '', errorMsg, 1);
+      }
+      
       console.error('Terminal command error:', e);
     } finally {
       isRunning = false;
