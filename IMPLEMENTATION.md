@@ -24,10 +24,12 @@ This document summarizes the current implementation status of RuneBook.
    - All nodes support drag-and-drop repositioning
 
 4. **Reactive Data Flow**
-   - Svelte stores manage canvas and node state
+   - **Praxis reactive logic engine** for type-safe state management
+   - Event-driven architecture with typed events and rules
    - Terminal stdout automatically flows to connected displays
    - Input values reactively propagate to connected nodes
    - Efficient updates using Svelte 5 runes ($state, $derived, $effect)
+   - Backward-compatible Svelte store wrapper for existing components
 
 5. **YAML Canvas Loader**
    - Save canvases as human-readable YAML
@@ -185,22 +187,29 @@ runebook/
 ## Technical Highlights
 
 ### Reactive Architecture
-- Uses Svelte 5's latest runes for reactivity
-- Terminal stdout → nodeDataStore → Display nodes (automatic)
-- Input values → nodeDataStore → Connected nodes (reactive)
+- **Praxis reactive logic engine** for type-safe, testable state management
+- Event-driven updates with typed events (`AddNodeEvent`, `UpdateNodeEvent`, etc.)
+- Declarative rules for state transformations
+- Svelte 5 runes for UI reactivity
+- Terminal stdout → Praxis events → Display nodes (automatic)
+- Input values → Praxis events → Connected nodes (reactive)
 - No manual event wiring needed
 
 ### Modern Stack
 - **Frontend**: Svelte 5 + SvelteKit + TypeScript + Vite
+- **State Management**: Praxis v1.2.0 reactive logic engine
+- **Data Storage**: PluresDB v1.3.1 for P2P-enabled persistent storage
 - **Backend**: Rust + Tauri 2.x
 - **Build**: Fast HMR development, optimized production builds
 - **Cross-platform**: Single codebase → Windows, macOS, Linux
 
 ### Developer Experience
-- TypeScript for type safety
+- TypeScript for type safety across state management and UI
+- Praxis rules and events for better code organization
 - Hot module replacement in dev mode
 - Comprehensive error handling
 - Clear separation of concerns
+- Testable state logic through Praxis engine
 
 ## What Works Right Now
 

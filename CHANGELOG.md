@@ -5,6 +5,20 @@ All notable changes to RuneBook will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+- **Praxis Integration**: Integrated @plures/praxis v1.2.0 for reactive state management
+  - Type-safe event-driven architecture with defineEvent and defineRule
+  - Reactive logic engine replacing manual Svelte stores
+  - Improved testability and maintainability of state management
+  - Backward-compatible API wrapper for existing components
+
+### Changed
+- Refactored canvas state management to use Praxis reactive engine
+- State updates now use events (AddNodeEvent, UpdateNodeEvent, etc.) for better traceability
+- Improved type safety across the state management layer
+
 ## [0.2.0] - 2024-12-27
 
 ### Added
