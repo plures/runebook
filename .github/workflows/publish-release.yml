@@ -136,3 +136,47 @@ jobs:
           installers-regex: '\.msi$'
           token: ${{ secrets.WINGET_GITHUB_TOKEN }}
         continue-on-error: true
+
+  nixos-publish:
+    needs: build-tauri
+    runs-on: ubuntu-latest
+    if: github.event_name == 'release' && github.event.action == 'published'
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Get release version
+        id: version
+        shell: bash
+        run: |
+          VERSION="${{ github.event.release.tag_name }}"
+          VERSION="${VERSION#v}"
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+
+      - name: Install Nix
+        uses: DeterminateSystems/nix-installer-action@main
+
+      - name: Build Nix packages
+        run: |
+          nix build .#runebook .#runebook-agent --out-link ./nix-results
+
+      - name: Upload Nix build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: nix-packages
+          path: nix-results
+          retention-days: 90
+
+      - name: Note about NixOS package submission
+        run: |
+          echo "## NixOS Package Publishing" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Nix packages have been built successfully. To publish to NixOS:" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "1. Submit a PR to [nixpkgs](https://github.com/NixOS/nixpkgs) with the package definition" >> $GITHUB_STEP_SUMMARY
+          echo "2. Or use the flake directly: \`nix run github:plures/runebook\`" >> $GITHUB_STEP_SUMMARY
+          echo "3. Or add to your flake inputs: \`runebook.url = \"github:plures/runebook\";\`" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Current version**: ${{ steps.version.outputs.version }}" >> $GITHUB_STEP_SUMMARY
+        continue-on-error: true

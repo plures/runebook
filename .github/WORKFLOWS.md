@@ -12,6 +12,7 @@ RuneBook uses GitHub Actions to automate:
   - npm registry
   - GitHub Packages (npm)
   - Windows Package Manager (winget)
+  - NixOS (via flake, nixpkgs PR in progress)
 
 ## Workflows
 
@@ -67,7 +68,7 @@ Each build:
 1. Installs platform-specific dependencies
 2. Builds the Tauri application
 3. Creates installers (.dmg, .AppImage, .msi, etc.)
-4. Uploads artifacts to the GitHub Release
+4. Uploads artifacts to the GitHub Release automatically via tauri-action
 
 #### Publish to npm (`publish-npm`)
 - Publishes `@plures/runebook` to npm registry
@@ -85,6 +86,13 @@ Each build:
 - Submits package to Windows Package Manager (winget)
 - Requires: `WINGET_GITHUB_TOKEN` secret configured
 - Automatically detects `.msi` installer from release
+- Only on published releases
+
+#### Build Nix packages (`nixos-publish`)
+- Builds Nix packages for `runebook` and `runebook-agent`
+- Creates build artifacts for NixOS distribution
+- Note: NixOS package submission to nixpkgs requires manual PR submission
+- Users can use the flake directly: `nix run github:plures/runebook`
 - Only on published releases
 
 **How to use**:
@@ -240,6 +248,53 @@ winget install Plures.RuneBook
 **Upgrade**:
 ```powershell
 winget upgrade Plures.RuneBook
+```
+
+### NixOS / Nix Flakes
+
+**Using the flake directly**:
+```bash
+# Run the application
+nix run github:plures/runebook
+
+# Run the agent CLI
+nix run github:plures/runebook#runebook-agent -- agent status
+
+# Build packages
+nix build github:plures/runebook#runebook
+nix build github:plures/runebook#runebook-agent
+```
+
+**Adding to your flake**:
+```nix
+{
+  inputs = {
+    runebook.url = "github:plures/runebook";
+  };
+
+  outputs = { self, nixpkgs, runebook }: {
+    # Use runebook.packages.runebook or runebook.packages.runebook-agent
+  };
+}
+```
+
+**NixOS Module**:
+```nix
+{
+  imports = [ runebook.nixosModules.default ];
+  
+  services.runebook-agent = {
+    enable = true;
+    captureEvents = true;
+  };
+}
+```
+
+**Note**: A PR to add RuneBook to nixpkgs is in progress. Once merged, you'll be able to install via:
+```bash
+nix-env -iA nixpkgs.runebook
+# or in configuration.nix:
+environment.systemPackages = [ pkgs.runebook ];
 ```
 
 ## Troubleshooting

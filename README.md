@@ -11,6 +11,8 @@ RuneBook is a reactive, canvas-native computing environment that merges terminal
 - **Display Components**: Visualize data as text, JSON, tables, or charts
 - **Reactive Data Flow**: Node outputs automatically flow to connected inputs
 - **YAML Canvas Definitions**: Save and load canvas configurations
+- **Ambient Agent Mode**: Intelligent command analysis and suggestions (opt-in)
+- **Headless CLI**: SSH-friendly interface for agent management
 - **Cross-Platform**: Built with Tauri for Windows, macOS, and Linux
 
 See [CHANGELOG.md](./CHANGELOG.md) for version history and detailed feature information.
@@ -32,10 +34,31 @@ Download the latest release for your platform from [GitHub Releases](https://git
 npm install -g @plures/runebook
 ```
 
+**GitHub Packages (npm)**:
+```bash
+npm config set @plures:registry https://npm.pkg.github.com
+npm install -g @plures/runebook
+```
+
 **Windows (winget)**:
 ```powershell
 winget install Plures.RuneBook
 ```
+
+**NixOS / Nix Flakes**:
+```bash
+# Run directly from flake
+nix run github:plures/runebook
+
+# Or add to your flake inputs
+# runebook.url = "github:plures/runebook";
+
+# Build packages
+nix build github:plures/runebook#runebook
+nix build github:plures/runebook#runebook-agent
+```
+
+**Note**: A PR to add RuneBook to nixpkgs is in progress. Once merged, you'll be able to install via `nix-env` or NixOS configuration.
 
 ## Getting Started
 
@@ -47,6 +70,7 @@ winget install Plures.RuneBook
   - **Linux**: webkit2gtk, rsvg2 (see [Tauri prerequisites](https://tauri.app/guides/prerequisites/#linux))
   - **macOS**: Xcode Command Line Tools
   - **Windows**: Microsoft C++ Build Tools
+  - **NixOS**: Use `nix-shell` or `nix develop` (see NixOS Support below)
 
 ### Installation
 
@@ -70,6 +94,36 @@ winget install Plures.RuneBook
    ```bash
    npm run tauri build
    ```
+
+### NixOS Support
+
+RuneBook includes full NixOS support for reproducible development and deployment:
+
+**Using Nix Flakes:**
+```bash
+nix develop  # Enter development shell
+npm install
+npm run dev
+```
+
+**Building packages:**
+```bash
+nix build .#runebook        # Build Tauri app
+nix build .#runebook-agent  # Build headless agent CLI
+```
+
+**Running applications:**
+```bash
+nix run .#runebook                    # Run Tauri app
+nix run .#runebook-agent -- agent status  # Run agent CLI
+```
+
+**NixOS Module:**
+The flake includes a NixOS module for running `runebook-agent` as a systemd service. See [NIXOS.md](./NIXOS.md) for detailed configuration instructions.
+
+The Nix environment includes all required dependencies (Node.js, Rust, system libraries, Tauri CLI).
+
+For complete NixOS documentation, see [NIXOS.md](./NIXOS.md).
 
 ## Usage
 
@@ -162,6 +216,266 @@ Load previously saved canvases:
 - Click "📚 Saved Canvases" to view your saved work
 - Click on any canvas name to load it
 - Or click "📂 Load Example" to try pre-built demos
+
+### Ambient Agent Mode
+
+RuneBook includes an optional **Ambient Agent Mode** that analyzes your terminal commands and provides intelligent suggestions. This feature runs in the background, learns from your command patterns, and offers actionable recommendations to improve your workflow.
+
+#### What is Ambient Agent Mode?
+
+Ambient Agent Mode is an intelligent assistant that:
+- **Captures** terminal commands and their outcomes automatically
+- **Analyzes** patterns in your command usage (frequency, success rates, performance)
+- **Suggests** optimizations, shortcuts, and warnings based on detected patterns
+- **Learns** from failures and provides context-aware remediation suggestions
+- **Operates** entirely locally—no data leaves your machine
+
+The agent uses a multi-layer analysis ladder (see [ANALYSIS_LADDER.md](./ANALYSIS_LADDER.md)):
+1. **Layer 1**: Fast heuristic classifiers for common errors (Nix, Git, syntax errors)
+2. **Layer 2**: Local search through repository files for context
+3. **Layer 3**: Optional LLM/MCP integration (disabled by default)
+
+#### How to Enable
+
+**Option 1: Via CLI (Headless Mode - Recommended for SSH)**
+
+```bash
+# Enable the agent
+npm run agent enable
+
+# Check status
+npm run agent status
+
+# View suggestions
+npm run agent suggestions
+
+# View recent events
+npm run agent events 20
+
+# Analyze last failure
+npm run analyze last
+```
+
+**Option 2: Via Code (In Application)**
+
+```typescript
+import { initAgent } from './lib/agent/integration';
+
+initAgent({
+  enabled: true,
+  captureEvents: true,
+  analyzePatterns: true,
+  suggestImprovements: true,
+});
+```
+
+**Option 3: Via Observer (Terminal Observer Layer)**
+
+```bash
+# Enable terminal observer (captures all shell commands)
+npm run observer enable
+
+# Tail events in real-time
+npm run observer events tail
+
+# View recent events
+npm run observer events 20
+```
+
+#### What Data is Stored?
+
+The agent stores the following data locally:
+
+**Event Data:**
+- Command name and arguments
+- Working directory
+- Environment variables (sanitized, secrets redacted)
+- Command output (stdout/stderr)
+- Exit codes and execution duration
+- Timestamps and session IDs
+
+**Analysis Data:**
+- Command patterns (frequency, success rates)
+- Error classifications
+- Performance metrics
+- Generated suggestions with confidence scores
+
+**Storage Locations:**
+- **In-memory**: Default for testing (data lost on restart)
+- **PluresDB**: Persistent storage (requires PluresDB server)
+- **Local files**: Configuration in `~/.runebook/agent-config.json`
+
+**Privacy & Security:**
+- All data stored locally—never sent to external services
+- Secrets automatically redacted (API keys, tokens, passwords)
+- Opt-in by default (disabled until explicitly enabled)
+- Configurable retention period (default: 30 days)
+
+#### How to Inspect Data
+
+**View Agent Status:**
+```bash
+npm run agent status
+```
+
+**View Recent Events:**
+```bash
+npm run agent events 20  # Show last 20 events
+```
+
+**View Suggestions:**
+```bash
+npm run agent suggestions        # All suggestions
+npm run agent suggestions high   # High priority only
+```
+
+**Inspect Cognitive Memory (PluresDB):**
+```bash
+npm run memory inspect
+```
+
+This shows:
+- Recent sessions
+- Recent errors
+- Active suggestions (ranked by priority)
+
+**View Analysis Results:**
+```bash
+npm run analyze last  # Analyze the last command failure
+```
+
+**Tail Events in Real-Time:**
+```bash
+npm run observer events tail
+```
+
+#### How to Delete Data
+
+**Clear Old Events:**
+```bash
+# Clear events older than 30 days (default)
+npm run agent clear
+
+# Clear events older than 7 days
+npm run agent clear 7
+```
+
+**Clear Observer Events:**
+```typescript
+// Via code
+const observer = createObserver(config);
+await observer.clearEvents(days);
+```
+
+**Wipe All Memory (PluresDB):**
+```rust
+// Via Rust API (in development)
+store.wipe_all().await?;
+```
+
+**Manual Cleanup:**
+- Configuration: `~/.runebook/agent-config.json`
+- Observer config: `~/.runebook/observer-config.json`
+- PluresDB data: `./pluresdb-data` (or configured path)
+
+#### Running Headless
+
+Ambient Agent Mode is designed to work without the GUI, making it perfect for SSH sessions and server environments.
+
+**Basic Usage:**
+```bash
+# Enable and check status
+npm run agent enable
+npm run agent status
+
+# Run some commands (they'll be captured)
+nix build
+git push
+
+# View suggestions
+npm run agent suggestions
+
+# Analyze failures
+npm run analyze last
+```
+
+**Observer Mode (Captures All Shell Commands):**
+```bash
+# Enable observer
+npm run observer enable
+
+# Tail events as they happen
+npm run observer events tail
+
+# View recent events
+npm run observer events 50
+```
+
+**Full CLI Reference:**
+```bash
+# Agent commands
+npm run agent enable|disable|status|suggestions|events|clear
+
+# Observer commands  
+npm run observer enable|disable|status|events
+
+# Analysis commands
+npm run analyze last
+
+# Memory commands
+npm run memory inspect
+```
+
+#### CLI Commands Reference
+
+**Agent Commands:**
+- `npm run agent enable` - Enable the agent
+- `npm run agent disable` - Disable the agent
+- `npm run agent status` - Show agent status and statistics
+- `npm run agent suggestions [priority]` - View suggestions (optional: low/medium/high)
+- `npm run agent events [limit]` - View recent command events (default: 10)
+- `npm run agent clear [days]` - Clear events older than N days (default: 30)
+- `npm run agent config <key> <value>` - Set configuration option
+
+**Observer Commands:**
+- `npm run observer enable` - Enable terminal observer
+- `npm run observer disable` - Disable terminal observer
+- `npm run observer status` - Show observer status and statistics
+- `npm run observer events [limit]` - Show recent events (default: 10)
+- `npm run observer events tail` - Tail events in real-time
+
+**Analysis Commands:**
+- `npm run analyze last` - Analyze the last command failure
+
+**Memory Commands:**
+- `npm run memory inspect` - Inspect cognitive memory storage (PluresDB)
+
+#### Troubleshooting
+
+**Agent not capturing events:**
+1. Check if agent is enabled: `npm run agent status`
+2. Verify configuration: `cat ~/.runebook/agent-config.json`
+3. Ensure `captureEvents: true` in config
+
+**PluresDB not available:**
+1. Check if PluresDB is running: `curl http://localhost:34567/health`
+2. Start PluresDB: `pluresdb --port 34567`
+3. Use in-memory storage: Set `usePluresDB: false` in config
+
+**No suggestions appearing:**
+1. Run some commands first (agent needs data to analyze)
+2. Check for failures: `npm run agent events 20`
+3. Run analysis: `npm run analyze last`
+
+**Observer not working:**
+1. Check if observer is enabled: `npm run observer status`
+2. Verify shell hooks are installed (bash/zsh adapters)
+3. Check observer config: `cat ~/.runebook/observer-config.json`
+
+For more details, see:
+- [ARCHITECTURE.md](./ARCHITECTURE.md) - Technical architecture
+- [ANALYSIS_LADDER.md](./ANALYSIS_LADDER.md) - Analysis system details
+- [MEMORY.md](./MEMORY.md) - Memory storage schema
 
 ### PluresDB Integration
 
@@ -275,6 +589,13 @@ runebook/
 - [ ] Keyboard shortcuts
 - [ ] Undo/redo functionality
 
+### Implemented ✅ (v0.3.0+)
+- [x] **Ambient Agent Mode** - Command analysis and intelligent suggestions
+- [x] **Headless CLI** - SSH-friendly agent management interface
+- [x] **Event Capture System** - Terminal command tracking
+- [x] **Pattern Analysis** - Detect frequent commands and patterns
+- [x] **Suggestion Engine** - Generate actionable suggestions
+
 ### Planned 📋
 - [ ] Advanced PluresDB features (encrypted sharing, device sync)
 - [ ] MCP (Model Context Protocol) integration for AI assistance
@@ -285,6 +606,7 @@ runebook/
 - [ ] Canvas search and filtering
 - [ ] Advanced transform nodes (custom JS, Python, etc.)
 - [ ] More display types (charts, graphs, markdown)
+- [ ] GUI integration for agent suggestions
 
 See [CHANGELOG.md](./CHANGELOG.md) for completed features by version.
 

@@ -47,11 +47,12 @@ The workflow will:
 5. Click "Publish release"
 
 This will trigger the Build and Publish workflow that:
-- Builds for all platforms
-- Uploads binaries to GitHub Release
-- Publishes to npm
+- Builds for all platforms (macOS Intel/Apple Silicon, Linux, Windows)
+- Uploads binaries to GitHub Release automatically
+- Publishes to npm registry
 - Publishes to GitHub Packages
 - Submits to winget (if configured)
+- Builds Nix packages for NixOS distribution
 
 ### 4. Verify Release
 
@@ -62,8 +63,11 @@ npm view @plures/runebook
 # Check GitHub Packages
 # Visit: https://github.com/plures/runebook/packages
 
-# Check GitHub Release
+# Check GitHub Release (verify binaries are uploaded)
 # Visit: https://github.com/plures/runebook/releases
+
+# Verify Nix packages (if nixos-publish job ran)
+# Check workflow artifacts for nix-packages
 ```
 
 ## Setup (First Time Only)
@@ -155,13 +159,29 @@ After release, users can install RuneBook via:
 npm install -g @plures/runebook
 ```
 
+**GitHub Packages**:
+```bash
+npm config set @plures:registry https://npm.pkg.github.com
+npm install -g @plures/runebook
+```
+
 **winget** (Windows):
 ```powershell
 winget install Plures.RuneBook
 ```
 
+**NixOS / Nix Flakes**:
+```bash
+# Direct flake usage
+nix run github:plures/runebook
+
+# Or add to your flake inputs
+# runebook.url = "github:plures/runebook";
+```
+
 **Direct Download**: 
 - Visit [GitHub Releases](https://github.com/plures/runebook/releases)
+- Download platform-specific installers (.dmg, .AppImage, .msi, .exe)
 
 ## Need Help?
 
