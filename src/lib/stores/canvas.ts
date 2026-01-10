@@ -1,108 +1,52 @@
-import { writable, derived, get } from 'svelte/store';
+// Re-export the praxis-based canvas store for backward compatibility
+// This maintains the same API while using Praxis reactive engine underneath
+
+import { canvasPraxisStore, canvasEngine, type CanvasContext } from './canvas-praxis';
+import { createPraxisStore } from '@plures/praxis/svelte';
 import type { Canvas, CanvasNode, Connection } from '../types/canvas';
 
-// Create the main canvas store
-function createCanvasStore() {
-  const { subscribe, set, update } = writable<Canvas>({
-    id: 'default',
-    name: 'Untitled Canvas',
-    description: '',
-    nodes: [],
-    connections: [],
-    version: '1.0.0'
-  });
+// Create a Svelte store from the praxis engine
+const praxisStore = createPraxisStore<CanvasContext>(canvasEngine);
 
-  return {
-    subscribe,
-    set,
-    
-    // Add a new node to the canvas
-    addNode: (node: CanvasNode) => {
-      update(canvas => ({
-        ...canvas,
-        nodes: [...canvas.nodes, node]
-      }));
-    },
+// Create a derived store for just the canvas
+export const canvasStore = {
+  subscribe: (fn: (value: Canvas) => void) => {
+    return praxisStore.subscribe((state) => {
+      fn(state.context.canvas);
+    });
+  },
+  set: (canvas: Canvas) => canvasPraxisStore.loadCanvas(canvas),
+  addNode: canvasPraxisStore.addNode,
+  removeNode: canvasPraxisStore.removeNode,
+  updateNode: canvasPraxisStore.updateNode,
+  updateNodePosition: canvasPraxisStore.updateNodePosition,
+  addConnection: canvasPraxisStore.addConnection,
+  removeConnection: canvasPraxisStore.removeConnection,
+  loadCanvas: canvasPraxisStore.loadCanvas,
+  clear: canvasPraxisStore.clear
+};
 
-    // Remove a node from the canvas
-    removeNode: (nodeId: string) => {
-      update(canvas => ({
-        ...canvas,
-        nodes: canvas.nodes.filter(n => n.id !== nodeId),
-        connections: canvas.connections.filter(
-          c => c.from !== nodeId && c.to !== nodeId
-        )
-      }));
-    },
-
-    // Update a node's properties
-    updateNode: (nodeId: string, updates: Partial<CanvasNode>) => {
-      update(canvas => ({
-        ...canvas,
-        nodes: canvas.nodes.map(n => 
-          n.id === nodeId ? { ...n, ...updates } as CanvasNode : n
-        )
-      }));
-    },
-
-    // Update a node's position
-    updateNodePosition: (nodeId: string, x: number, y: number) => {
-      update(canvas => ({
-        ...canvas,
-        nodes: canvas.nodes.map(n =>
-          n.id === nodeId ? { ...n, position: { x, y } } : n
-        )
-      }));
-    },
-
-    // Add a connection between nodes
-    addConnection: (connection: Connection) => {
-      update(canvas => ({
-        ...canvas,
-        connections: [...canvas.connections, connection]
-      }));
-    },
-
-    // Remove a connection
-    removeConnection: (from: string, to: string, fromPort: string, toPort: string) => {
-      update(canvas => ({
-        ...canvas,
-        connections: canvas.connections.filter(
-          c => !(c.from === from && c.to === to && c.fromPort === fromPort && c.toPort === toPort)
-        )
-      }));
-    },
-
-    // Load a canvas from data
-    loadCanvas: (canvas: Canvas) => {
-      set(canvas);
-    },
-
-    // Clear the canvas
-    clear: () => {
-      set({
-        id: 'default',
-        name: 'Untitled Canvas',
-        description: '',
-        nodes: [],
-        connections: [],
-        version: '1.0.0'
-      });
-    }
-  };
-}
-
-export const canvasStore = createCanvasStore();
-
-// Store for node data/outputs (reactive data flow)
-export const nodeDataStore = writable<Record<string, any>>({});
+// Create a derived store for node data
+export const nodeDataStore = {
+  subscribe: (fn: (value: Record<string, any>) => void) => {
+    return praxisStore.subscribe((state) => {
+      fn(state.context.nodeData);
+    });
+  },
+  set: (data: Record<string, any>) => {
+    // Not typically used, but provided for compatibility
+    const context = canvasEngine.getContext();
+    context.nodeData = data;
+  },
+  update: (fn: (value: Record<string, any>) => Record<string, any>) => {
+    const context = canvasEngine.getContext();
+    context.nodeData = fn(context.nodeData);
+  }
+};
 
 // Helper to update node output data
 export function updateNodeData(nodeId: string, portId: string, data: any) {
-  nodeDataStore.update(store => ({
-    ...store,
-    [`${nodeId}:${portId}`]: data
-  }));
+  canvasPraxisStore.updateNodeData(nodeId, portId, data);
 }
 
 // Helper to get node input data from connections
