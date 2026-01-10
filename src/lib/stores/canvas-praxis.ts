@@ -50,11 +50,10 @@ const removeNodeRule = defineRule<CanvasContext>({
     );
     
     // Remove node data
-    Object.keys(state.context.nodeData).forEach(key => {
-      if (key.startsWith(`${nodeId}:`)) {
-        delete state.context.nodeData[key];
-      }
-    });
+    const prefix = `${nodeId}:`;
+    state.context.nodeData = Object.fromEntries(
+      Object.entries(state.context.nodeData).filter(([key]) => !key.startsWith(prefix))
+    );
     
     return [];
   },
