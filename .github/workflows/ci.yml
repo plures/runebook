@@ -17,9 +17,6 @@ jobs:
       - name: Install Nix
         uses: DeterminateSystems/nix-installer-action@main
       
-      - name: Setup Nix Flakes
-        uses: DeterminateSystems/flake-check-action@main
-      
       - name: Run nix flake check
         run: nix flake check
       
@@ -40,9 +37,6 @@ jobs:
       
       - name: Install Nix
         uses: DeterminateSystems/nix-installer-action@main
-      
-      - name: Setup Nix Flakes
-        uses: DeterminateSystems/flake-check-action@main
       
       - name: Build runebook
         run: nix build .#runebook
@@ -66,9 +60,6 @@ jobs:
       
       - name: Install Nix
         uses: DeterminateSystems/nix-installer-action@main
-      
-      - name: Setup Nix Flakes
-        uses: DeterminateSystems/flake-check-action@main
       
       - name: Run Rust tests
         run: |
@@ -94,9 +85,6 @@ jobs:
       
       - name: Install Nix
         uses: DeterminateSystems/nix-installer-action@main
-      
-      - name: Setup Nix Flakes
-        uses: DeterminateSystems/flake-check-action@main
       
       - name: Build for ${{ matrix.system }}
         run: |
