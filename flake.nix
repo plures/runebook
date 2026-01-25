@@ -67,7 +67,6 @@
             pkgs.openssl
             pkgs.webkitgtk_4_1
             pkgs.librsvg
-            pkgs.appimagekit
             pkgs.bubblewrap
             pkgs.glib
             pkgs.gtk3
@@ -224,7 +223,6 @@
             pkgs.libayatana-appindicator
             pkgs.libsoup_2_4
             pkgs.nodePackages.typescript
-            pkgs.nodePackages.vitest
             pkgs.nodePackages.tsx
             # Optional: pre-commit hooks
             pkgs.pre-commit
