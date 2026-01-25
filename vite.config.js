@@ -29,4 +29,18 @@ export default defineConfig(async () => ({
       ignored: ["**/src-tauri/**"],
     },
   },
+  
+  // Exclude Node.js-only modules from browser build
+  ssr: {
+    noExternal: [],
+  },
+  
+  build: {
+    rollupOptions: {
+      external: [
+        // Mark node-only agent modules as external for dynamic import
+        /\/agent\/node-.*\.ts$/,
+      ],
+    },
+  },
 }));
