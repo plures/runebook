@@ -60,13 +60,12 @@
             pkgs.openssl
             pkgs.webkitgtk_4_1
             pkgs.librsvg
-            pkgs.tauri-cli
             pkgs.appimagekit
             pkgs.bubblewrap
             pkgs.glib
             pkgs.gtk3
             pkgs.libayatana-appindicator
-            pkgs.libsoup
+            pkgs.libsoup_2_4
             pkgs.wrapGAppsHook
           ];
 
@@ -76,7 +75,7 @@
             pkgs.glib
             pkgs.gtk3
             pkgs.libayatana-appindicator
-            pkgs.libsoup
+            pkgs.libsoup_2_4
           ];
 
           preBuild = ''
@@ -213,11 +212,10 @@
             pkgs.openssl
             pkgs.webkitgtk_4_1
             pkgs.librsvg
-            pkgs.tauri-cli
             pkgs.glib
             pkgs.gtk3
             pkgs.libayatana-appindicator
-            pkgs.libsoup
+            pkgs.libsoup_2_4
             pkgs.nodePackages.typescript
             pkgs.nodePackages.vitest
             pkgs.nodePackages.tsx
