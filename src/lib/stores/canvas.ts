@@ -1,12 +1,11 @@
 // Re-export the praxis-based canvas store for backward compatibility
 // This maintains the same API while using Praxis reactive engine underneath
 
-import { canvasPraxisStore, canvasEngine, type CanvasContext } from './canvas-praxis';
-import { createPraxisStore } from '@plures/praxis/svelte';
+import { canvasPraxisStore, praxisStoreInternal, type CanvasContext } from './canvas-praxis';
 import type { Canvas, CanvasNode, Connection } from '../types/canvas';
 
-// Create a Svelte store from the praxis engine
-const praxisStore = createPraxisStore<CanvasContext>(canvasEngine);
+// Use the praxis store from canvas-praxis instead of creating a new one
+const praxisStore = praxisStoreInternal;
 
 // Create a derived store for just the canvas
 export const canvasStore = {
