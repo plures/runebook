@@ -13,6 +13,11 @@
         overlays = [ (import rust-overlay) ];
         pkgs = import nixpkgs {
           inherit system overlays;
+          config = {
+            permittedInsecurePackages = [
+              "libsoup-2.74.3"
+            ];
+          };
         };
 
         # Rust toolchain (stable)
