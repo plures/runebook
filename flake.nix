@@ -72,7 +72,7 @@
             pkgs.gtk3
             pkgs.libayatana-appindicator
             pkgs.libsoup_2_4
-            pkgs.wrapGAppsHook
+            pkgs.wrapGAppsHook3
           ];
 
           buildInputs = [
@@ -151,7 +151,7 @@
             install -Dm755 "$BINARY_PATH" $out/bin/runebook
           '';
           
-          # wrapGAppsHook will automatically wrap binaries in $out/bin
+          # wrapGAppsHook3 will automatically wrap binaries in $out/bin
           # with the necessary GTK/WebKit environment variables
 
           # Don't include secrets in the derivation
@@ -178,7 +178,6 @@
           nativeBuildInputs = [
             nodejs
             pkgs.nodePackages.typescript
-            pkgs.nodePackages.tsx
           ];
 
           # Don't build the frontend, just install deps
@@ -223,7 +222,6 @@
             pkgs.libayatana-appindicator
             pkgs.libsoup_2_4
             pkgs.nodePackages.typescript
-            pkgs.nodePackages.tsx
             # Optional: pre-commit hooks
             pkgs.pre-commit
             pkgs.nixpkgs-fmt
