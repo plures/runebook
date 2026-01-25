@@ -142,7 +142,7 @@ export abstract class BaseShellAdapter implements ShellAdapter {
       : env;
 
     const event: CommandStartEvent = {
-      id: this.generateEventId(),
+      id: commandId,
       type: 'command_start',
       timestamp: this.commandStartTime,
       sessionId: this.config.sessionId || 'unknown',

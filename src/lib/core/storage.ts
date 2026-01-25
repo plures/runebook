@@ -7,6 +7,10 @@ import type {
   EventType,
   ObserverConfig,
 } from './types';
+import { mkdir, readFile, writeFile } from 'fs/promises';
+import { join } from 'path';
+import { homedir } from 'os';
+import { existsSync } from 'fs';
 
 // Re-export EventStore from types for convenience
 export type { EventStore } from './types';
@@ -19,9 +23,13 @@ export class LocalFileStore implements EventStore {
   private events: TerminalObserverEvent[] = [];
   private config: ObserverConfig;
   private initialized = false;
+  private storagePath: string;
+  private eventsFile: string;
 
   constructor(config: ObserverConfig) {
     this.config = config;
+    this.storagePath = config.storagePath || join(homedir(), '.runebook', 'observer');
+    this.eventsFile = join(this.storagePath, 'events.json');
   }
 
   private async ensureInitialized(): Promise<void> {
@@ -29,9 +37,31 @@ export class LocalFileStore implements EventStore {
       return;
     }
 
-    // For now, use in-memory storage
-    // TODO: Implement file-based persistence if needed
+    // Create storage directory if it doesn't exist
+    if (!existsSync(this.storagePath)) {
+      await mkdir(this.storagePath, { recursive: true });
+    }
+
+    // Load existing events from file
+    if (existsSync(this.eventsFile)) {
+      try {
+        const data = await readFile(this.eventsFile, 'utf-8');
+        this.events = JSON.parse(data);
+      } catch (error) {
+        console.error('Failed to load events from file:', error);
+        this.events = [];
+      }
+    }
+
     this.initialized = true;
+  }
+
+  private async persistEvents(): Promise<void> {
+    try {
+      await writeFile(this.eventsFile, JSON.stringify(this.events, null, 2), 'utf-8');
+    } catch (error) {
+      console.error('Failed to persist events to file:', error);
+    }
   }
 
   async saveEvent(event: TerminalObserverEvent): Promise<void> {
@@ -46,6 +76,9 @@ export class LocalFileStore implements EventStore {
         this.events = this.events.slice(-this.config.maxEvents);
       }
     }
+
+    // Persist to file
+    await this.persistEvents();
   }
 
   async getEvents(
@@ -81,10 +114,12 @@ export class LocalFileStore implements EventStore {
     await this.ensureInitialized();
     
     return this.events.filter(e => {
-      if ('commandId' in e) {
-        return e.commandId === commandId;
-      }
+      // command_start events use their id as the command identifier
       if (e.type === 'command_start' && e.id === commandId) {
+        return true;
+      }
+      // Other events reference the command via commandId field
+      if ('commandId' in e && e.commandId === commandId) {
         return true;
       }
       return false;
@@ -116,6 +151,9 @@ export class LocalFileStore implements EventStore {
     } else {
       this.events = [];
     }
+
+    // Persist changes to file
+    await this.persistEvents();
   }
 
   async getStats(): Promise<{
@@ -220,10 +258,12 @@ export class PluresDBEventStore implements EventStore {
   ): Promise<TerminalObserverEvent[]> {
     const allEvents = await this.getEvents();
     return allEvents.filter(e => {
-      if ('commandId' in e) {
-        return e.commandId === commandId;
-      }
+      // command_start events use their id as the command identifier
       if (e.type === 'command_start' && e.id === commandId) {
+        return true;
+      }
+      // Other events reference the command via commandId field
+      if ('commandId' in e && e.commandId === commandId) {
         return true;
       }
       return false;
