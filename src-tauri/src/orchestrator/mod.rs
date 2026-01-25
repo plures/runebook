@@ -6,9 +6,8 @@
 //! 3. Assigns file ownership boundaries
 //! 4. Coordinates agent execution
 
-pub mod planner;
 pub mod coordinator;
+pub mod planner;
 
-pub use planner::*;
 pub use coordinator::*;
-
+pub use planner::*;

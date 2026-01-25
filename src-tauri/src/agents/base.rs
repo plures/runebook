@@ -1,7 +1,7 @@
 //! Base agent trait and common functionality.
 
-use crate::core::types::{AgentId, AgentStatus};
 use crate::core::coordination::CoordinationHandle;
+use crate::core::types::{AgentId, AgentStatus};
 use async_trait::async_trait;
 
 /// Base trait for all agents
@@ -28,6 +28,12 @@ pub trait Agent: Send + Sync {
     fn can_start(&self) -> bool {
         matches!(self.status(), AgentStatus::Pending | AgentStatus::Running)
     }
+
+    /// Finalize the agent (called at the end of execution)
+    async fn finalize(&mut self) -> Result<(), String> {
+        // Default implementation does nothing
+        Ok(())
+    }
 }
 
 /// Agent execution context
@@ -44,4 +50,3 @@ impl AgentContext {
         }
     }
 }
-

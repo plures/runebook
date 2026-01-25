@@ -7,6 +7,13 @@ import type {
   EventType,
   ObserverConfig,
 } from './types';
+import { mkdir, readFile, writeFile } from 'fs/promises';
+import { join } from 'path';
+import { homedir } from 'os';
+import { existsSync } from 'fs';
+
+// Re-export EventStore from types for convenience
+export type { EventStore } from './types';
 
 /**
  * Local file-based storage adapter
@@ -16,9 +23,14 @@ export class LocalFileStore implements EventStore {
   private events: TerminalObserverEvent[] = [];
   private config: ObserverConfig;
   private initialized = false;
+  private storagePath: string;
+  private eventsFile: string;
+  private writePromise: Promise<void> | null = null;
 
   constructor(config: ObserverConfig) {
     this.config = config;
+    this.storagePath = config.storagePath || join(homedir(), '.runebook', 'observer');
+    this.eventsFile = join(this.storagePath, 'events.json');
   }
 
   private async ensureInitialized(): Promise<void> {
@@ -26,9 +38,54 @@ export class LocalFileStore implements EventStore {
       return;
     }
 
-    // For now, use in-memory storage
-    // TODO: Implement file-based persistence if needed
+    // Create storage directory (mkdir with recursive handles already exists)
+    try {
+      await mkdir(this.storagePath, { recursive: true });
+    } catch (error) {
+      // Directory already exists or can't be created
+      console.error('Failed to create storage directory:', error);
+    }
+
+    // Load existing events from file (handle ENOENT directly)
+    try {
+      const data = await readFile(this.eventsFile, 'utf-8');
+      this.events = JSON.parse(data);
+    } catch (error: unknown) {
+      if (error && typeof error === 'object' && 'code' in error && error.code === 'ENOENT') {
+        // File doesn't exist yet, start with empty array
+        this.events = [];
+      } else {
+        console.error('Failed to load events from file:', error);
+        this.events = [];
+      }
+    }
+
     this.initialized = true;
+  }
+
+  private async persistEvents(): Promise<void> {
+    // Serialize writes to prevent race conditions and data corruption
+    const writeOp = (async () => {
+      // If there's already a write in progress, wait for it
+      while (this.writePromise) {
+        await this.writePromise;
+      }
+      
+      // Now perform this write
+      try {
+        await writeFile(this.eventsFile, JSON.stringify(this.events, null, 2), 'utf-8');
+      } catch (error) {
+        console.error('Failed to persist events to file:', error);
+      }
+    })();
+    
+    this.writePromise = writeOp;
+    await writeOp;
+    
+    // Clear writePromise only if it's still this operation
+    if (this.writePromise === writeOp) {
+      this.writePromise = null;
+    }
   }
 
   async saveEvent(event: TerminalObserverEvent): Promise<void> {
@@ -43,6 +100,9 @@ export class LocalFileStore implements EventStore {
         this.events = this.events.slice(-this.config.maxEvents);
       }
     }
+
+    // Persist to file
+    await this.persistEvents();
   }
 
   async getEvents(
@@ -78,10 +138,12 @@ export class LocalFileStore implements EventStore {
     await this.ensureInitialized();
     
     return this.events.filter(e => {
-      if ('commandId' in e) {
-        return e.commandId === commandId;
-      }
+      // command_start events use their id as the command identifier
       if (e.type === 'command_start' && e.id === commandId) {
+        return true;
+      }
+      // Other events reference the command via commandId field
+      if ('commandId' in e && e.commandId === commandId) {
         return true;
       }
       return false;
@@ -113,6 +175,9 @@ export class LocalFileStore implements EventStore {
     } else {
       this.events = [];
     }
+
+    // Persist changes to file
+    await this.persistEvents();
   }
 
   async getStats(): Promise<{
@@ -217,10 +282,12 @@ export class PluresDBEventStore implements EventStore {
   ): Promise<TerminalObserverEvent[]> {
     const allEvents = await this.getEvents();
     return allEvents.filter(e => {
-      if ('commandId' in e) {
-        return e.commandId === commandId;
-      }
+      // command_start events use their id as the command identifier
       if (e.type === 'command_start' && e.id === commandId) {
+        return true;
+      }
+      // Other events reference the command via commandId field
+      if ('commandId' in e && e.commandId === commandId) {
         return true;
       }
       return false;

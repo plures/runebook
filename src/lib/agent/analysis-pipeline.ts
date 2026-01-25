@@ -123,12 +123,12 @@ export class AnalysisJobQueue {
         return aIdx - bIdx;
       });
 
-    if (!commandStart || !exitStatus) {
+    if (!commandStart || !exitStatus || commandStart.type !== 'command_start' || exitStatus.type !== 'exit_status') {
       return null;
     }
 
     // Check if it's a failure
-    if (exitStatus.type !== 'exit_status' || exitStatus.success) {
+    if (exitStatus.success) {
       return null; // Not a failure
     }
 

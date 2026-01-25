@@ -130,4 +130,3 @@ pub struct ExecutionPlan {
     pub file_ownership: Vec<FileOwnership>,
     pub created_at: chrono::DateTime<chrono::Utc>,
 }
-

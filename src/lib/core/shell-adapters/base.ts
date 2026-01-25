@@ -142,7 +142,7 @@ export abstract class BaseShellAdapter implements ShellAdapter {
       : env;
 
     const event: CommandStartEvent = {
-      id: this.generateEventId(),
+      id: commandId,
       type: 'command_start',
       timestamp: this.commandStartTime,
       sessionId: this.config.sessionId || 'unknown',
@@ -288,7 +288,6 @@ export abstract class BaseShellAdapter implements ShellAdapter {
       shellType: this.getShellType(),
       paneId: this.config.paneId,
       tabId: this.config.tabId,
-      shellType: this.getShellType(),
       cwd: process.cwd(),
       envSummary,
     });
@@ -306,7 +305,7 @@ export abstract class BaseShellAdapter implements ShellAdapter {
       ? await this.store.getEventsBySession(this.config.sessionId, 1)
       : [];
     
-    const startEvent = sessionStart.find(e => e.type === 'session_start');
+    const startEvent = sessionStart.find((e: TerminalObserverEvent) => e.type === 'session_start');
     const duration = startEvent
       ? Date.now() - startEvent.timestamp
       : 0;

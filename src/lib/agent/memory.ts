@@ -1,7 +1,7 @@
 // Memory/storage layer for Ambient Agent Mode
 // Stores terminal events and patterns for analysis
 
-import type { TerminalEvent, CommandPattern, AgentConfig } from '../types/agent';
+import type { TerminalEvent, CommandPattern, Suggestion, AgentConfig } from '../types/agent';
 
 export interface EventStorage {
   saveEvent(event: TerminalEvent): Promise<void>;
@@ -9,6 +9,8 @@ export interface EventStorage {
   getEventsByCommand(command: string, limit?: number): Promise<TerminalEvent[]>;
   getPatterns(): Promise<CommandPattern[]>;
   savePattern(pattern: CommandPattern): Promise<void>;
+  saveSuggestion(suggestion: Suggestion): Promise<void>;
+  getSuggestions(limit: number): Promise<Suggestion[]>;
   clearEvents(olderThan?: number): Promise<void>;
   getStats(): Promise<{
     totalEvents: number;
@@ -24,6 +26,7 @@ export interface EventStorage {
 export class MemoryStorage implements EventStorage {
   private events: TerminalEvent[] = [];
   private patterns: Map<string, CommandPattern> = new Map();
+  private suggestions: Suggestion[] = [];
   private config: AgentConfig;
 
   constructor(config: AgentConfig) {
@@ -72,6 +75,20 @@ export class MemoryStorage implements EventStorage {
 
   async savePattern(pattern: CommandPattern): Promise<void> {
     this.patterns.set(pattern.id, pattern);
+  }
+
+  async saveSuggestion(suggestion: Suggestion): Promise<void> {
+    this.suggestions.push(suggestion);
+    // Keep only recent suggestions (last 100)
+    if (this.suggestions.length > 100) {
+      this.suggestions = this.suggestions.slice(-100);
+    }
+  }
+
+  async getSuggestions(limit: number): Promise<Suggestion[]> {
+    return this.suggestions
+      .sort((a, b) => b.timestamp - a.timestamp)
+      .slice(0, limit);
   }
 
   async clearEvents(olderThan?: number): Promise<void> {
@@ -155,6 +172,7 @@ export class PluresDBStorage implements EventStorage {
   private db: any = null;
   private readonly eventPrefix = 'agent:event:';
   private readonly patternPrefix = 'agent:pattern:';
+  private readonly suggestionPrefix = 'agent:suggestion:';
   private initialized = false;
   private config: AgentConfig;
 
@@ -243,6 +261,32 @@ export class PluresDBStorage implements EventStorage {
     await this.ensureInitialized();
     const key = `${this.patternPrefix}${pattern.id}`;
     await this.db.put(key, pattern);
+  }
+
+  async saveSuggestion(suggestion: Suggestion): Promise<void> {
+    await this.ensureInitialized();
+    const key = `${this.suggestionPrefix}${suggestion.id}`;
+    await this.db.put(key, suggestion);
+  }
+
+  async getSuggestions(limit: number): Promise<Suggestion[]> {
+    await this.ensureInitialized();
+    const keys = await this.db.list(this.suggestionPrefix);
+    const suggestions: Suggestion[] = [];
+
+    for (const key of keys) {
+      try {
+        const suggestion = await this.db.getValue(key);
+        if (suggestion) {
+          suggestions.push(suggestion as Suggestion);
+        }
+      } catch (error) {
+        console.error('Failed to load suggestion:', error);
+      }
+    }
+
+    suggestions.sort((a, b) => b.timestamp - a.timestamp);
+    return suggestions.slice(0, limit);
   }
 
   async clearEvents(olderThan?: number): Promise<void> {

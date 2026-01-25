@@ -59,4 +59,3 @@ impl Default for OwnershipManager {
         Self::new()
     }
 }
-

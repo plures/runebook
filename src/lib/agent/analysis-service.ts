@@ -5,6 +5,12 @@ import { AnalysisJobQueue } from './analysis-pipeline';
 import { createHeuristicAnalyzers, createLocalSearchAnalyzer, createLLMAnalyzer } from './analyzers';
 import type { TerminalObserverEvent, EventStore } from '../core/types';
 import type { ObserverConfig } from '../core/types';
+import type { LLMProviderConfig } from './llm/types';
+
+// Extended config that includes optional LLM support
+interface AnalysisServiceConfig extends ObserverConfig {
+  llm?: LLMProviderConfig;
+}
 
 /**
  * Analysis service that monitors observer events and triggers analysis
@@ -12,7 +18,7 @@ import type { ObserverConfig } from '../core/types';
 export class AnalysisService {
   private queue: AnalysisJobQueue;
   private store: EventStore | null = null;
-  private config: ObserverConfig | null = null;
+  private config: AnalysisServiceConfig | null = null;
   private enabled = false;
 
   constructor() {
@@ -25,12 +31,12 @@ export class AnalysisService {
    */
   initialize(store: EventStore, config: ObserverConfig): void {
     this.store = store;
-    this.config = config;
+    this.config = config as AnalysisServiceConfig;
     this.queue = new AnalysisJobQueue(store);
     this.setupAnalyzers();
     
     // Enable LLM if configured
-    const llmConfig = config.llm;
+    const llmConfig = this.config.llm;
     if (llmConfig && llmConfig.enabled) {
       this.queue.setLLMEnabled(true);
     }
@@ -140,7 +146,7 @@ export class AnalysisService {
   /**
    * Update LLM configuration
    */
-  setLLMConfig(config: ObserverConfig['llm']): void {
+  setLLMConfig(config: LLMProviderConfig | undefined): void {
     if (this.config) {
       this.config.llm = config;
       this.setupAnalyzers();

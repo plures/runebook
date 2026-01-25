@@ -1,7 +1,6 @@
 //! Execution plan creation and task breakdown.
 
 use crate::core::types::*;
-use crate::core::ownership::{OwnershipManager, FileOwnership};
 
 /// Creates the execution plan with roadmap, tasks, interfaces, and ownership
 pub fn create_execution_plan() -> ExecutionPlan {
@@ -23,31 +22,37 @@ fn create_roadmap() -> Vec<RoadmapItem> {
     vec![
         RoadmapItem {
             phase: "phase-1-orchestration".to_string(),
-            description: "Orchestrator creates roadmap, task breakdown, stubs interfaces, assigns ownership".to_string(),
+            description:
+                "Orchestrator creates roadmap, task breakdown, stubs interfaces, assigns ownership"
+                    .to_string(),
             agents: vec![AgentId::Orchestrator],
             dependencies: vec![],
         },
         RoadmapItem {
             phase: "phase-2-parallel-agents".to_string(),
-            description: "Agent 1 (event capture) and Agent 2 (storage APIs) run in parallel".to_string(),
+            description: "Agent 1 (event capture) and Agent 2 (storage APIs) run in parallel"
+                .to_string(),
             agents: vec![AgentId::Agent1, AgentId::Agent2],
             dependencies: vec!["phase-1-orchestration".to_string()],
         },
         RoadmapItem {
             phase: "phase-3-analysis".to_string(),
-            description: "Agent 3 (analysis pipeline) starts after Agent 2 publishes APIs".to_string(),
+            description: "Agent 3 (analysis pipeline) starts after Agent 2 publishes APIs"
+                .to_string(),
             agents: vec![AgentId::Agent3],
             dependencies: vec!["phase-2-parallel-agents".to_string()],
         },
         RoadmapItem {
             phase: "phase-4-surfaces".to_string(),
-            description: "Agent 4 (surfaces) starts after Agent 3 writes suggestions to store".to_string(),
+            description: "Agent 4 (surfaces) starts after Agent 3 writes suggestions to store"
+                .to_string(),
             agents: vec![AgentId::Agent4],
             dependencies: vec!["phase-3-analysis".to_string()],
         },
         RoadmapItem {
             phase: "phase-5-continuous".to_string(),
-            description: "Agent 5 (nix + CI) and Agent 6 (finalization) run continuously".to_string(),
+            description: "Agent 5 (nix + CI) and Agent 6 (finalization) run continuously"
+                .to_string(),
             agents: vec![AgentId::Agent5, AgentId::Agent6],
             dependencies: vec!["phase-1-orchestration".to_string()],
         },
@@ -297,4 +302,3 @@ fn create_file_ownership() -> Vec<FileOwnership> {
         },
     ]
 }
-

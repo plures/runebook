@@ -55,27 +55,26 @@
         };
 
         # Build the Rust backend (Tauri)
-        runebook = pkgs.stdenv.mkDerivation {
+        runebook = pkgs.rustPlatform.buildRustPackage {
           pname = "runebook";
           version = "0.2.0";
-          src = ./.;
+          
+          # Point src directly to src-tauri directory
+          src = ./src-tauri;
 
+          # Use Cargo.lock from the source
+          cargoLock = {
+            lockFile = ./src-tauri/Cargo.lock;
+          };
+          
           nativeBuildInputs = [
-            rustToolchain
             nodejs
             pkgs.pkg-config
-            pkgs.openssl
-            pkgs.webkitgtk_4_1
-            pkgs.librsvg
-            pkgs.bubblewrap
-            pkgs.glib
-            pkgs.gtk3
-            pkgs.libayatana-appindicator
-            pkgs.libsoup_2_4
             pkgs.wrapGAppsHook3
           ];
 
           buildInputs = [
+            pkgs.openssl
             pkgs.webkitgtk_4_1
             pkgs.librsvg
             pkgs.glib
@@ -85,77 +84,25 @@
           ];
 
           preBuild = ''
-            export HOME=$(mktemp -d)
-            export CARGO_HOME=$HOME/.cargo
-            export NPM_CONFIG_CACHE=$HOME/.npm
-            export NPM_CONFIG_PREFIX=$HOME/.npm-global
-            
             # Copy frontend build to expected location (Tauri expects it at ../build)
-            mkdir -p build
-            cp -r ${frontend}/build/* build/ || true
-            
-            # Also copy to src-tauri expected location for Tauri build
-            mkdir -p src-tauri/../build
-            cp -r ${frontend}/build/* src-tauri/../build/ || true
+            mkdir -p ../build
+            cp -r ${frontend}/build/* ../build/ || true
             
             # Set up Rust environment
             export RUST_BACKTRACE=1
             export TAURI_DIST_DIR="../build"
-          '';
-
-          buildPhase = ''
-            cd src-tauri
-            
-            # Set environment for Tauri build
             export TAURI_PRIVATE_KEY=""
             export TAURI_KEY_PASSWORD=""
-            
-            # Build with cargo (Tauri will embed the frontend)
-            # Note: For a full Tauri bundle, you'd use `tauri build`, but that's
-            # complex in Nix. This builds the binary which can be run directly.
-            cargo build --release --bin runebook
-            
-            # If binary name differs, check what was built
-            if [ ! -f target/release/runebook ]; then
-              # Try to find the actual binary name
-              BINARY=$(find target/release -maxdepth 1 -type f -executable | head -1)
-              if [ -n "$BINARY" ]; then
-                cp "$BINARY" target/release/runebook
-              fi
-            fi
           '';
 
-          installPhase = ''
-            mkdir -p $out/bin
+          # Don't run tests during build
+          doCheck = false;
+
+          postInstall = ''
+            # wrapGAppsHook3 will handle wrapping for GTK/WebKit
             mkdir -p $out/share/applications
             mkdir -p $out/share/icons/hicolor
-            
-            # Install the binary (Tauri creates a binary with the package name)
-            BINARY_PATH=""
-            if [ -f src-tauri/target/release/runebook ]; then
-              BINARY_PATH="src-tauri/target/release/runebook"
-            elif [ -f target/release/runebook ]; then
-              BINARY_PATH="target/release/runebook"
-            else
-              # Search for the binary
-              FOUND=$(find . -path "*/target/release/runebook" -type f -executable | head -1)
-              if [ -n "$FOUND" ]; then
-                BINARY_PATH="$FOUND"
-              else
-                echo "Error: Binary not found. Available files:"
-                find . -path "*/target/release/*" -type f | head -10 || true
-                exit 1
-              fi
-            fi
-            
-            install -Dm755 "$BINARY_PATH" $out/bin/runebook
           '';
-          
-          # wrapGAppsHook3 will automatically wrap binaries in $out/bin
-          # with the necessary GTK/WebKit environment variables
-
-          # Don't include secrets in the derivation
-          dontFixup = false;
         };
 
         # Headless CLI agent wrapper
@@ -173,7 +120,7 @@
           version = "0.2.0";
           src = ./.;
           
-          npmDepsHash = "sha256-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA="; # Update after first build
+          npmDepsHash = "sha256-S2tAn2QEmj5ry9COmE/dxJEAjlxiugazvN9WxE/IyNE=";
           
           nativeBuildInputs = [
             nodejs

@@ -18,7 +18,7 @@ export class DefaultAnalyzer implements Analyzer {
     // Check for repeated failures
     if (!event.success) {
       const recentFailures = await storage.getEventsByCommand(event.command, 5);
-      const failureCount = recentFailures.filter(e => !e.success).length;
+      const failureCount = recentFailures.filter((e: TerminalEvent) => !e.success).length;
       
       if (failureCount >= 3) {
         suggestions.push({
@@ -46,7 +46,7 @@ export class DefaultAnalyzer implements Analyzer {
 
     // Check for common patterns
     const patterns = await storage.getPatterns();
-    const pattern = patterns.find(p => p.command === event.command);
+    const pattern = patterns.find((p: CommandPattern) => p.command === event.command);
     
     if (pattern && pattern.frequency > 5) {
       // Suggest shortcuts for frequently used commands
@@ -68,7 +68,7 @@ export class DefaultAnalyzer implements Analyzer {
     if (!event.success) {
       const similarEvents = await storage.getEvents(20);
       const similarSuccessful = similarEvents.filter(
-        e => e.command === event.command && e.success && e.args.length === event.args.length
+        (e: TerminalEvent) => e.command === event.command && e.success && e.args.length === event.args.length
       );
       
       if (similarSuccessful.length > 0) {
@@ -100,8 +100,8 @@ export class DefaultAnalyzer implements Analyzer {
 
     // Suggest frequently used commands as shortcuts
     const frequentPatterns = patterns
-      .filter(p => p.frequency >= 5)
-      .sort((a, b) => b.frequency - a.frequency)
+      .filter((p: CommandPattern) => p.frequency >= 5)
+      .sort((a: CommandPattern, b: CommandPattern) => b.frequency - a.frequency)
       .slice(0, 5);
 
     for (const pattern of frequentPatterns) {
@@ -118,8 +118,8 @@ export class DefaultAnalyzer implements Analyzer {
 
     // Suggest optimization for slow commands
     const slowPatterns = patterns
-      .filter(p => p.avgDuration > 3000)
-      .sort((a, b) => b.avgDuration - a.avgDuration)
+      .filter((p: CommandPattern) => p.avgDuration > 3000)
+      .sort((a: CommandPattern, b: CommandPattern) => b.avgDuration - a.avgDuration)
       .slice(0, 3);
 
     for (const pattern of slowPatterns) {

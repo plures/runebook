@@ -24,6 +24,14 @@ jobs:
         run: |
           nix develop --command -- bash -c "cd src-tauri && cargo fmt --check"
       
+      - name: Install npm dependencies
+        run: |
+          nix develop --command -- bash -c "npm install"
+      
+      - name: Sync SvelteKit configuration
+        run: |
+          nix develop --command -- bash -c "npx svelte-kit sync"
+      
       - name: Check TypeScript/JavaScript formatting
         run: |
           nix develop --command -- bash -c "npm run check"
@@ -64,6 +72,14 @@ jobs:
       - name: Run Rust tests
         run: |
           nix develop --command -- bash -c "cd src-tauri && cargo test"
+      
+      - name: Install npm dependencies
+        run: |
+          nix develop --command -- bash -c "npm install"
+      
+      - name: Sync SvelteKit configuration
+        run: |
+          nix develop --command -- bash -c "npx svelte-kit sync"
       
       - name: Run TypeScript tests
         run: |

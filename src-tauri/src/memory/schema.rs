@@ -1,8 +1,8 @@
 // Schema definitions for cognitive memory storage
 // Defines tables/collections: sessions, commands, outputs, errors, insights, suggestions, provenance
 
-use serde::{Deserialize, Serialize};
 use chrono::{DateTime, Utc};
+use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
 /// Session metadata - represents a terminal session
@@ -44,7 +44,7 @@ pub struct Output {
     pub chunk_index: u32,
     pub content: Vec<u8>, // Raw bytes (may be compressed)
     pub compressed: bool, // Whether content is gzip-compressed
-    pub size_bytes: u64, // Uncompressed size
+    pub size_bytes: u64,  // Uncompressed size
     pub timestamp: DateTime<Utc>,
 }
 
@@ -55,7 +55,7 @@ pub struct Error {
     pub command_id: String,
     pub session_id: String,
     pub error_type: String, // "exit_code", "stderr", "timeout", "permission", etc.
-    pub severity: String, // "low", "medium", "high", "critical"
+    pub severity: String,   // "low", "medium", "high", "critical"
     pub message: String,
     pub stderr_snippet: Option<String>, // First 500 chars of stderr
     pub exit_code: Option<i32>,
@@ -69,11 +69,11 @@ pub struct Insight {
     pub id: String,
     pub command_id: Option<String>, // Optional: linked to specific command
     pub session_id: Option<String>, // Optional: linked to specific session
-    pub insight_type: String, // "pattern", "optimization", "warning", "tip", "correlation"
+    pub insight_type: String,       // "pattern", "optimization", "warning", "tip", "correlation"
     pub title: String,
     pub description: String,
     pub confidence: f64, // 0.0 to 1.0
-    pub source: String, // "heuristic", "ai", "rule", etc.
+    pub source: String,  // "heuristic", "ai", "rule", etc.
     pub generated_at: DateTime<Utc>,
     pub metadata: serde_json::Value,
 }
@@ -83,11 +83,11 @@ pub struct Insight {
 pub struct Suggestion {
     pub id: String,
     pub suggestion_type: String, // "command", "optimization", "shortcut", "warning", "tip"
-    pub priority: String, // "low", "medium", "high"
-    pub rank: f64, // Ranking score (higher = more relevant)
+    pub priority: String,        // "low", "medium", "high"
+    pub rank: f64,               // Ranking score (higher = more relevant)
     pub title: String,
     pub description: String,
-    pub command: Option<String>, // Suggested command
+    pub command: Option<String>,   // Suggested command
     pub args: Option<Vec<String>>, // Suggested arguments
     pub context: serde_json::Value,
     pub created_at: DateTime<Utc>,
@@ -101,10 +101,10 @@ pub struct Provenance {
     pub id: String,
     pub entity_type: String, // "command", "output", "error", "insight", "suggestion"
     pub entity_id: String,
-    pub source: String, // "terminal", "ai", "heuristic", "user", etc.
+    pub source: String,          // "terminal", "ai", "heuristic", "user", etc.
     pub confidence: Option<f64>, // 0.0 to 1.0
-    pub model: Option<String>, // AI model name if applicable
-    pub tool: Option<String>, // Tool/function name if applicable
+    pub model: Option<String>,   // AI model name if applicable
+    pub tool: Option<String>,    // Tool/function name if applicable
     pub created_at: DateTime<Utc>,
     pub metadata: serde_json::Value,
 }
@@ -167,7 +167,12 @@ impl Command {
 }
 
 impl Output {
-    pub fn new(command_id: String, stream_type: String, chunk_index: u32, content: Vec<u8>) -> Self {
+    pub fn new(
+        command_id: String,
+        stream_type: String,
+        chunk_index: u32,
+        content: Vec<u8>,
+    ) -> Self {
         let size_bytes = content.len() as u64;
         Self {
             id: Uuid::new_v4().to_string(),
@@ -268,4 +273,3 @@ impl Provenance {
         }
     }
 }
-

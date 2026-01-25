@@ -1,8 +1,8 @@
 //! Coordination mechanisms for agent communication.
 
-use super::types::{AgentId, CoordinationMessage, ApiPublished};
-use tokio::sync::mpsc;
+use super::types::{AgentId, ApiPublished, CoordinationMessage};
 use std::collections::HashMap;
+use tokio::sync::mpsc;
 
 /// Coordination channel for agent communication
 pub struct CoordinationChannel {
@@ -37,7 +37,9 @@ pub struct CoordinationHandle {
 
 impl CoordinationHandle {
     pub fn send(&self, message: CoordinationMessage) -> Result<(), String> {
-        self.sender.send(message).map_err(|e| format!("Channel closed: {}", e))
+        self.sender
+            .send(message)
+            .map_err(|e| format!("Channel closed: {}", e))
     }
 
     pub fn agent_ready(&self, agent: AgentId) -> Result<(), String> {
@@ -52,7 +54,11 @@ impl CoordinationHandle {
         self.send(CoordinationMessage::TaskCompleted(agent, task_id))
     }
 
-    pub fn status_update(&self, agent: AgentId, status: super::types::AgentStatus) -> Result<(), String> {
+    pub fn status_update(
+        &self,
+        agent: AgentId,
+        status: super::types::AgentStatus,
+    ) -> Result<(), String> {
         self.send(CoordinationMessage::StatusUpdate(agent, status))
     }
 
@@ -97,7 +103,10 @@ impl ApiRegistry {
     }
 
     pub fn get_agent_apis(&self, agent: AgentId) -> Vec<&ApiPublished> {
-        self.apis.values().filter(|api| api.agent == agent).collect()
+        self.apis
+            .values()
+            .filter(|api| api.agent == agent)
+            .collect()
     }
 }
 
@@ -106,4 +115,3 @@ impl Default for ApiRegistry {
         Self::new()
     }
 }
-

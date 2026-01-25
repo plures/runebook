@@ -5,8 +5,8 @@
 //! Writes suggestions to store (triggers Agent 4)
 
 use crate::agents::base::{Agent, AgentContext};
-use crate::core::types::{AgentId, AgentStatus};
 use crate::core::coordination::CoordinationHandle;
+use crate::core::types::{AgentId, AgentStatus};
 use async_trait::async_trait;
 
 pub struct Agent3 {
@@ -40,22 +40,23 @@ impl Agent for Agent3 {
         // - Implement enqueueFailure
         // - Integrate with storage APIs from Agent 2
         // - Write suggestions to store (triggers Agent 4)
-        
+
         log::info!("Agent 3 (Analysis Pipeline) executing...");
-        
+
         // Signal ready
         if let Some(ref ctx) = self.context {
             ctx.coordination.agent_ready(AgentId::Agent3)?;
         }
-        
+
         // Simulate work
         tokio::time::sleep(tokio::time::Duration::from_millis(100)).await;
-        
+
         // Complete task: write suggestions to store
         if let Some(ref ctx) = self.context {
-            ctx.coordination.task_completed(AgentId::Agent3, "agent3-2".to_string())?;
+            ctx.coordination
+                .task_completed(AgentId::Agent3, "agent3-2".to_string())?;
         }
-        
+
         self.status = AgentStatus::Completed;
         Ok(())
     }
@@ -70,4 +71,3 @@ impl Default for Agent3 {
         Self::new()
     }
 }
-
