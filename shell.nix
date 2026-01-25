@@ -10,7 +10,7 @@ pkgs.mkShell {
     cargo
     pkg-config
     openssl
-    webkitgtk
+    webkitgtk_4_1
     librsvg
     tauri-cli
   ];

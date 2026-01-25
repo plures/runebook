@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-01-25
+
 ### Added
 - **Praxis Integration**: Integrated @plures/praxis v1.2.0 for reactive state management
   - Type-safe event-driven architecture with defineEvent and defineRule

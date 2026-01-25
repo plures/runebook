@@ -366,6 +366,6 @@ Users cannot yet:
 
 RuneBook is now a functional, well-documented desktop application with a solid foundation for future development. The reactive canvas system works, terminals execute commands, data flows between nodes, and transform nodes enable data processing. The architecture is extensible, the code is clean and typed, and comprehensive documentation guides both users and developers.
 
-**Current Version**: v0.2.0
+**Current Version**: v0.3.0
 **Status**: ✅ Ready for use and further development
-**Last Updated**: December 27, 2024
+**Last Updated**: January 25, 2026

@@ -43,9 +43,9 @@ RuneBook uses GitHub Actions to automate:
 5. Click "Run workflow" button
 
 **Example**:
-- Current version: `0.2.0`
-- Choose `patch` → New version: `0.2.1`
-- Choose `minor` → New version: `0.3.0`
+- Current version: `0.3.0`
+- Choose `patch` → New version: `0.3.1`
+- Choose `minor` → New version: `0.4.0`
 - Choose `major` → New version: `1.0.0`
 
 ### 2. Build and Publish Release (`publish-release.yml`)
