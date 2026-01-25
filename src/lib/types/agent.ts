@@ -49,6 +49,22 @@ export interface Suggestion {
 
 import type { LLMProviderConfig } from '../agent/llm/types';
 
+export interface EventStorage {
+  saveEvent(event: TerminalEvent): Promise<void>;
+  getEvents(limit?: number, since?: number): Promise<TerminalEvent[]>;
+  getEventsByCommand(command: string, limit: number): Promise<TerminalEvent[]>;
+  getPatterns(): Promise<CommandPattern[]>;
+  savePattern(pattern: CommandPattern): Promise<void>;
+  saveSuggestion(suggestion: Suggestion): Promise<void>;
+  getSuggestions(limit: number): Promise<Suggestion[]>;
+  getStats(): Promise<{
+    totalEvents: number;
+    uniqueCommands: number;
+    avgSuccessRate: number;
+    totalDuration: number;
+  }>;
+}
+
 export interface AgentConfig {
   enabled: boolean;
   captureEvents: boolean;

@@ -9,6 +9,7 @@
 
   let { node }: Props = $props();
 
+  // Initialize content from node prop (warning is expected as we need mutable state)
   let content = $state<any>(node.content || '');
 
   // Subscribe to node data changes to update content reactively

@@ -202,87 +202,6 @@ async function showLastCommandSuggestions(): Promise<void> {
 }
 
 /**
- * Show agent status for suggestions
- */
-function showSuggestStatus(): void {
-  const status = getAgentStatus();
-  const statusText = formatStatus(status);
-  
-  console.log(`\n=== Agent Status ===\n`);
-  console.log(`Status: ${statusText}`);
-  console.log(`Suggestions: ${status.suggestionCount}`);
-  console.log(`High Priority: ${status.highPriorityCount}`);
-  
-  if (status.lastCommand) {
-    const date = new Date(status.lastCommandTimestamp || 0).toLocaleString();
-    console.log(`Last Command: ${status.lastCommand} (${date})`);
-  }
-  
-  console.log();
-}
-
-/**
- * Show top suggestion
- */
-async function showTopSuggestion(): Promise<void> {
-  const config = loadConfig();
-  
-  if (!config.enabled) {
-    console.log('Agent is not enabled. Run: runebook agent enable');
-    return;
-  }
-  
-  const agent = createAgent(config);
-  const topSuggestions = agent.getTopSuggestion(1);
-  
-  if (topSuggestions.length === 0) {
-    console.log('No suggestions available.');
-    return;
-  }
-  
-  const suggestion = topSuggestions[0];
-  console.log(formatSuggestionCompact(suggestion));
-  console.log(`\n${suggestion.description}`);
-  if (suggestion.command) {
-    const args = suggestion.args ? suggestion.args.join(' ') : '';
-    console.log(`\nCommand: ${suggestion.command} ${args}`);
-  }
-  
-  agent.stop();
-}
-
-/**
- * Show suggestions for last command
- */
-async function showLastCommandSuggestions(): Promise<void> {
-  const config = loadConfig();
-  
-  if (!config.enabled) {
-    console.log('Agent is not enabled. Run: runebook agent enable');
-    return;
-  }
-  
-  const agent = createAgent(config);
-  const suggestions = agent.getSuggestionsForLastCommand();
-  const status = getAgentStatus();
-  
-  if (!status.lastCommand) {
-    console.log('No command has been executed yet.');
-    return;
-  }
-  
-  console.log(`\n=== Suggestions for "${status.lastCommand}" ===\n`);
-  
-  if (suggestions.length === 0) {
-    console.log('No suggestions for this command.');
-  } else {
-    console.log(formatSuggestionsForCLI(suggestions));
-  }
-  
-  agent.stop();
-}
-
-/**
  * Show recent events
  */
 async function showEvents(limit: number = 10): Promise<void> {
@@ -445,7 +364,9 @@ async function showLLMStatus(): Promise<void> {
   
   console.log('\n=== LLM/MCP Integration Status ===\n');
   
-  if (!obsConfig.llm) {
+  // Check if llm config exists (extended observer config)
+  const llmConfig = (obsConfig as any).llm;
+  if (!llmConfig) {
     console.log('Status: Disabled (no configuration)');
     console.log('\nTo enable LLM analysis, add LLM configuration to observer config.');
     console.log('Example:');
@@ -459,7 +380,6 @@ async function showLLMStatus(): Promise<void> {
     return;
   }
   
-  const llmConfig = obsConfig.llm;
   console.log(`Provider Type: ${llmConfig.type}`);
   console.log(`Enabled: ${llmConfig.enabled ? 'Yes' : 'No'}`);
   

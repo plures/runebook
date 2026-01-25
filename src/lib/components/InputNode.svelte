@@ -8,6 +8,7 @@
 
   let { node }: Props = $props();
 
+  // Initialize value from node prop (warning is expected as we need mutable state)
   let value = $state(node.value ?? '');
 
   function handleValueChange() {

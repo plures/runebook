@@ -16,7 +16,7 @@ export class LLMAnalyzer implements Analyzer {
   layer = 3;
   private enabled = false;
   private provider: LLMProvider | null = null;
-  private config: LLMProviderConfig | null = null;
+  private config: LLMProviderConfig | undefined = undefined;
 
   constructor(enabled: boolean = false, config?: LLMProviderConfig) {
     this.enabled = enabled;

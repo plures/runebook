@@ -8,6 +8,9 @@ import type {
   ObserverConfig,
 } from './types';
 
+// Re-export EventStore from types for convenience
+export type { EventStore } from './types';
+
 /**
  * Local file-based storage adapter
  * Stores events as JSON files in a directory

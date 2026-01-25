@@ -12,6 +12,9 @@ import type {
 import type { ShellAdapter } from './shell-adapters';
 import type { EventStore } from './storage';
 
+// Re-export ObserverConfig for convenience
+export type { ObserverConfig } from './types';
+
 export class TerminalObserver {
   private config: ObserverConfig;
   private adapter: ShellAdapter | null = null;

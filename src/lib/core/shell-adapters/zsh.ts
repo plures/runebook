@@ -21,39 +21,34 @@ export class ZshAdapter extends BaseShellAdapter {
   }
 
   getHookScript(): string {
-    return `
-# RuneBook Terminal Observer Hook for Zsh
-# Add this to your ~/.zshrc
-
-if [ -n "$RUNBOOK_OBSERVER_ENABLED" ]; then
-  # Function to capture command start
-  __runebook_capture_start() {
-    local cmd="$1"
-    local args="${@:2}"
-    local cwd="$PWD"
-    
-    # Call runebook observer API (if available)
-    if command -v runebook >/dev/null 2>&1; then
-      runebook observer capture-start "$cmd" "$args" "$cwd" &
-    fi
-  }
-
-  # Function to capture command end
-  __runebook_capture_end() {
-    local exit_code=$?
-    
-    if command -v runebook >/dev/null 2>&1; then
-      runebook observer capture-end $exit_code &
-    fi
-    
-    return $exit_code
-  }
-
-  # Hook into command execution using zsh hooks
-  preexec_functions+=(__runebook_capture_start)
-  precmd_functions+=(__runebook_capture_end)
-fi
-`;
+    // @ts-ignore - Shell script content, not TypeScript
+    return (
+      '# RuneBook Terminal Observer Hook for Zsh\n' +
+      '# Add this to your ~/.zshrc\n\n' +
+      'if [ -n "$RUNBOOK_OBSERVER_ENABLED" ]; then\n' +
+      '  # Function to capture command start\n' +
+      '  __runebook_capture_start() {\n' +
+      '    local cmd="$1"\n' +
+      '    local args="${@:2}"\n' +
+      '    local cwd="$PWD"\n    \n' +
+      '    # Call runebook observer API (if available)\n' +
+      '    if command -v runebook >/dev/null 2>&1; then\n' +
+      '      runebook observer capture-start "$cmd" "$args" "$cwd" &\n' +
+      '    fi\n' +
+      '  }\n\n' +
+      '  # Function to capture command end\n' +
+      '  __runebook_capture_end() {\n' +
+      '    local exit_code=$?\n    \n' +
+      '    if command -v runebook >/dev/null 2>&1; then\n' +
+      '      runebook observer capture-end $exit_code &\n' +
+      '    fi\n    \n' +
+      '    return $exit_code\n' +
+      '  }\n\n' +
+      '  # Hook into command execution using zsh hooks\n' +
+      '  preexec_functions+=(__runebook_capture_start)\n' +
+      '  precmd_functions+=(__runebook_capture_end)\n' +
+      'fi\n'
+    );
   }
 
   async initialize(config: ObserverConfig, store: EventStore): Promise<void> {

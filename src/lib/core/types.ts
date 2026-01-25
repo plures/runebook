@@ -147,7 +147,6 @@ export interface ObserverConfig {
   chunkSize?: number; // Max size for stdout/stderr chunks (bytes)
   maxEvents?: number; // Maximum events to store (0 = unlimited)
   retentionDays?: number; // Days to retain events (0 = unlimited)
-  llm?: LLMProviderConfig; // LLM/MCP integration config (disabled by default)
 }
 
 /**
