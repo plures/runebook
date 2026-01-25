@@ -58,15 +58,14 @@
         runebook = pkgs.rustPlatform.buildRustPackage {
           pname = "runebook";
           version = "0.2.0";
-          src = ./.;
+          
+          # Point src directly to src-tauri directory
+          src = ./src-tauri;
 
           # Use Cargo.lock from the source
           cargoLock = {
             lockFile = ./src-tauri/Cargo.lock;
           };
-
-          # Build from src-tauri directory
-          sourceRoot = "source/src-tauri";
           
           nativeBuildInputs = [
             nodejs
