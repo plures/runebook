@@ -13,6 +13,13 @@
         overlays = [ (import rust-overlay) ];
         pkgs = import nixpkgs {
           inherit system overlays;
+          config = {
+            # TODO: Migrate to libsoup 3 or newer webkitgtk version
+            # libsoup 2.74.3 is EOL with known CVEs but required by webkitgtk_4_1
+            permittedInsecurePackages = [
+              "libsoup-2.74.3"
+            ];
+          };
         };
 
         # Rust toolchain (stable)
@@ -60,13 +67,11 @@
             pkgs.openssl
             pkgs.webkitgtk_4_1
             pkgs.librsvg
-            pkgs.tauri-cli
-            pkgs.appimagekit
             pkgs.bubblewrap
             pkgs.glib
             pkgs.gtk3
             pkgs.libayatana-appindicator
-            pkgs.libsoup
+            pkgs.libsoup_2_4
             pkgs.wrapGAppsHook
           ];
 
@@ -76,7 +81,7 @@
             pkgs.glib
             pkgs.gtk3
             pkgs.libayatana-appindicator
-            pkgs.libsoup
+            pkgs.libsoup_2_4
           ];
 
           preBuild = ''
@@ -213,13 +218,11 @@
             pkgs.openssl
             pkgs.webkitgtk_4_1
             pkgs.librsvg
-            pkgs.tauri-cli
             pkgs.glib
             pkgs.gtk3
             pkgs.libayatana-appindicator
-            pkgs.libsoup
+            pkgs.libsoup_2_4
             pkgs.nodePackages.typescript
-            pkgs.nodePackages.vitest
             pkgs.nodePackages.tsx
             # Optional: pre-commit hooks
             pkgs.pre-commit
