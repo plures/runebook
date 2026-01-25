@@ -1,7 +1,6 @@
 //! Execution plan creation and task breakdown.
 
 use crate::core::types::*;
-use crate::core::ownership::{OwnershipManager, FileOwnership};
 
 /// Creates the execution plan with roadmap, tasks, interfaces, and ownership
 pub fn create_execution_plan() -> ExecutionPlan {

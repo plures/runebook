@@ -59,7 +59,9 @@ impl Agent for Agent6 {
     fn status(&self) -> AgentStatus {
         self.status.clone()
     }
-    
+}
+
+impl Agent6 {
     /// Finalize the agent (called at the end)
     pub async fn finalize(&mut self) -> Result<(), String> {
         log::info!("Agent 6 (Finalization) finalizing...");
