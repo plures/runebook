@@ -25,6 +25,7 @@ export class LocalFileStore implements EventStore {
   private initialized = false;
   private storagePath: string;
   private eventsFile: string;
+  private writePromise: Promise<void> | null = null;
 
   constructor(config: ObserverConfig) {
     this.config = config;
@@ -37,31 +38,44 @@ export class LocalFileStore implements EventStore {
       return;
     }
 
-    // Create storage directory if it doesn't exist
-    if (!existsSync(this.storagePath)) {
+    // Create storage directory (mkdir with recursive handles already exists)
+    try {
       await mkdir(this.storagePath, { recursive: true });
+    } catch (error) {
+      // Directory already exists or can't be created
+      console.error('Failed to create storage directory:', error);
     }
 
-    // Load existing events from file
-    if (existsSync(this.eventsFile)) {
-      try {
-        const data = await readFile(this.eventsFile, 'utf-8');
-        this.events = JSON.parse(data);
-      } catch (error) {
+    // Load existing events from file (handle ENOENT directly)
+    try {
+      const data = await readFile(this.eventsFile, 'utf-8');
+      this.events = JSON.parse(data);
+    } catch (error: any) {
+      if (error.code !== 'ENOENT') {
         console.error('Failed to load events from file:', error);
-        this.events = [];
       }
+      this.events = [];
     }
 
     this.initialized = true;
   }
 
   private async persistEvents(): Promise<void> {
-    try {
-      await writeFile(this.eventsFile, JSON.stringify(this.events, null, 2), 'utf-8');
-    } catch (error) {
-      console.error('Failed to persist events to file:', error);
+    // Wait for any pending write to complete, then perform new write
+    if (this.writePromise) {
+      await this.writePromise;
     }
+    
+    this.writePromise = (async () => {
+      try {
+        await writeFile(this.eventsFile, JSON.stringify(this.events, null, 2), 'utf-8');
+      } catch (error) {
+        console.error('Failed to persist events to file:', error);
+      }
+    })();
+    
+    await this.writePromise;
+    this.writePromise = null;
   }
 
   async saveEvent(event: TerminalObserverEvent): Promise<void> {
