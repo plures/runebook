@@ -1,7 +1,7 @@
 // Re-export the praxis-based canvas store for backward compatibility
 // This maintains the same API while using Praxis reactive engine underneath
 
-import { canvasPraxisStore, praxisStoreInternal, type CanvasContext } from './canvas-praxis';
+import { canvasPraxisStore, praxisStoreInternal, canvasEngine, type CanvasContext } from './canvas-praxis';
 import type { Canvas, CanvasNode, Connection } from '../types/canvas';
 
 // Use the praxis store from canvas-praxis instead of creating a new one
