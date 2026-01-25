@@ -144,6 +144,9 @@ async fn execute_terminal_command(
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
+    // Initialize logger
+    env_logger::init();
+    
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
         .invoke_handler(tauri::generate_handler![greet, execute_terminal_command, memory_inspect])
