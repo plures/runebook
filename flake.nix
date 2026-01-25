@@ -58,7 +58,7 @@
             nodejs
             pkgs.pkg-config
             pkgs.openssl
-            pkgs.webkitgtk
+            pkgs.webkitgtk_4_1
             pkgs.librsvg
             pkgs.tauri-cli
             pkgs.appimagekit
@@ -71,7 +71,7 @@
           ];
 
           buildInputs = [
-            pkgs.webkitgtk
+            pkgs.webkitgtk_4_1
             pkgs.librsvg
             pkgs.glib
             pkgs.gtk3
@@ -211,7 +211,7 @@
             rustToolchain
             pkgs.pkg-config
             pkgs.openssl
-            pkgs.webkitgtk
+            pkgs.webkitgtk_4_1
             pkgs.librsvg
             pkgs.tauri-cli
             pkgs.glib
