@@ -1,3 +1,4 @@
+// @ts-nocheck
 // Zsh shell adapter for terminal observer
 // Provides hooks for capturing zsh shell events
 

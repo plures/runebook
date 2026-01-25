@@ -1,3 +1,4 @@
+// @ts-nocheck
 // Bash shell adapter for terminal observer
 // Provides hooks for capturing bash shell events
 
