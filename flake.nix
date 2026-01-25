@@ -14,6 +14,8 @@
         pkgs = import nixpkgs {
           inherit system overlays;
           config = {
+            # TODO: Migrate to libsoup 3 or newer webkitgtk version
+            # libsoup 2.74.3 is EOL with known CVEs but required by webkitgtk_4_1
             permittedInsecurePackages = [
               "libsoup-2.74.3"
             ];
