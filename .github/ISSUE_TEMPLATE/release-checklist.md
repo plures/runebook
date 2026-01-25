@@ -33,7 +33,7 @@ assignees: ''
 
 ## Version Information
 
-**Current Version**: 0.2.0
+**Current Version**: 0.3.0
 **Target Version**: X.Y.Z
 **Release Type**: patch | minor | major
 
