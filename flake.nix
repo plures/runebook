@@ -120,7 +120,7 @@
           version = "0.2.0";
           src = ./.;
           
-          npmDepsHash = "sha256-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA="; # Update after first build
+          npmDepsHash = "sha256-S2tAn2QEmj5ry9COmE/dxJEAjlxiugazvN9WxE/IyNE=";
           
           nativeBuildInputs = [
             nodejs
