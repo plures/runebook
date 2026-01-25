@@ -4,7 +4,7 @@
 import { initCapture, stopCapture, captureCommand, captureResult, updateContext } from './capture';
 import { createStorage, type EventStorage } from './memory';
 import { createAnalyzer, type Analyzer } from './analysis';
-import { FileSuggestionStore, formatSuggestionsForCLI, type SuggestionStore } from './suggestions';
+import { MemorySuggestionStore, formatSuggestionsForCLI, type SuggestionStore } from './suggestions';
 import { updateAgentStatus, getAgentStatus } from './status';
 import type { TerminalEvent, AgentConfig, Suggestion } from '../types/agent';
 
@@ -20,12 +20,22 @@ export class AmbientAgent {
     this.sessionId = `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
     this.storage = createStorage(config);
     this.analyzer = createAnalyzer();
-    this.suggestionStore = new FileSuggestionStore();
     
-    // Load existing suggestions
-    this.suggestionStore.load().catch(err => 
-      console.error('Failed to load suggestions:', err)
-    );
+    // Initialize with MemorySuggestionStore (browser-safe)
+    this.suggestionStore = new MemorySuggestionStore();
+    
+    // In Node.js environment, upgrade to file-based store
+    if (typeof process !== 'undefined' && process.versions?.node) {
+      import('./node-suggestions').then(({ FileSuggestionStore }) => {
+        this.suggestionStore = new FileSuggestionStore();
+        this.suggestionStore.load().catch(err => 
+          console.error('Failed to load suggestions:', err)
+        );
+      }).catch(() => {
+        // Fallback already initialized with MemorySuggestionStore
+        console.warn('FileSuggestionStore not available, using MemorySuggestionStore');
+      });
+    }
 
     if (config.enabled && config.captureEvents) {
       initCapture(this.sessionId, {

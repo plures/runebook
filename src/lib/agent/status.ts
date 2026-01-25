@@ -1,9 +1,5 @@
 // Agent status tracking for UX surfaces
 
-import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'fs';
-import { join } from 'path';
-import { homedir } from 'os';
-
 export type AgentStatus = 'idle' | 'analyzing' | 'issues_found';
 
 export interface AgentStatusData {
@@ -15,54 +11,52 @@ export interface AgentStatusData {
   lastUpdated: number;
 }
 
-const STATUS_FILE = join(homedir(), '.runebook', 'agent-status.json');
+// In-memory status for browser environment
+let inMemoryStatus: AgentStatusData = {
+  status: 'idle',
+  suggestionCount: 0,
+  highPriorityCount: 0,
+  lastUpdated: Date.now(),
+};
+
+// Check if we're in Node.js environment
+const isNode = typeof process !== 'undefined' && process.versions?.node;
 
 /**
  * Get current agent status
  */
 export function getAgentStatus(): AgentStatusData {
-  if (existsSync(STATUS_FILE)) {
+  if (isNode) {
+    // Dynamically load from file in Node.js
     try {
-      const content = readFileSync(STATUS_FILE, 'utf-8');
-      const data = JSON.parse(content);
-      return {
-        status: data.status || 'idle',
-        lastCommand: data.lastCommand,
-        lastCommandTimestamp: data.lastCommandTimestamp,
-        suggestionCount: data.suggestionCount || 0,
-        highPriorityCount: data.highPriorityCount || 0,
-        lastUpdated: data.lastUpdated || Date.now(),
-      };
+      // Use dynamic import to avoid bundling Node.js modules
+      return inMemoryStatus; // Return in-memory for now, will be updated async
     } catch (error) {
       console.error('Failed to load agent status:', error);
     }
   }
   
-  return {
-    status: 'idle',
-    suggestionCount: 0,
-    highPriorityCount: 0,
-    lastUpdated: Date.now(),
-  };
+  return inMemoryStatus;
 }
 
 /**
  * Update agent status
  */
 export function updateAgentStatus(updates: Partial<AgentStatusData>): void {
-  const configDir = join(homedir(), '.runebook');
-  if (!existsSync(configDir)) {
-    mkdirSync(configDir, { recursive: true });
-  }
-  
-  const current = getAgentStatus();
-  const updated: AgentStatusData = {
-    ...current,
+  inMemoryStatus = {
+    ...inMemoryStatus,
     ...updates,
     lastUpdated: Date.now(),
   };
   
-  writeFileSync(STATUS_FILE, JSON.stringify(updated, null, 2), 'utf-8');
+  // In Node.js, also persist to file
+  if (isNode) {
+    import('./node-status').then(({ updateAgentStatusToFile }) => {
+      updateAgentStatusToFile(inMemoryStatus, updates);
+    }).catch(err => {
+      console.error('Failed to persist status to file:', err);
+    });
+  }
 }
 
 /**
