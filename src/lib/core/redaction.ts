@@ -20,18 +20,20 @@ const DEFAULT_SECRET_PATTERNS = [
 
 /**
  * Redact a value, replacing it with a placeholder
+ * @param value - Value to redact
+ * @param fullRedaction - If true, always use [REDACTED]; if false, show first/last 4 chars for long values
  */
-export function redactValue(value: string): string {
+export function redactValue(value: string, fullRedaction: boolean = false): string {
   if (!value || value.length === 0) {
     return value;
   }
   
-  // If it's a short value, just show it's redacted
-  if (value.length <= 8) {
+  // If full redaction requested or value is short, use [REDACTED]
+  if (fullRedaction || value.length <= 8) {
     return '[REDACTED]';
   }
   
-  // For longer values, show first 4 and last 4 chars
+  // For longer values in partial redaction mode, show first 4 and last 4 chars
   return `${value.substring(0, 4)}...${value.substring(value.length - 4)}`;
 }
 
@@ -65,7 +67,8 @@ export function sanitizeEnv(
   
   for (const [key, value] of Object.entries(env)) {
     if (isSecretKey(key, customPatterns)) {
-      sanitized[key] = redactValue(value);
+      // Use full redaction for environment variables
+      sanitized[key] = '[REDACTED]';
     } else {
       sanitized[key] = value;
     }
@@ -98,7 +101,7 @@ export function redactSecretsFromText(
   for (const pattern of outputPatterns) {
     redacted = redacted.replace(pattern, (match, key, value) => {
       if (value) {
-        return `${key}=${redactValue(value)}`;
+        return `${key}=[REDACTED]`;
       }
       return '[REDACTED]';
     });
