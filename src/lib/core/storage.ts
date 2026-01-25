@@ -50,23 +50,28 @@ export class LocalFileStore implements EventStore {
     try {
       const data = await readFile(this.eventsFile, 'utf-8');
       this.events = JSON.parse(data);
-    } catch (error: any) {
-      if (error.code !== 'ENOENT') {
+    } catch (error: unknown) {
+      if (error && typeof error === 'object' && 'code' in error && error.code === 'ENOENT') {
+        // File doesn't exist yet, start with empty array
+        this.events = [];
+      } else {
         console.error('Failed to load events from file:', error);
+        this.events = [];
       }
-      this.events = [];
     }
 
     this.initialized = true;
   }
 
   private async persistEvents(): Promise<void> {
-    // Wait for any pending write to complete, then perform new write
-    if (this.writePromise) {
-      await this.writePromise;
-    }
-    
-    this.writePromise = (async () => {
+    // Serialize writes to prevent race conditions and data corruption
+    const writeOp = (async () => {
+      // If there's already a write in progress, wait for it
+      while (this.writePromise) {
+        await this.writePromise;
+      }
+      
+      // Now perform this write
       try {
         await writeFile(this.eventsFile, JSON.stringify(this.events, null, 2), 'utf-8');
       } catch (error) {
@@ -74,8 +79,13 @@ export class LocalFileStore implements EventStore {
       }
     })();
     
-    await this.writePromise;
-    this.writePromise = null;
+    this.writePromise = writeOp;
+    await writeOp;
+    
+    // Clear writePromise only if it's still this operation
+    if (this.writePromise === writeOp) {
+      this.writePromise = null;
+    }
   }
 
   async saveEvent(event: TerminalObserverEvent): Promise<void> {
