@@ -10,24 +10,25 @@ const CURRENT_SCHEMA_VERSION: u32 = 1;
 /// Run all pending migrations
 pub async fn run_migrations(store: &MemoryStore) -> Result<()> {
     let current_version = get_current_version(store).await?;
-    
+
     if current_version < CURRENT_SCHEMA_VERSION {
         // Run migrations sequentially
         for version in (current_version + 1)..=CURRENT_SCHEMA_VERSION {
-            migrate_to_version(store, version).await
+            migrate_to_version(store, version)
+                .await
                 .with_context(|| format!("Failed to migrate to version {}", version))?;
         }
-        
+
         // Update version
         set_version(store, CURRENT_SCHEMA_VERSION).await?;
     }
-    
+
     Ok(())
 }
 
 async fn get_current_version(store: &MemoryStore) -> Result<u32> {
     let client = &store.client;
-    
+
     match client.get(SCHEMA_VERSION_KEY).await? {
         Some(value) => {
             if let Some(version) = value.as_u64() {
@@ -63,7 +64,7 @@ async fn migrate_to_version(store: &MemoryStore, version: u32) -> Result<()> {
 /// Get migration status
 pub async fn get_migration_status(store: &MemoryStore) -> Result<MigrationStatus> {
     let current_version = get_current_version(store).await?;
-    
+
     Ok(MigrationStatus {
         current_version,
         target_version: CURRENT_SCHEMA_VERSION,
@@ -107,4 +108,3 @@ pub struct MigrationStatus {
 //     }
 //     Ok(())
 // }
-

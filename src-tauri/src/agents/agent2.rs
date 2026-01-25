@@ -5,8 +5,8 @@
 //! Publishes APIs that Agent 3 depends on
 
 use crate::agents::base::{Agent, AgentContext};
-use crate::core::types::{AgentId, AgentStatus, ApiPublished};
 use crate::core::coordination::CoordinationHandle;
+use crate::core::types::{AgentId, AgentStatus, ApiPublished};
 use async_trait::async_trait;
 
 pub struct Agent2 {
@@ -41,17 +41,17 @@ impl Agent for Agent2 {
         // - Implement list_sessions
         // - Implement persist_suggestion
         // - Publish APIs for Agent 3
-        
+
         log::info!("Agent 2 (Storage APIs) executing...");
-        
+
         // Signal ready
         if let Some(ref ctx) = self.context {
             ctx.coordination.agent_ready(AgentId::Agent2)?;
         }
-        
+
         // Simulate work
         tokio::time::sleep(tokio::time::Duration::from_millis(100)).await;
-        
+
         // Publish APIs
         if let Some(ref ctx) = self.context {
             let api = ApiPublished {
@@ -63,7 +63,7 @@ impl Agent for Agent2 {
             };
             ctx.coordination.api_published(api)?;
         }
-        
+
         self.status = AgentStatus::Completed;
         Ok(())
     }
@@ -78,4 +78,3 @@ impl Default for Agent2 {
         Self::new()
     }
 }
-

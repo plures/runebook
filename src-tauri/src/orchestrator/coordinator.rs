@@ -1,8 +1,8 @@
 //! Parallel execution coordinator.
 
-use crate::core::types::*;
-use crate::core::coordination::{CoordinationChannel, CoordinationHandle, ApiRegistry};
+use crate::core::coordination::{ApiRegistry, CoordinationChannel, CoordinationHandle};
 use crate::core::ownership::OwnershipManager;
+use crate::core::types::*;
 use std::collections::HashMap;
 use tokio::sync::RwLock;
 
@@ -19,7 +19,7 @@ pub struct ExecutionCoordinator {
 impl ExecutionCoordinator {
     pub fn new(plan: ExecutionPlan) -> (Self, CoordinationHandle) {
         let (coordination, coordination_handle) = CoordinationChannel::new();
-        
+
         // Initialize ownership manager
         let mut ownership = OwnershipManager::new();
         for file_ownership in &plan.file_ownership {
@@ -31,8 +31,14 @@ impl ExecutionCoordinator {
         agent_status.insert(AgentId::Orchestrator, AgentStatus::Running);
         agent_status.insert(AgentId::Agent1, AgentStatus::Pending);
         agent_status.insert(AgentId::Agent2, AgentStatus::Pending);
-        agent_status.insert(AgentId::Agent3, AgentStatus::WaitingForDependency(AgentId::Agent2));
-        agent_status.insert(AgentId::Agent4, AgentStatus::WaitingForDependency(AgentId::Agent3));
+        agent_status.insert(
+            AgentId::Agent3,
+            AgentStatus::WaitingForDependency(AgentId::Agent2),
+        );
+        agent_status.insert(
+            AgentId::Agent4,
+            AgentStatus::WaitingForDependency(AgentId::Agent3),
+        );
         agent_status.insert(AgentId::Agent5, AgentStatus::Pending);
         agent_status.insert(AgentId::Agent6, AgentStatus::Pending);
 
@@ -61,8 +67,19 @@ impl ExecutionCoordinator {
                 CoordinationMessage::TaskCompleted(agent, task_id) => {
                     self.handle_task_completed(agent, task_id).await?;
                 }
-                CoordinationMessage::CoordinationRequest { requester, target_agent, target_module, reason } => {
-                    self.handle_coordination_request(requester, target_agent, target_module, reason).await?;
+                CoordinationMessage::CoordinationRequest {
+                    requester,
+                    target_agent,
+                    target_module,
+                    reason,
+                } => {
+                    self.handle_coordination_request(
+                        requester,
+                        target_agent,
+                        target_module,
+                        reason,
+                    )
+                    .await?;
                 }
                 CoordinationMessage::StatusUpdate(agent, status) => {
                     self.agent_status.insert(agent, status);
@@ -78,13 +95,14 @@ impl ExecutionCoordinator {
     async fn handle_agent_ready(&mut self, agent: AgentId) -> Result<(), String> {
         // Check if agent can start based on dependencies
         let can_start = self.can_agent_start(agent);
-        
+
         if can_start {
             self.agent_status.insert(agent, AgentStatus::Running);
             log::info!("Agent {:?} started", agent);
         } else {
             let dependency = self.get_blocking_dependency(agent);
-            self.agent_status.insert(agent, AgentStatus::WaitingForDependency(dependency));
+            self.agent_status
+                .insert(agent, AgentStatus::WaitingForDependency(dependency));
             log::info!("Agent {:?} waiting for dependency {:?}", agent, dependency);
         }
         Ok(())
@@ -92,7 +110,7 @@ impl ExecutionCoordinator {
 
     async fn handle_api_published(&mut self, api: ApiPublished) -> Result<(), String> {
         self.api_registry.register(api.clone());
-        
+
         // Check if Agent 3 can start now (depends on Agent 2 APIs)
         if api.agent == AgentId::Agent2 {
             if let Some(status) = self.agent_status.get_mut(&AgentId::Agent3) {
@@ -102,12 +120,16 @@ impl ExecutionCoordinator {
                 }
             }
         }
-        
+
         log::info!("API published: {} by {:?}", api.api_name, api.agent);
         Ok(())
     }
 
-    async fn handle_task_completed(&mut self, agent: AgentId, task_id: String) -> Result<(), String> {
+    async fn handle_task_completed(
+        &mut self,
+        agent: AgentId,
+        task_id: String,
+    ) -> Result<(), String> {
         // Update task status in plan
         if let Some(task) = self.plan.tasks.iter_mut().find(|t| t.id == task_id) {
             task.status = TaskStatus::Completed;
@@ -140,7 +162,7 @@ impl ExecutionCoordinator {
                 // Agent owns the module, no coordination needed
                 return Ok(());
             }
-            
+
             // Check if modification is allowed
             if !self.ownership.can_modify(requester, &target_module) {
                 log::warn!(
@@ -149,7 +171,10 @@ impl ExecutionCoordinator {
                     target_module,
                     owner
                 );
-                return Err(format!("Agent {:?} does not own module {}", owner, target_module));
+                return Err(format!(
+                    "Agent {:?} does not own module {}",
+                    owner, target_module
+                ));
             }
         }
 
@@ -169,7 +194,8 @@ impl ExecutionCoordinator {
             AgentId::Orchestrator => true,
             AgentId::Agent1 | AgentId::Agent2 | AgentId::Agent5 | AgentId::Agent6 => {
                 // These can start after orchestrator
-                self.agent_status.get(&AgentId::Orchestrator)
+                self.agent_status
+                    .get(&AgentId::Orchestrator)
                     .map(|s| matches!(s, AgentStatus::Running | AgentStatus::Completed))
                     .unwrap_or(false)
             }
@@ -180,7 +206,9 @@ impl ExecutionCoordinator {
             AgentId::Agent4 => {
                 // Agent 4 needs Agent 3 to write suggestions
                 // Check if agent3-2 task is completed
-                self.plan.tasks.iter()
+                self.plan
+                    .tasks
+                    .iter()
                     .any(|t| t.id == "agent3-2" && t.status == TaskStatus::Completed)
             }
         }
@@ -202,4 +230,3 @@ impl ExecutionCoordinator {
         &self.plan
     }
 }
-

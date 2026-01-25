@@ -21,12 +21,12 @@ pub struct PluresDBClient {
 impl PluresDBClient {
     pub fn new(host: &str, port: u16, data_dir: &str) -> Result<Self> {
         let base_url = format!("http://{}:{}", host, port);
-        
+
         let client = Client::builder()
             .timeout(Duration::from_secs(30))
             .build()
             .context("Failed to create HTTP client")?;
-        
+
         Ok(Self {
             client,
             base_url,
@@ -41,20 +41,21 @@ impl PluresDBClient {
             "key": key,
             "value": value,
         });
-        
-        let response = self.client
+
+        let response = self
+            .client
             .post(&url)
             .json(&payload)
             .send()
             .await
             .context("Failed to send PUT request")?;
-        
+
         if !response.status().is_success() {
             let status = response.status();
             let text = response.text().await.unwrap_or_default();
             anyhow::bail!("PluresDB PUT failed with status {}: {}", status, text);
         }
-        
+
         Ok(())
     }
 
@@ -64,24 +65,25 @@ impl PluresDBClient {
         let payload = serde_json::json!({
             "key": key,
         });
-        
-        let response = self.client
+
+        let response = self
+            .client
             .post(&url)
             .json(&payload)
             .send()
             .await
             .context("Failed to send GET request")?;
-        
+
         if response.status() == 404 {
             return Ok(None);
         }
-        
+
         if !response.status().is_success() {
             let status = response.status();
             let text = response.text().await.unwrap_or_default();
             anyhow::bail!("PluresDB GET failed with status {}: {}", status, text);
         }
-        
+
         let result: Value = response.json().await.context("Failed to parse response")?;
         Ok(result.get("value").cloned())
     }
@@ -92,26 +94,27 @@ impl PluresDBClient {
         let payload = serde_json::json!({
             "prefix": prefix,
         });
-        
-        let response = self.client
+
+        let response = self
+            .client
             .post(&url)
             .json(&payload)
             .send()
             .await
             .context("Failed to send LIST request")?;
-        
+
         if !response.status().is_success() {
             let status = response.status();
             let text = response.text().await.unwrap_or_default();
             anyhow::bail!("PluresDB LIST failed with status {}: {}", status, text);
         }
-        
+
         let result: Value = response.json().await.context("Failed to parse response")?;
         let keys = result
             .get("keys")
             .and_then(|v| v.as_array())
             .ok_or_else(|| anyhow::anyhow!("Invalid LIST response format"))?;
-        
+
         Ok(keys
             .iter()
             .filter_map(|v| v.as_str().map(|s| s.to_string()))
@@ -124,20 +127,21 @@ impl PluresDBClient {
         let payload = serde_json::json!({
             "key": key,
         });
-        
-        let response = self.client
+
+        let response = self
+            .client
             .post(&url)
             .json(&payload)
             .send()
             .await
             .context("Failed to send DELETE request")?;
-        
+
         if !response.status().is_success() && response.status() != 404 {
             let status = response.status();
             let text = response.text().await.unwrap_or_default();
             anyhow::bail!("PluresDB DELETE failed with status {}: {}", status, text);
         }
-        
+
         Ok(())
     }
 
@@ -150,4 +154,3 @@ impl PluresDBClient {
         }
     }
 }
-

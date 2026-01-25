@@ -1,7 +1,7 @@
 //! Base agent trait and common functionality.
 
-use crate::core::types::{AgentId, AgentStatus};
 use crate::core::coordination::CoordinationHandle;
+use crate::core::types::{AgentId, AgentStatus};
 use async_trait::async_trait;
 
 /// Base trait for all agents
@@ -50,4 +50,3 @@ impl AgentContext {
         }
     }
 }
-

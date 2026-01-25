@@ -4,8 +4,8 @@
 //! Runs in parallel with Agent 2
 
 use crate::agents::base::{Agent, AgentContext};
-use crate::core::types::{AgentId, AgentStatus};
 use crate::core::coordination::CoordinationHandle;
+use crate::core::types::{AgentId, AgentStatus};
 use async_trait::async_trait;
 
 pub struct Agent1 {
@@ -39,17 +39,17 @@ impl Agent for Agent1 {
         // - Implement captureCommandStart
         // - Implement captureCommandResult
         // - Integrate with terminal observer
-        
+
         log::info!("Agent 1 (Event Capture) executing...");
-        
+
         // Signal ready
         if let Some(ref ctx) = self.context {
             ctx.coordination.agent_ready(AgentId::Agent1)?;
         }
-        
+
         // Simulate work
         tokio::time::sleep(tokio::time::Duration::from_millis(100)).await;
-        
+
         self.status = AgentStatus::Completed;
         Ok(())
     }
@@ -64,4 +64,3 @@ impl Default for Agent1 {
         Self::new()
     }
 }
-

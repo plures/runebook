@@ -1,11 +1,11 @@
 //! Parallel execution runner.
 
-use crate::orchestrator::{create_execution_plan, ExecutionCoordinator};
 use crate::agents::*;
-use crate::core::types::AgentId;
 use crate::core::coordination::CoordinationHandle;
+use crate::core::types::AgentId;
+use crate::orchestrator::{create_execution_plan, ExecutionCoordinator};
 use std::sync::Arc;
-use tokio::sync::{RwLock, Mutex};
+use tokio::sync::{Mutex, RwLock};
 
 /// Runs agents in parallel according to the execution plan
 pub struct ParallelExecutionRunner {
@@ -75,7 +75,11 @@ impl ParallelExecutionRunner {
         result2.map_err(|e| format!("Agent 2 error: {:?}", e))??;
 
         // Process coordination messages
-        self.coordinator.write().await.process_coordination().await?;
+        self.coordinator
+            .write()
+            .await
+            .process_coordination()
+            .await?;
 
         // Phase 3: Agent 3 starts after Agent 2 publishes APIs
         log::info!("Phase 3: Starting Agent 3 (after Agent 2 APIs published)...");
@@ -86,7 +90,11 @@ impl ParallelExecutionRunner {
         }
 
         // Process coordination messages
-        self.coordinator.write().await.process_coordination().await?;
+        self.coordinator
+            .write()
+            .await
+            .process_coordination()
+            .await?;
 
         // Phase 4: Agent 4 starts after Agent 3 writes suggestions
         log::info!("Phase 4: Starting Agent 4 (after Agent 3 writes suggestions)...");
@@ -133,4 +141,3 @@ impl ParallelExecutionRunner {
         Ok(())
     }
 }
-

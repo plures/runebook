@@ -12,7 +12,7 @@ use serde_json::Value;
 pub trait EncryptionProvider: Send + Sync {
     /// Encrypt a JSON value
     async fn encrypt(&self, value: &Value) -> Result<Value>;
-    
+
     /// Decrypt a JSON value
     async fn decrypt(&self, value: &Value) -> Result<Value>;
 }
@@ -25,7 +25,7 @@ impl EncryptionProvider for NoOpEncryption {
     async fn encrypt(&self, value: &Value) -> Result<Value> {
         Ok(value.clone())
     }
-    
+
     async fn decrypt(&self, value: &Value) -> Result<Value> {
         Ok(value.clone())
     }
@@ -48,7 +48,7 @@ impl EncryptionProvider for NoOpEncryption {
 //         // Return encrypted data as base64-encoded string in JSON
 //         // ...
 //     }
-//     
+//
 //     async fn decrypt(&self, value: &Value) -> Result<Value> {
 //         // Extract encrypted data from JSON
 //         // Decrypt using AES-256-GCM
@@ -71,10 +71,9 @@ impl EncryptionProvider for NoOpEncryption {
 //         // PluresDB encrypts automatically, just pass through
 //         Ok(value.clone())
 //     }
-//     
+//
 //     async fn decrypt(&self, value: &Value) -> Result<Value> {
 //         // PluresDB decrypts automatically, just pass through
 //         Ok(value.clone())
 //     }
 // }
-
