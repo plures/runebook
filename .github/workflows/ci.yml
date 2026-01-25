@@ -22,7 +22,7 @@ jobs:
       
       - name: Check Rust formatting
         run: |
-          nix develop --command -- bash -c "cargo fmt --check"
+          nix develop --command -- bash -c "cd src-tauri && cargo fmt --check"
       
       - name: Check TypeScript/JavaScript formatting
         run: |
