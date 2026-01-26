@@ -200,7 +200,7 @@ export const canvasEngine = createPraxisEngine<CanvasContext>({
 });
 
 // Create the Praxis store that properly notifies subscribers
-export const praxisStoreInternal = createPraxisStore<CanvasContext>(canvasEngine);
+export const canvasPraxisStoreInstance = createPraxisStore<CanvasContext>(canvasEngine);
 
 // Export a convenience API that matches the old store interface
 export const canvasPraxisStore = {
@@ -219,39 +219,39 @@ export const canvasPraxisStore = {
   
   // Actions
   addNode: (node: CanvasNode) => {
-    praxisStoreInternal.dispatch([AddNodeEvent.create({ node })]);
+    canvasPraxisStoreInstance.dispatch([AddNodeEvent.create({ node })]);
   },
   
   removeNode: (nodeId: string) => {
-    praxisStoreInternal.dispatch([RemoveNodeEvent.create({ nodeId })]);
+    canvasPraxisStoreInstance.dispatch([RemoveNodeEvent.create({ nodeId })]);
   },
   
   updateNode: (nodeId: string, updates: Partial<CanvasNode>) => {
-    praxisStoreInternal.dispatch([UpdateNodeEvent.create({ nodeId, updates })]);
+    canvasPraxisStoreInstance.dispatch([UpdateNodeEvent.create({ nodeId, updates })]);
   },
   
   updateNodePosition: (nodeId: string, x: number, y: number) => {
-    praxisStoreInternal.dispatch([UpdateNodePositionEvent.create({ nodeId, x, y })]);
+    canvasPraxisStoreInstance.dispatch([UpdateNodePositionEvent.create({ nodeId, x, y })]);
   },
   
   addConnection: (connection: Connection) => {
-    praxisStoreInternal.dispatch([AddConnectionEvent.create({ connection })]);
+    canvasPraxisStoreInstance.dispatch([AddConnectionEvent.create({ connection })]);
   },
   
   removeConnection: (from: string, to: string, fromPort: string, toPort: string) => {
-    praxisStoreInternal.dispatch([RemoveConnectionEvent.create({ from, to, fromPort, toPort })]);
+    canvasPraxisStoreInstance.dispatch([RemoveConnectionEvent.create({ from, to, fromPort, toPort })]);
   },
   
   loadCanvas: (canvas: Canvas) => {
-    praxisStoreInternal.dispatch([LoadCanvasEvent.create({ canvas })]);
+    canvasPraxisStoreInstance.dispatch([LoadCanvasEvent.create({ canvas })]);
   },
   
   clear: () => {
-    praxisStoreInternal.dispatch([ClearCanvasEvent.create({})]);
+    canvasPraxisStoreInstance.dispatch([ClearCanvasEvent.create({})]);
   },
   
   updateNodeData: (nodeId: string, portId: string, data: any) => {
-    praxisStoreInternal.dispatch([UpdateNodeDataEvent.create({ nodeId, portId, data })]);
+    canvasPraxisStoreInstance.dispatch([UpdateNodeDataEvent.create({ nodeId, portId, data })]);
   },
   
   // Helper to get node input data from connections
