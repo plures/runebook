@@ -11,3 +11,6 @@ vite.config.ts.timestamp-*
 
 # Rust/Cargo
 /src-tauri/target
+
+# Test coverage output
+/coverage
