@@ -1,0 +1,65 @@
+/* @plures/design-dojo — design tokens */
+:root {
+  /* Surfaces */
+  --surface-0: #1e1e1e;
+  --surface-1: #252526;
+  --surface-2: #2d2d2d;
+  --surface-3: #3a3a3a;
+  --surface-4: #4a4a4a;
+
+  /* Borders */
+  --border-default: #4a4a4a;
+  --border-subtle: #3e3e42;
+
+  /* Text */
+  --text-primary: #e0e0e0;
+  --text-secondary: #cccccc;
+  --text-muted: #808080;
+  --text-dim: #888888;
+  --text-code: #d4d4d4;
+  --text-accent: #4ec9b0;
+  --text-error: #f48771;
+  --text-warning: #f0db4f;
+  --text-link: #4ec9b0;
+
+  /* Interactive */
+  --interactive-primary: #0e639c;
+  --interactive-primary-hover: #1177bb;
+  --interactive-danger: #5a1e1e;
+  --interactive-danger-hover: #7a2e2e;
+  --interactive-disabled: #555555;
+  --interactive-accent: #ce9178;
+
+  /* Status */
+  --status-processing: #3a3a1e;
+  --status-error-bg: #5a1e1e;
+  --status-error-text: #ff6b6b;
+
+  /* Spacing */
+  --space-xs: 4px;
+  --space-sm: 6px;
+  --space-md: 8px;
+  --space-lg: 12px;
+  --space-xl: 16px;
+
+  /* Radius */
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
+
+  /* Font */
+  --font-mono: 'Courier New', monospace;
+  --font-size-xs: 11px;
+  --font-size-sm: 12px;
+  --font-size-md: 13px;
+  --font-size-base: 14px;
+  --font-size-icon: 18px;
+
+  /* Shadow */
+  --shadow-node: 0 4px 12px rgba(0, 0, 0, 0.3);
+
+  /* Port */
+  --port-bg: #4ec9b0;
+  --port-border: var(--surface-2);
+  --port-size: 12px;
+}

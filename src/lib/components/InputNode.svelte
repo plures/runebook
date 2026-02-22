@@ -1,12 +1,17 @@
 <script lang="ts">
   import type { InputNode } from '../types/canvas';
   import { updateNodeData } from '../stores/canvas';
+  import Box from '../design-dojo/Box.svelte';
+  import Input from '../design-dojo/Input.svelte';
+  import Toggle from '../design-dojo/Toggle.svelte';
+  import Text from '../design-dojo/Text.svelte';
 
   interface Props {
     node: InputNode;
+    tui?: boolean;
   }
 
-  let { node }: Props = $props();
+  let { node, tui = false }: Props = $props();
 
   // Initialize value from node prop (warning is expected as we need mutable state)
   let value = $state(node.value ?? '');
@@ -23,51 +28,26 @@
   });
 </script>
 
-<div class="input-node">
-  <div class="node-header">
-    <span class="node-icon">📝</span>
-    <span class="node-title">{node.label || 'Input'}</span>
-  </div>
+<Box variant="node" {tui} style="min-width:250px">
+  <Box variant="header" {tui}>
+    <Text variant="normal" as="span" style="font-size:var(--font-size-icon)">📝</Text>
+    <Text variant="normal" as="span" style="font-weight:600;font-size:var(--font-size-base)">{node.label || 'Input'}</Text>
+  </Box>
   
-  <div class="node-body">
+  <Box variant="body" {tui}>
     {#if node.inputType === 'text'}
-      <input 
-        type="text" 
-        bind:value
-        placeholder="Enter text..."
-        class="input-field"
-      />
+      <Input {tui} type="text" bind:value placeholder="Enter text..." />
     {:else if node.inputType === 'number'}
-      <input 
-        type="number" 
-        bind:value
-        min={node.min}
-        max={node.max}
-        step={node.step}
-        class="input-field"
-      />
+      <Input {tui} type="number" bind:value min={node.min} max={node.max} step={node.step} />
     {:else if node.inputType === 'checkbox'}
-      <label class="checkbox-label">
-        <input 
-          type="checkbox" 
-          bind:checked={value}
-        />
-        <span>{node.label}</span>
-      </label>
+      <Toggle {tui} bind:checked={value} label={node.label} />
     {:else if node.inputType === 'slider'}
       <div class="slider-container">
-        <input 
-          type="range" 
-          bind:value
-          min={node.min ?? 0}
-          max={node.max ?? 100}
-          step={node.step ?? 1}
-          class="slider"
-        />
-        <span class="slider-value">{value}</span>
+        <Input {tui} type="range" bind:value min={node.min ?? 0} max={node.max ?? 100} step={node.step ?? 1} />
+        <Text variant="accent" as="span" style="text-align:center;font-weight:600">{value}</Text>
       </div>
     {/if}
-  </div>
+  </Box>
   
   <!-- Output ports -->
   <div class="ports">
@@ -77,84 +57,13 @@
       </div>
     {/each}
   </div>
-</div>
+</Box>
 
 <style>
-  .input-node {
-    background: #2d2d2d;
-    border: 2px solid #4a4a4a;
-    border-radius: 8px;
-    min-width: 250px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-    color: #e0e0e0;
-  }
-
-  .node-header {
-    background: #3a3a3a;
-    padding: 8px 12px;
-    border-bottom: 1px solid #4a4a4a;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    border-radius: 6px 6px 0 0;
-  }
-
-  .node-icon {
-    font-size: 18px;
-  }
-
-  .node-title {
-    font-weight: 600;
-    font-size: 14px;
-  }
-
-  .node-body {
-    padding: 12px;
-  }
-
-  .input-field {
-    width: 100%;
-    padding: 8px;
-    background: #1e1e1e;
-    border: 1px solid #4a4a4a;
-    border-radius: 4px;
-    color: #e0e0e0;
-    font-size: 14px;
-  }
-
-  .input-field:focus {
-    outline: none;
-    border-color: #0e639c;
-  }
-
-  .checkbox-label {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    cursor: pointer;
-  }
-
-  .checkbox-label input[type="checkbox"] {
-    width: 18px;
-    height: 18px;
-    cursor: pointer;
-  }
-
   .slider-container {
     display: flex;
     flex-direction: column;
-    gap: 8px;
-  }
-
-  .slider {
-    width: 100%;
-    cursor: pointer;
-  }
-
-  .slider-value {
-    text-align: center;
-    font-weight: 600;
-    color: #4ec9b0;
+    gap: var(--space-md);
   }
 
   .ports {
@@ -163,10 +72,10 @@
 
   .port {
     position: absolute;
-    width: 12px;
-    height: 12px;
-    background: #4ec9b0;
-    border: 2px solid #2d2d2d;
+    width: var(--port-size);
+    height: var(--port-size);
+    background: var(--port-bg);
+    border: 2px solid var(--port-border);
     border-radius: 50%;
     cursor: crosshair;
   }

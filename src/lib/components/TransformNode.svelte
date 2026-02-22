@@ -1,12 +1,16 @@
 <script lang="ts">
   import type { TransformNode } from '../types/canvas';
   import { canvasStore, nodeDataStore, getNodeInputData, updateNodeData } from '../stores/canvas';
+  import Box from '../design-dojo/Box.svelte';
+  import Select from '../design-dojo/Select.svelte';
+  import Text from '../design-dojo/Text.svelte';
 
   interface Props {
     node: TransformNode;
+    tui?: boolean;
   }
 
-  let { node }: Props = $props();
+  let { node, tui = false }: Props = $props();
 
   let output = $state<any>('');
   let error = $state<string>('');
@@ -127,51 +131,58 @@
   }
 </script>
 
-<div class="transform-node">
-  <div class="node-header">
-    <span class="node-icon">🔄</span>
-    <span class="node-title">{node.label || 'Transform'}</span>
-  </div>
+<Box variant="node" {tui} style="min-width:320px;max-width:450px;border-color:var(--interactive-accent)">
+  <Box variant="header" {tui}>
+    <Text variant="normal" as="span" style="font-size:var(--font-size-icon)">🔄</Text>
+    <Text variant="normal" as="span" style="font-weight:600;font-size:var(--font-size-base)">{node.label || 'Transform'}</Text>
+  </Box>
   
-  <div class="node-body">
+  <Box variant="body" {tui}>
     <div class="control-group">
-      <label for="transform-type-{node.id}">Type:</label>
-      <select 
+      <Text variant="muted" as="label" style="display:block;margin-bottom:var(--space-xs)" for="transform-type-{node.id}">Type:</Text>
+      <Select
+        {tui}
         id="transform-type-{node.id}"
         value={node.transformType}
+        options={[
+          { value: 'map', label: 'Map' },
+          { value: 'filter', label: 'Filter' },
+          { value: 'reduce', label: 'Reduce' },
+          { value: 'sudolang', label: 'Sudolang (planned)' }
+        ]}
         onchange={updateTransformType}
-      >
-        <option value="map">Map</option>
-        <option value="filter">Filter</option>
-        <option value="reduce">Reduce</option>
-        <option value="sudolang">Sudolang (planned)</option>
-      </select>
+      />
     </div>
 
     <div class="control-group">
-      <label for="code-{node.id}">Code:</label>
+      <Text variant="muted" as="label" style="display:block;margin-bottom:var(--space-xs)" for="code-{node.id}">Code:</Text>
       <textarea
         id="code-{node.id}"
         value={node.code}
         oninput={updateCode}
         placeholder={getPlaceholder(node.transformType)}
         rows="4"
+        class="code-area {tui ? 'code-area--tui' : ''}"
       ></textarea>
     </div>
 
     {#if error}
-      <div class="error-message">{error}</div>
+      <Box variant="inset" {tui} style="background:var(--status-error-bg);margin-top:var(--space-md)">
+        <Text variant="error" as="span">{error}</Text>
+      </Box>
     {/if}
 
     {#if isProcessing}
-      <div class="status processing">Processing...</div>
+      <Box variant="inset" {tui} style="background:var(--status-processing);margin-top:var(--space-md)">
+        <Text variant="warning" as="span">Processing...</Text>
+      </Box>
     {:else if output !== ''}
-      <div class="output-preview">
-        <strong>Output:</strong>
-        <pre>{typeof output === 'object' ? JSON.stringify(output, null, 2) : String(output)}</pre>
-      </div>
+      <Box variant="inset" {tui} style="margin-top:var(--space-md);max-height:150px;overflow-y:auto">
+        <Text variant="accent" as="strong" style="display:block;margin-bottom:var(--space-xs);font-size:var(--font-size-sm)">Output:</Text>
+        <Text variant="code" as="pre">{typeof output === 'object' ? JSON.stringify(output, null, 2) : String(output)}</Text>
+      </Box>
     {/if}
-  </div>
+  </Box>
   
   <!-- Input and output ports -->
   <div class="ports">
@@ -187,123 +198,32 @@
       </div>
     {/each}
   </div>
-</div>
+</Box>
 
 <style>
-  .transform-node {
-    background: #2d2d2d;
-    border: 2px solid #ce9178;
-    border-radius: 8px;
-    min-width: 320px;
-    max-width: 450px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-    color: #e0e0e0;
-  }
-
-  .node-header {
-    background: #3a3a3a;
-    padding: 8px 12px;
-    border-bottom: 1px solid #4a4a4a;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    border-radius: 6px 6px 0 0;
-  }
-
-  .node-icon {
-    font-size: 18px;
-  }
-
-  .node-title {
-    font-weight: 600;
-    font-size: 14px;
-  }
-
-  .node-body {
-    padding: 12px;
-  }
-
   .control-group {
-    margin-bottom: 12px;
+    margin-bottom: var(--space-lg);
   }
 
-  label {
-    display: block;
-    margin-bottom: 4px;
-    font-size: 12px;
-    color: #cccccc;
-  }
-
-  select {
+  .code-area {
     width: 100%;
-    padding: 6px 8px;
-    background: #1e1e1e;
-    border: 1px solid #4a4a4a;
-    border-radius: 4px;
-    color: #e0e0e0;
-    font-size: 13px;
-  }
-
-  textarea {
-    width: 100%;
-    padding: 8px;
-    background: #1e1e1e;
-    border: 1px solid #4a4a4a;
-    border-radius: 4px;
-    color: #e0e0e0;
-    font-family: 'Courier New', monospace;
-    font-size: 12px;
+    padding: var(--space-md);
+    background: var(--surface-0);
+    border: 1px solid var(--border-default);
+    border-radius: var(--radius-sm);
+    color: var(--text-primary);
+    font-family: var(--font-mono);
+    font-size: var(--font-size-sm);
     resize: vertical;
+    box-sizing: border-box;
   }
 
-  textarea::placeholder {
-    color: #888;
+  .code-area::placeholder {
+    color: var(--text-dim);
   }
 
-  .error-message {
-    background: #5a1e1e;
-    padding: 8px;
-    border-radius: 4px;
-    font-size: 12px;
-    margin-top: 8px;
-    color: #ff6b6b;
-  }
-
-  .status {
-    padding: 8px;
-    border-radius: 4px;
-    font-size: 12px;
-    margin-top: 8px;
-  }
-
-  .processing {
-    background: #3a3a1e;
-    color: #f0db4f;
-  }
-
-  .output-preview {
-    background: #1e1e1e;
-    padding: 8px;
-    border-radius: 4px;
-    margin-top: 8px;
-    max-height: 150px;
-    overflow-y: auto;
-  }
-
-  .output-preview strong {
-    display: block;
-    margin-bottom: 4px;
-    font-size: 12px;
-    color: #4ec9b0;
-  }
-
-  .output-preview pre {
-    margin: 0;
-    font-family: 'Courier New', monospace;
-    font-size: 11px;
-    color: #d4d4d4;
-    white-space: pre-wrap;
-    word-break: break-word;
+  .code-area--tui {
+    border-radius: 0;
   }
 
   .ports {
@@ -312,10 +232,10 @@
 
   .port {
     position: absolute;
-    width: 12px;
-    height: 12px;
-    background: #4ec9b0;
-    border: 2px solid #2d2d2d;
+    width: var(--port-size);
+    height: var(--port-size);
+    background: var(--port-bg);
+    border: 2px solid var(--port-border);
     border-radius: 50%;
     cursor: crosshair;
   }

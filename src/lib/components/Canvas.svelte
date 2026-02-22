@@ -8,6 +8,12 @@
   import type { CanvasNode } from '../types/canvas';
   import type { ComponentType, SvelteComponent } from 'svelte';
 
+  interface Props {
+    tui?: boolean;
+  }
+
+  let { tui = false }: Props = $props();
+
   let canvas = $state<HTMLDivElement>();
   let isDragging = $state(false);
   let draggedNodeId = $state<string | null>(null);
@@ -52,7 +58,7 @@
 <div class="canvas-container" bind:this={canvas}>
   <svg class="connections-layer">
     {#each canvasData.connections as connection}
-      <ConnectionLine {connection} nodes={canvasData.nodes} />
+      <ConnectionLine {connection} nodes={canvasData.nodes} {tui} />
     {/each}
   </svg>
   
@@ -66,13 +72,13 @@
         onmousedown={(e) => handleNodeMouseDown(e, node.id)}
       >
         {#if node.type === 'terminal'}
-          <TerminalNodeComponent node={node} />
+          <TerminalNodeComponent node={node} {tui} />
         {:else if node.type === 'input'}
-          <InputNodeComponent node={node} />
+          <InputNodeComponent node={node} {tui} />
         {:else if node.type === 'display'}
-          <DisplayNodeComponent node={node} />
+          <DisplayNodeComponent node={node} {tui} />
         {:else if node.type === 'transform'}
-          <TransformNodeComponent node={node} />
+          <TransformNodeComponent node={node} {tui} />
         {/if}
       </div>
     {/each}
@@ -84,7 +90,7 @@
     position: relative;
     width: 100%;
     height: 100vh;
-    background-color: #1e1e1e;
+    background-color: var(--surface-0);
     background-image: 
       linear-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px),
       linear-gradient(90deg, rgba(255, 255, 255, 0.05) 1px, transparent 1px);

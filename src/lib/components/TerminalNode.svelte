@@ -5,12 +5,16 @@
   import { updateNodeData } from '../stores/canvas';
   import { captureCommandStart, captureCommandResult, isAgentEnabled } from '../agent/integration';
   import type { TerminalEvent } from '../types/agent';
+  import Box from '../design-dojo/Box.svelte';
+  import Button from '../design-dojo/Button.svelte';
+  import Text from '../design-dojo/Text.svelte';
 
   interface Props {
     node: TerminalNode;
+    tui?: boolean;
   }
 
-  let { node }: Props = $props();
+  let { node, tui = false }: Props = $props();
 
   let output = $state<string[]>([]);
   let isRunning = $state(false);
@@ -81,38 +85,38 @@
   });
 </script>
 
-<div class="terminal-node">
-  <div class="node-header">
-    <span class="node-icon">⚡</span>
-    <span class="node-title">{node.label || 'Terminal'}</span>
-  </div>
+<Box variant="node" {tui}>
+  <Box variant="header" {tui}>
+    <Text variant="normal" as="span" style="font-size: var(--font-size-icon)">⚡</Text>
+    <Text variant="normal" as="span" style="font-weight:600;font-size:var(--font-size-base)">{node.label || 'Terminal'}</Text>
+  </Box>
   
-  <div class="node-body">
-    <div class="command-display">
-      <code>{node.command} {(node.args || []).join(' ')}</code>
-    </div>
+  <Box variant="body" {tui}>
+    <Box variant="inset" {tui} style="margin-bottom:var(--space-md);font-size:var(--font-size-sm)">
+      <code><Text variant="accent" as="span">{node.command} {(node.args || []).join(' ')}</Text></code>
+    </Box>
     
-    <div class="output-container">
+    <Box variant="inset" {tui} style="max-height:200px;overflow-y:auto;min-height:60px;font-size:var(--font-size-xs)">
       {#if output.length > 0}
         {#each output as line}
-          <div class="output-line">{line}</div>
+          <div><Text variant="code" as="span">{line}</Text></div>
         {/each}
       {:else}
-        <div class="output-placeholder">No output yet</div>
+        <Text variant="muted" as="span">No output yet</Text>
       {/if}
       
       {#if error}
-        <div class="error-line">{error}</div>
+        <div><Text variant="error" as="span">{error}</Text></div>
       {/if}
-    </div>
-  </div>
+    </Box>
+  </Box>
   
-  <div class="node-footer">
-    <button onclick={executeCommand} disabled={isRunning} class="run-btn">
+  <Box variant="footer" {tui}>
+    <Button variant="primary" onclick={executeCommand} disabled={isRunning} {tui}>
       {isRunning ? '⏳ Running...' : '▶ Run'}
-    </button>
-    <button onclick={clearOutput} class="clear-btn">Clear</button>
-  </div>
+    </Button>
+    <Button variant="secondary" onclick={clearOutput} {tui}>Clear</Button>
+  </Box>
   
   <!-- Input/Output ports -->
   <div class="ports">
@@ -128,132 +132,19 @@
       </div>
     {/each}
   </div>
-</div>
+</Box>
 
 <style>
-  .terminal-node {
-    background: #2d2d2d;
-    border: 2px solid #4a4a4a;
-    border-radius: 8px;
-    min-width: 300px;
-    max-width: 500px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-    color: #e0e0e0;
-    font-family: 'Courier New', monospace;
-  }
-
-  .node-header {
-    background: #3a3a3a;
-    padding: 8px 12px;
-    border-bottom: 1px solid #4a4a4a;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    border-radius: 6px 6px 0 0;
-  }
-
-  .node-icon {
-    font-size: 18px;
-  }
-
-  .node-title {
-    font-weight: 600;
-    font-size: 14px;
-  }
-
-  .node-body {
-    padding: 12px;
-  }
-
-  .command-display {
-    background: #1e1e1e;
-    padding: 8px;
-    border-radius: 4px;
-    margin-bottom: 8px;
-    font-size: 12px;
-  }
-
-  .command-display code {
-    color: #4ec9b0;
-  }
-
-  .output-container {
-    background: #1e1e1e;
-    padding: 8px;
-    border-radius: 4px;
-    max-height: 200px;
-    overflow-y: auto;
-    min-height: 60px;
-    font-size: 11px;
-  }
-
-  .output-line {
-    color: #d4d4d4;
-    margin: 2px 0;
-    word-break: break-word;
-  }
-
-  .output-placeholder {
-    color: #808080;
-    font-style: italic;
-  }
-
-  .error-line {
-    color: #f48771;
-    margin: 2px 0;
-  }
-
-  .node-footer {
-    padding: 8px 12px;
-    border-top: 1px solid #4a4a4a;
-    display: flex;
-    gap: 8px;
-  }
-
-  button {
-    padding: 6px 12px;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-    font-size: 12px;
-    font-weight: 500;
-    transition: background-color 0.2s;
-  }
-
-  .run-btn {
-    background: #0e639c;
-    color: white;
-    flex: 1;
-  }
-
-  .run-btn:hover:not(:disabled) {
-    background: #1177bb;
-  }
-
-  .run-btn:disabled {
-    background: #555;
-    cursor: not-allowed;
-  }
-
-  .clear-btn {
-    background: #3a3a3a;
-    color: #d4d4d4;
-  }
-
-  .clear-btn:hover {
-    background: #4a4a4a;
-  }
-
   .ports {
     position: relative;
   }
 
   .port {
     position: absolute;
-    width: 12px;
-    height: 12px;
-    background: #4ec9b0;
-    border: 2px solid #2d2d2d;
+    width: var(--port-size);
+    height: var(--port-size);
+    background: var(--port-bg);
+    border: 2px solid var(--port-border);
     border-radius: 50%;
     cursor: crosshair;
   }

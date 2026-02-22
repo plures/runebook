@@ -4,9 +4,10 @@
   interface Props {
     connection: Connection;
     nodes: CanvasNode[];
+    tui?: boolean;
   }
 
-  let { connection, nodes }: Props = $props();
+  let { connection, nodes, tui = false }: Props = $props();
 
   function getNodePosition(nodeId: string) {
     const node = nodes.find(n => n.id === nodeId);
@@ -33,10 +34,31 @@
   });
 </script>
 
-<path
-  d={path()}
-  fill="none"
-  stroke="#4ec9b0"
-  stroke-width="2"
-  stroke-linecap="round"
-/>
+{#if tui}
+  <!-- TUI ASCII fallback: straight horizontal line with arrow -->
+  <line
+    x1={fromPos.x + 300}
+    y1={fromPos.y + 50}
+    x2={toPos.x}
+    y2={toPos.y + 50}
+    stroke="var(--text-accent)"
+    stroke-width="1"
+    stroke-dasharray="4 2"
+  />
+  <text
+    x={(fromPos.x + 300 + toPos.x) / 2}
+    y={fromPos.y + 46}
+    fill="var(--text-accent)"
+    font-family="var(--font-mono)"
+    font-size="10"
+    text-anchor="middle"
+  >--&gt;</text>
+{:else}
+  <path
+    d={path()}
+    fill="none"
+    stroke="var(--text-accent)"
+    stroke-width="2"
+    stroke-linecap="round"
+  />
+{/if}
