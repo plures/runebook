@@ -2,6 +2,7 @@
 // Uses Praxis reactive engine for type-safe, testable state management
 
 import { createPraxisEngine, defineEvent, defineRule, PraxisRegistry } from '@plures/praxis';
+import { createPraxisStore } from '@plures/praxis/svelte';
 import type { PraxisState, PraxisEvent } from '@plures/praxis';
 import type { Canvas, CanvasNode, Connection } from '../types/canvas';
 
