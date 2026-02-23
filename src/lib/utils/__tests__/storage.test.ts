@@ -145,7 +145,6 @@ describe('Storage adapter management', () => {
   it('loadCanvas delegates to current adapter', async () => {
     const mock = createLocalStorageMock();
     Object.defineProperty(global, 'localStorage', { value: mock, writable: true });
-    mock.getItem.mockReturnValueOnce(null);
     useLocalStorage();
     const result = await loadCanvas('non-existent');
     expect(result).toBeNull();

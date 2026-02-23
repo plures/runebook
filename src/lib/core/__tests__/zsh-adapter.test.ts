@@ -12,6 +12,7 @@ const TEST_DIR = join(tmpdir(), `runebook-zsh-test-${Date.now()}`);
 
 const makeConfig = (): ObserverConfig => ({
   enabled: true,
+  redactSecrets: true,
   storagePath: TEST_DIR,
   maxEvents: 100,
 });

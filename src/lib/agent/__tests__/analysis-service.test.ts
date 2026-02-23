@@ -1,6 +1,6 @@
 // Tests for agent/analysis-service.ts
 
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { AnalysisService, getAnalysisService } from '../analysis-service';
 import { LocalFileStore } from '../../core/storage';
 import { rmSync, existsSync } from 'fs';
@@ -12,6 +12,7 @@ const TEST_DIR = join(tmpdir(), `runebook-analysis-service-test-${Date.now()}`);
 
 const makeConfig = (): ObserverConfig => ({
   enabled: true,
+  redactSecrets: true,
   storagePath: TEST_DIR,
   maxEvents: 100,
 });

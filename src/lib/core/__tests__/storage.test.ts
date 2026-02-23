@@ -11,10 +11,11 @@ const TEST_DIR = join(tmpdir(), `runebook-storage-test-${Date.now()}`);
 
 const makeConfig = (overrides: Partial<ObserverConfig> = {}): ObserverConfig => ({
   enabled: true,
+  redactSecrets: true,
   storagePath: TEST_DIR,
   maxEvents: 100,
   ...overrides,
-});
+} as ObserverConfig);
 
 const makeEvent = (id: string, sessionId = 'session-1', type: TerminalObserverEvent['type'] = 'command_start'): TerminalObserverEvent => ({
   id,
