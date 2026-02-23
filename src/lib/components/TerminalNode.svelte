@@ -5,12 +5,16 @@
   import { updateNodeData } from '../stores/canvas';
   import { captureCommandStart, captureCommandResult, isAgentEnabled } from '../agent/integration';
   import type { TerminalEvent } from '../types/agent';
+  import Box from '../design-dojo/Box.svelte';
+  import Button from '../design-dojo/Button.svelte';
+  import Text from '../design-dojo/Text.svelte';
 
   interface Props {
     node: TerminalNode;
+    tui?: boolean;
   }
 
-  let { node }: Props = $props();
+  let { node, tui = false }: Props = $props();
 
   let output = $state<string[]>([]);
   let isRunning = $state(false);
@@ -81,38 +85,38 @@
   });
 </script>
 
-<div class="terminal-node">
-  <div class="node-header">
+<Box class="terminal-node" surface={2} border radius={3} shadow={2} {tui}>
+  <Box class="node-header" surface={3} {tui}>
     <span class="node-icon">⚡</span>
-    <span class="node-title">{node.label || 'Terminal'}</span>
-  </div>
+    <Text class="node-title">{node.label || 'Terminal'}</Text>
+  </Box>
   
-  <div class="node-body">
-    <div class="command-display">
-      <code>{node.command} {(node.args || []).join(' ')}</code>
-    </div>
+  <Box class="node-body" pad={3}>
+    <Box class="command-display" surface={1} pad={2} radius={2}>
+      <Text mono class="command-text"><code>{node.command} {(node.args || []).join(' ')}</code></Text>
+    </Box>
     
-    <div class="output-container">
+    <Box class="output-container" surface={1} pad={2} radius={2}>
       {#if output.length > 0}
         {#each output as line}
-          <div class="output-line">{line}</div>
+          <Text mono variant={1} class="output-line">{line}</Text>
         {/each}
       {:else}
-        <div class="output-placeholder">No output yet</div>
+        <Text variant={2} class="output-placeholder">No output yet</Text>
       {/if}
       
       {#if error}
-        <div class="error-line">{error}</div>
+        <Text class="error-line">{error}</Text>
       {/if}
-    </div>
-  </div>
+    </Box>
+  </Box>
   
-  <div class="node-footer">
-    <button onclick={executeCommand} disabled={isRunning} class="run-btn">
+  <Box class="node-footer" pad={2}>
+    <Button {tui} variant="primary" onclick={executeCommand} disabled={isRunning} class="run-btn">
       {isRunning ? '⏳ Running...' : '▶ Run'}
-    </button>
-    <button onclick={clearOutput} class="clear-btn">Clear</button>
-  </div>
+    </Button>
+    <Button {tui} onclick={clearOutput} class="clear-btn">Clear</Button>
+  </Box>
   
   <!-- Input/Output ports -->
   <div class="ports">
@@ -128,120 +132,77 @@
       </div>
     {/each}
   </div>
-</div>
+</Box>
 
 <style>
-  .terminal-node {
-    background: #2d2d2d;
-    border: 2px solid #4a4a4a;
-    border-radius: 8px;
+  :global(.terminal-node) {
     min-width: 300px;
     max-width: 500px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-    color: #e0e0e0;
-    font-family: 'Courier New', monospace;
+    font-family: var(--font-mono);
   }
 
-  .node-header {
-    background: #3a3a3a;
-    padding: 8px 12px;
-    border-bottom: 1px solid #4a4a4a;
+  :global(.terminal-node .node-header) {
+    padding: var(--space-2) var(--space-3);
+    border-bottom: 1px solid var(--border-color);
     display: flex;
     align-items: center;
-    gap: 8px;
-    border-radius: 6px 6px 0 0;
+    gap: var(--space-2);
+    border-radius: var(--radius-3) var(--radius-3) 0 0;
   }
 
   .node-icon {
     font-size: 18px;
   }
 
-  .node-title {
+  :global(.terminal-node .node-title) {
     font-weight: 600;
-    font-size: 14px;
+    font-size: var(--font-size-1);
   }
 
-  .node-body {
-    padding: 12px;
+  :global(.terminal-node .node-body) {
+    padding: var(--space-3);
   }
 
-  .command-display {
-    background: #1e1e1e;
-    padding: 8px;
-    border-radius: 4px;
-    margin-bottom: 8px;
-    font-size: 12px;
+  :global(.terminal-node .command-display) {
+    margin-bottom: var(--space-2);
+    font-size: var(--font-size-0);
   }
 
-  .command-display code {
-    color: #4ec9b0;
+  :global(.terminal-node .command-text) {
+    color: var(--brand);
   }
 
-  .output-container {
-    background: #1e1e1e;
-    padding: 8px;
-    border-radius: 4px;
+  :global(.terminal-node .output-container) {
     max-height: 200px;
     overflow-y: auto;
     min-height: 60px;
-    font-size: 11px;
+    font-size: var(--font-size-0);
   }
 
-  .output-line {
-    color: #d4d4d4;
+  :global(.terminal-node .output-line) {
+    display: block;
     margin: 2px 0;
     word-break: break-word;
   }
 
-  .output-placeholder {
-    color: #808080;
+  :global(.terminal-node .output-placeholder) {
     font-style: italic;
   }
 
-  .error-line {
-    color: #f48771;
+  :global(.terminal-node .error-line) {
+    display: block;
     margin: 2px 0;
+    color: var(--error);
   }
 
-  .node-footer {
-    padding: 8px 12px;
-    border-top: 1px solid #4a4a4a;
+  :global(.terminal-node .node-footer) {
+    border-top: 1px solid var(--border-color);
     display: flex;
-    gap: 8px;
+    gap: var(--space-2);
   }
 
-  button {
-    padding: 6px 12px;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-    font-size: 12px;
-    font-weight: 500;
-    transition: background-color 0.2s;
-  }
-
-  .run-btn {
-    background: #0e639c;
-    color: white;
+  :global(.terminal-node .run-btn) {
     flex: 1;
-  }
-
-  .run-btn:hover:not(:disabled) {
-    background: #1177bb;
-  }
-
-  .run-btn:disabled {
-    background: #555;
-    cursor: not-allowed;
-  }
-
-  .clear-btn {
-    background: #3a3a3a;
-    color: #d4d4d4;
-  }
-
-  .clear-btn:hover {
-    background: #4a4a4a;
   }
 
   .ports {
@@ -252,8 +213,8 @@
     position: absolute;
     width: 12px;
     height: 12px;
-    background: #4ec9b0;
-    border: 2px solid #2d2d2d;
+    background: var(--brand);
+    border: 2px solid var(--surface-2);
     border-radius: 50%;
     cursor: crosshair;
   }

@@ -2,12 +2,17 @@
   import { onMount } from 'svelte';
   import type { DisplayNode } from '../types/canvas';
   import { canvasStore, nodeDataStore, getNodeInputData } from '../stores/canvas';
+  import Box from '../design-dojo/Box.svelte';
+  import Text from '../design-dojo/Text.svelte';
+  import Table from '../design-dojo/Table.svelte';
+  import List from '../design-dojo/List.svelte';
 
   interface Props {
     node: DisplayNode;
+    tui?: boolean;
   }
 
-  let { node }: Props = $props();
+  let { node, tui = false }: Props = $props();
 
   // Initialize content from node prop (warning is expected as we need mutable state)
   let content = $state<any>(node.content || '');
@@ -34,24 +39,20 @@
   }
 </script>
 
-<div class="display-node">
-  <div class="node-header">
+<Box class="display-node" surface={2} border radius={3} shadow={2} {tui}>
+  <Box class="node-header" surface={3} {tui}>
     <span class="node-icon">📊</span>
-    <span class="node-title">{node.label || 'Display'}</span>
-  </div>
+    <Text class="node-title">{node.label || 'Display'}</Text>
+  </Box>
   
-  <div class="node-body">
-    {#if node.displayType === 'text'}
-      <div class="text-display">
-        <pre>{formatContent()}</pre>
-      </div>
-    {:else if node.displayType === 'json'}
-      <div class="json-display">
-        <pre>{formatContent()}</pre>
-      </div>
+  <Box class="node-body" pad={3}>
+    {#if node.displayType === 'text' || node.displayType === 'json'}
+      <Box class="text-display" surface={1} pad={3} radius={2}>
+        <Text mono variant={1} class="display-pre">{formatContent()}</Text>
+      </Box>
     {:else if node.displayType === 'table'}
       <div class="table-display">
-        <table>
+        <Table {tui}>
           {#if Array.isArray(content)}
             <thead>
               <tr>
@@ -63,8 +64,8 @@
             <tbody>
               {#each content as row}
                 <tr>
-                  {#each Object.values(row) as value}
-                    <td>{value}</td>
+                  {#each Object.values(row) as val}
+                    <td>{val}</td>
                   {/each}
                 </tr>
               {/each}
@@ -76,14 +77,14 @@
               </tr>
             </tbody>
           {/if}
-        </table>
+        </Table>
       </div>
     {:else}
-      <div class="text-display">
-        <pre>{formatContent()}</pre>
-      </div>
+      <Box class="text-display" surface={1} pad={3} radius={2}>
+        <Text mono variant={1} class="display-pre">{formatContent()}</Text>
+      </Box>
     {/if}
-  </div>
+  </Box>
   
   <!-- Input ports -->
   <div class="ports">
@@ -93,84 +94,51 @@
       </div>
     {/each}
   </div>
-</div>
+</Box>
 
 <style>
-  .display-node {
-    background: #2d2d2d;
-    border: 2px solid #4a4a4a;
-    border-radius: 8px;
+  :global(.display-node) {
     min-width: 300px;
     max-width: 500px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-    color: #e0e0e0;
   }
 
-  .node-header {
-    background: #3a3a3a;
-    padding: 8px 12px;
-    border-bottom: 1px solid #4a4a4a;
+  :global(.display-node .node-header) {
+    padding: var(--space-2) var(--space-3);
+    border-bottom: 1px solid var(--border-color);
     display: flex;
     align-items: center;
-    gap: 8px;
-    border-radius: 6px 6px 0 0;
+    gap: var(--space-2);
+    border-radius: var(--radius-3) var(--radius-3) 0 0;
   }
 
   .node-icon {
     font-size: 18px;
   }
 
-  .node-title {
+  :global(.display-node .node-title) {
     font-weight: 600;
-    font-size: 14px;
+    font-size: var(--font-size-1);
   }
 
-  .node-body {
-    padding: 12px;
+  :global(.display-node .node-body) {
+    padding: var(--space-3);
     max-height: 400px;
     overflow-y: auto;
   }
 
-  .text-display, .json-display {
-    background: #1e1e1e;
-    padding: 12px;
-    border-radius: 4px;
-    font-family: 'Courier New', monospace;
-    font-size: 12px;
+  :global(.display-node .text-display) {
+    font-family: var(--font-mono);
+    font-size: var(--font-size-0);
   }
 
-  .text-display pre, .json-display pre {
-    margin: 0;
+  :global(.display-node .display-pre) {
+    display: block;
     white-space: pre-wrap;
     word-break: break-word;
-    color: #d4d4d4;
   }
 
   .table-display {
     overflow-x: auto;
-  }
-
-  table {
-    width: 100%;
-    border-collapse: collapse;
-    background: #1e1e1e;
-    border-radius: 4px;
-  }
-
-  th, td {
-    padding: 8px;
-    text-align: left;
-    border-bottom: 1px solid #4a4a4a;
-    font-size: 12px;
-  }
-
-  th {
-    background: #3a3a3a;
-    font-weight: 600;
-  }
-
-  tr:last-child td {
-    border-bottom: none;
   }
 
   .ports {
@@ -181,8 +149,8 @@
     position: absolute;
     width: 12px;
     height: 12px;
-    background: #4ec9b0;
-    border: 2px solid #2d2d2d;
+    background: var(--brand);
+    border: 2px solid var(--surface-2);
     border-radius: 50%;
     cursor: crosshair;
   }

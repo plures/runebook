@@ -41,7 +41,7 @@ test.describe('canvas persistence', () => {
     await page.locator('.toolbar-btn', { hasText: /Save to Storage/ }).click();
 
     // Clear canvas to empty state
-    await page.locator('.toolbar-btn.danger').click();
+    await page.locator('.toolbar-btn.dd-btn--danger').click();
     await expect(page.locator('.node-wrapper')).toHaveCount(0);
 
     // Load the previously saved canvas
