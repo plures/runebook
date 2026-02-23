@@ -37,6 +37,11 @@
           src = ./.;
           
           npmDepsHash = "sha256-WsTmuY5aVhh9e4sUyAk7Zw4G8zqoX5GgGT1XH2q3bEE=";
+          
+          nativeBuildInputs = [
+            nodejs
+            pkgs.python3
+          ];
 
           buildPhase = ''
             export HOME=$(mktemp -d)
