@@ -1,12 +1,16 @@
 <script lang="ts">
   import type { TransformNode } from '../types/canvas';
   import { canvasStore, nodeDataStore, getNodeInputData, updateNodeData } from '../stores/canvas';
+  import Box from '../design-dojo/Box.svelte';
+  import Select from '../design-dojo/Select.svelte';
+  import Text from '../design-dojo/Text.svelte';
 
   interface Props {
     node: TransformNode;
+    tui?: boolean;
   }
 
-  let { node }: Props = $props();
+  let { node, tui = false }: Props = $props();
 
   let output = $state<any>('');
   let error = $state<string>('');
@@ -127,16 +131,17 @@
   }
 </script>
 
-<div class="transform-node">
-  <div class="node-header">
+<Box class="transform-node" surface={2} border radius={3} shadow={2} style="border-color: var(--accent)" {tui}>
+  <Box class="node-header" surface={3} {tui}>
     <span class="node-icon">🔄</span>
-    <span class="node-title">{node.label || 'Transform'}</span>
-  </div>
+    <Text class="node-title">{node.label || 'Transform'}</Text>
+  </Box>
   
-  <div class="node-body">
+  <Box class="node-body" pad={3}>
     <div class="control-group">
       <label for="transform-type-{node.id}">Type:</label>
-      <select 
+      <Select
+        {tui}
         id="transform-type-{node.id}"
         value={node.transformType}
         onchange={updateTransformType}
@@ -145,7 +150,7 @@
         <option value="filter">Filter</option>
         <option value="reduce">Reduce</option>
         <option value="sudolang">Sudolang (planned)</option>
-      </select>
+      </Select>
     </div>
 
     <div class="control-group">
@@ -156,22 +161,27 @@
         oninput={updateCode}
         placeholder={getPlaceholder(node.transformType)}
         rows="4"
+        class="code-textarea"
       ></textarea>
     </div>
 
     {#if error}
-      <div class="error-message">{error}</div>
+      <Box class="error-message" surface={1} pad={2} radius={2}>
+        <Text class="error-text">{error}</Text>
+      </Box>
     {/if}
 
     {#if isProcessing}
-      <div class="status processing">Processing...</div>
+      <Box class="status-processing" surface={1} pad={2} radius={2}>
+        <Text variant={2}>Processing...</Text>
+      </Box>
     {:else if output !== ''}
-      <div class="output-preview">
-        <strong>Output:</strong>
-        <pre>{typeof output === 'object' ? JSON.stringify(output, null, 2) : String(output)}</pre>
-      </div>
+      <Box class="output-preview" surface={1} pad={2} radius={2}>
+        <Text class="output-label">Output:</Text>
+        <Text mono variant={1} class="output-pre">{typeof output === 'object' ? JSON.stringify(output, null, 2) : String(output)}</Text>
+      </Box>
     {/if}
-  </div>
+  </Box>
   
   <!-- Input and output ports -->
   <div class="ports">
@@ -187,121 +197,100 @@
       </div>
     {/each}
   </div>
-</div>
+</Box>
 
 <style>
-  .transform-node {
-    background: #2d2d2d;
-    border: 2px solid #ce9178;
-    border-radius: 8px;
+  :global(.transform-node) {
     min-width: 320px;
     max-width: 450px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-    color: #e0e0e0;
   }
 
-  .node-header {
-    background: #3a3a3a;
-    padding: 8px 12px;
-    border-bottom: 1px solid #4a4a4a;
+  :global(.transform-node .node-header) {
+    padding: var(--space-2) var(--space-3);
+    border-bottom: 1px solid var(--border-color);
     display: flex;
     align-items: center;
-    gap: 8px;
-    border-radius: 6px 6px 0 0;
+    gap: var(--space-2);
+    border-radius: var(--radius-3) var(--radius-3) 0 0;
   }
 
   .node-icon {
     font-size: 18px;
   }
 
-  .node-title {
+  :global(.transform-node .node-title) {
     font-weight: 600;
-    font-size: 14px;
+    font-size: var(--font-size-1);
   }
 
-  .node-body {
-    padding: 12px;
+  :global(.transform-node .node-body) {
+    padding: var(--space-3);
   }
 
   .control-group {
-    margin-bottom: 12px;
+    margin-bottom: var(--space-3);
   }
 
   label {
     display: block;
-    margin-bottom: 4px;
-    font-size: 12px;
-    color: #cccccc;
+    margin-bottom: var(--space-1);
+    font-size: var(--font-size-0);
+    color: var(--text-2);
   }
 
-  select {
+  .code-textarea {
     width: 100%;
-    padding: 6px 8px;
-    background: #1e1e1e;
-    border: 1px solid #4a4a4a;
-    border-radius: 4px;
-    color: #e0e0e0;
-    font-size: 13px;
-  }
-
-  textarea {
-    width: 100%;
-    padding: 8px;
-    background: #1e1e1e;
-    border: 1px solid #4a4a4a;
-    border-radius: 4px;
-    color: #e0e0e0;
-    font-family: 'Courier New', monospace;
-    font-size: 12px;
+    padding: var(--space-2);
+    background: var(--surface-1);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-2);
+    color: var(--text-1);
+    font-family: var(--font-mono);
+    font-size: var(--font-size-0);
     resize: vertical;
+    box-sizing: border-box;
   }
 
-  textarea::placeholder {
-    color: #888;
+  .code-textarea::placeholder {
+    color: var(--text-3);
   }
 
-  .error-message {
-    background: #5a1e1e;
-    padding: 8px;
-    border-radius: 4px;
-    font-size: 12px;
-    margin-top: 8px;
-    color: #ff6b6b;
+  .code-textarea:focus {
+    outline: none;
+    border-color: var(--brand);
   }
 
-  .status {
-    padding: 8px;
-    border-radius: 4px;
-    font-size: 12px;
-    margin-top: 8px;
+  :global(.transform-node .error-message) {
+    margin-top: var(--space-2);
+    border: 1px solid var(--error);
   }
 
-  .processing {
-    background: #3a3a1e;
-    color: #f0db4f;
+  :global(.transform-node .error-text) {
+    font-size: var(--font-size-0);
+    color: var(--error);
   }
 
-  .output-preview {
-    background: #1e1e1e;
-    padding: 8px;
-    border-radius: 4px;
-    margin-top: 8px;
+  :global(.transform-node .status-processing) {
+    margin-top: var(--space-2);
+  }
+
+  :global(.transform-node .output-preview) {
+    margin-top: var(--space-2);
     max-height: 150px;
     overflow-y: auto;
   }
 
-  .output-preview strong {
+  :global(.transform-node .output-label) {
     display: block;
-    margin-bottom: 4px;
-    font-size: 12px;
-    color: #4ec9b0;
+    margin-bottom: var(--space-1);
+    font-size: var(--font-size-0);
+    font-weight: 600;
+    color: var(--brand);
   }
 
-  .output-preview pre {
-    margin: 0;
-    font-family: 'Courier New', monospace;
-    font-size: 11px;
-    color: #d4d4d4;
+  :global(.transform-node .output-pre) {
+    display: block;
+    font-size: var(--font-size-0);
     white-space: pre-wrap;
     word-break: break-word;
   }
@@ -314,8 +303,8 @@
     position: absolute;
     width: 12px;
     height: 12px;
-    background: #4ec9b0;
-    border: 2px solid #2d2d2d;
+    background: var(--brand);
+    border: 2px solid var(--surface-2);
     border-radius: 50%;
     cursor: crosshair;
   }

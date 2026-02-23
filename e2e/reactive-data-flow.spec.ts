@@ -9,12 +9,12 @@ test.describe('reactive data flow', () => {
 
   test('input node renders a text field', async ({ page }) => {
     await page.locator('.toolbar-btn', { hasText: /Input/ }).click();
-    await expect(page.locator('.input-node .input-field')).toBeVisible();
+    await expect(page.locator('.input-node .dd-input')).toBeVisible();
   });
 
   test('input node reflects typed value immediately', async ({ page }) => {
     await page.locator('.toolbar-btn', { hasText: /Input/ }).click();
-    const inputField = page.locator('.input-node .input-field');
+    const inputField = page.locator('.input-node .dd-input');
     await inputField.fill('hello runebook');
     await expect(inputField).toHaveValue('hello runebook');
   });
@@ -35,7 +35,7 @@ test.describe('reactive data flow', () => {
     await expect(page.locator('.node-wrapper')).toHaveCount(4);
 
     // User Input node is pre-populated with example text
-    const inputField = page.locator('.input-node .input-field');
+    const inputField = page.locator('.input-node .dd-input');
     await expect(inputField).toBeVisible();
     await expect(inputField).toHaveValue('Type something here...');
   });

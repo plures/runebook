@@ -7,8 +7,14 @@
   import ConnectionLine from './ConnectionLine.svelte';
   import type { CanvasNode } from '../types/canvas';
   import type { ComponentType, SvelteComponent } from 'svelte';
+  import Box from '../design-dojo/Box.svelte';
 
-  let canvas = $state<HTMLDivElement>();
+  interface Props {
+    tui?: boolean;
+  }
+
+  let { tui = false }: Props = $props();
+
   let isDragging = $state(false);
   let draggedNodeId = $state<string | null>(null);
   let dragOffset = $state({ x: 0, y: 0 });
@@ -49,10 +55,10 @@
   onmouseup={handleMouseUp}
 />
 
-<div class="canvas-container" bind:this={canvas}>
+<Box class="canvas-container" {tui}>
   <svg class="connections-layer">
     {#each canvasData.connections as connection}
-      <ConnectionLine {connection} nodes={canvasData.nodes} />
+      <ConnectionLine {connection} nodes={canvasData.nodes} {tui} />
     {/each}
   </svg>
   
@@ -66,28 +72,28 @@
         onmousedown={(e) => handleNodeMouseDown(e, node.id)}
       >
         {#if node.type === 'terminal'}
-          <TerminalNodeComponent node={node} />
+          <TerminalNodeComponent node={node} {tui} />
         {:else if node.type === 'input'}
-          <InputNodeComponent node={node} />
+          <InputNodeComponent node={node} {tui} />
         {:else if node.type === 'display'}
-          <DisplayNodeComponent node={node} />
+          <DisplayNodeComponent node={node} {tui} />
         {:else if node.type === 'transform'}
-          <TransformNodeComponent node={node} />
+          <TransformNodeComponent node={node} {tui} />
         {/if}
       </div>
     {/each}
   </div>
-</div>
+</Box>
 
 <style>
-  .canvas-container {
+  :global(.canvas-container) {
     position: relative;
     width: 100%;
     height: 100vh;
-    background-color: #1e1e1e;
+    background-color: var(--surface-1);
     background-image: 
-      linear-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
+      linear-gradient(var(--border-color) 1px, transparent 1px),
+      linear-gradient(90deg, var(--border-color) 1px, transparent 1px);
     background-size: 20px 20px;
     overflow: hidden;
   }
