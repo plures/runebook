@@ -46,8 +46,12 @@
     "runebook": "./dist/cli/index.js"
   },
   "license": "MIT",
+  "workspaces": [
+    "packages/*"
+  ],
   "dependencies": {
-    "@plures/praxis": "^1.2.0",
+    "@plures/design-dojo": "^0.1.0",
+    "@plures/praxis": "^1.2.13",
     "@tauri-apps/api": "^2.9.1",
     "@tauri-apps/plugin-opener": "^2.5.2",
     "@types/js-yaml": "^4.0.9",
