@@ -1,0 +1,20 @@
+{
+  "name": "@plures/design-dojo",
+  "version": "0.1.0",
+  "description": "Design tokens and UI component library for the Plures ecosystem",
+  "type": "module",
+  "main": "./index.js",
+  "exports": {
+    ".": "./index.js",
+    "./tokens.css": "./tokens.css"
+  },
+  "files": [
+    "index.js",
+    "tokens.css"
+  ],
+  "license": "MIT",
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  }
+}
