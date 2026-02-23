@@ -1,5 +1,4 @@
 <script lang="ts">
-  import { untrack } from 'svelte';
   import type { InputNode } from '../types/canvas';
   import { updateNodeData } from '../stores/canvas';
 
@@ -20,17 +19,7 @@
   }
 
   $effect(() => {
-    // Capture value outside untrack to establish it as the only reactive
-    // dependency. node properties are accessed inside untrack to prevent an
-    // infinite update cycle: Praxis deep-clones context on every dispatch,
-    // which creates a new node prop reference each time, which would otherwise
-    // re-trigger this effect indefinitely.
-    const currentValue = value;
-    untrack(() => {
-      if (node.outputs.length > 0) {
-        updateNodeData(node.id, node.outputs[0].id, currentValue);
-      }
-    });
+    handleValueChange();
   });
 </script>
 

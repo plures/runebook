@@ -2,7 +2,7 @@
 
 import { describe, it, expect, beforeEach } from 'vitest';
 import { canvasStore, nodeDataStore, updateNodeData, getNodeInputData } from '../canvas';
-import { canvasPraxisStore } from '../canvas-praxis';
+import { canvasEngine } from '../canvas-praxis';
 import type { CanvasNode, Connection } from '../../types/canvas';
 
 const makeTerminalNode = (id: string): CanvasNode => ({
@@ -17,7 +17,8 @@ const makeTerminalNode = (id: string): CanvasNode => ({
 
 describe('canvasStore', () => {
   beforeEach(() => {
-    canvasPraxisStore.clear();
+    // Use canvasStore.clear() so praxisStore.currentState is reset via dispatch
+    canvasStore.clear();
   });
 
   it('should subscribe and receive canvas updates', () => {
@@ -102,7 +103,7 @@ describe('canvasStore', () => {
 
 describe('nodeDataStore', () => {
   beforeEach(() => {
-    canvasPraxisStore.clear();
+    canvasStore.clear();
   });
 
   it('should subscribe and receive nodeData updates', () => {
@@ -127,30 +128,30 @@ describe('nodeDataStore', () => {
 
 describe('updateNodeData helper', () => {
   beforeEach(() => {
-    canvasPraxisStore.clear();
+    canvasStore.clear();
   });
 
   it('should update node output data', () => {
     updateNodeData('n1', 'port1', 'data');
-    expect(canvasPraxisStore.nodeData['n1:port1']).toBe('data');
+    expect(canvasEngine.getContext().nodeData['n1:port1']).toBe('data');
   });
 });
 
 describe('getNodeInputData helper', () => {
   beforeEach(() => {
-    canvasPraxisStore.clear();
+    canvasStore.clear();
   });
 
   it('should return data from the connected source', () => {
-    canvasPraxisStore.addNode(makeTerminalNode('n1'));
-    canvasPraxisStore.addNode(makeTerminalNode('n2'));
-    canvasPraxisStore.addConnection({ from: 'n1', to: 'n2', fromPort: 'out', toPort: 'in' });
+    canvasStore.addNode(makeTerminalNode('n1'));
+    canvasStore.addNode(makeTerminalNode('n2'));
+    canvasStore.addConnection({ from: 'n1', to: 'n2', fromPort: 'out', toPort: 'in' });
     updateNodeData('n1', 'out', 'value');
     const result = getNodeInputData(
       'n2',
       'in',
-      canvasPraxisStore.canvas.connections,
-      canvasPraxisStore.nodeData
+      canvasEngine.getContext().canvas.connections,
+      canvasEngine.getContext().nodeData
     );
     expect(result).toBe('value');
   });

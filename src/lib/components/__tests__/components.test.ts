@@ -4,7 +4,7 @@
 
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import { render, cleanup, fireEvent } from '@testing-library/svelte';
-import { canvasPraxisStore } from '../../stores/canvas-praxis';
+import { canvasStore } from '../../stores/canvas';
 
 // Mock Tauri invoke
 vi.mock('@tauri-apps/api/core', () => ({
@@ -291,7 +291,7 @@ describe('ConnectionLine', () => {
 describe('Toolbar', () => {
   afterEach(() => {
     cleanup();
-    canvasPraxisStore.clear();
+    canvasStore.clear();
   });
 
   it('should render the toolbar', () => {
@@ -313,7 +313,7 @@ describe('Toolbar', () => {
     if (terminalBtn) {
       await fireEvent.click(terminalBtn);
       // Should add a node to the store
-      const canvas = (canvasPraxisStore as any).getContext?.() ?? {};
+      const canvas = (canvasStore as any).getContext?.() ?? {};
       expect(container).toBeTruthy();
     }
   });
@@ -342,7 +342,7 @@ describe('Toolbar', () => {
 describe('Canvas', () => {
   afterEach(() => {
     cleanup();
-    canvasPraxisStore.clear();
+    canvasStore.clear();
   });
 
   it('should render the canvas', () => {
@@ -351,7 +351,7 @@ describe('Canvas', () => {
   });
 
   it('should render nodes from the store', async () => {
-    canvasPraxisStore.addNode(makeTerminalNode());
+    canvasStore.addNode(makeTerminalNode());
     const { container } = render(Canvas);
     // Node components should be rendered
     expect(container).toBeTruthy();
@@ -361,9 +361,9 @@ describe('Canvas', () => {
     // Use terminal nodes only: InputNode's $effect calls updateNodeData which
     // updates the store, potentially causing canvas re-renders that loop
     // with DisplayNode's $effect. TerminalNode has no such reactive side effects.
-    canvasPraxisStore.clear();
-    canvasPraxisStore.addNode(makeTerminalNode({ id: 'term-1' }));
-    canvasPraxisStore.addNode(makeTerminalNode({ id: 'term-2' }));
+    canvasStore.clear();
+    canvasStore.addNode(makeTerminalNode({ id: 'term-1' }));
+    canvasStore.addNode(makeTerminalNode({ id: 'term-2' }));
     const { container } = render(Canvas);
     expect(container.querySelector('.canvas-container')).toBeTruthy();
     // Multiple nodes should be rendered
@@ -372,8 +372,8 @@ describe('Canvas', () => {
   });
 
   it('should handle mouse events', () => {
-    canvasPraxisStore.clear();
-    canvasPraxisStore.addNode(makeTerminalNode({ id: 'drag-test' }));
+    canvasStore.clear();
+    canvasStore.addNode(makeTerminalNode({ id: 'drag-test' }));
     const { container } = render(Canvas);
     const canvasEl = container.querySelector('.canvas-container');
     if (canvasEl) {

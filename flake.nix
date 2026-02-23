@@ -141,8 +141,6 @@
             # Copy package files and source
             cp -r package.json package-lock.json $out/lib/node_modules/runebook-agent/
             cp -r src $out/lib/node_modules/runebook-agent/
-            # Copy workspace packages so that symlinks in node_modules resolve correctly
-            cp -r packages $out/lib/node_modules/runebook-agent/
             cp -r node_modules $out/lib/node_modules/runebook-agent/
             
             # Create wrapper script that uses tsx to run TypeScript directly
