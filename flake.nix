@@ -36,7 +36,7 @@
           version = "0.2.0";
           src = ./.;
           
-          npmDepsHash = "sha256-bTjHsr/TVOZ850v+dxqcOre9hO+QopAIqgQNckiSf3M=";
+          npmDepsHash = "sha256-0HEvw24urS7Kbu/Qj8wkx0L/wZye4oZdI6z2EL+K2PE=";
           
           nativeBuildInputs = [
             nodejs
@@ -120,7 +120,7 @@
           version = "0.2.0";
           src = ./.;
           
-          npmDepsHash = "sha256-S2tAn2QEmj5ry9COmE/dxJEAjlxiugazvN9WxE/IyNE=";
+          npmDepsHash = "sha256-0HEvw24urS7Kbu/Qj8wkx0L/wZye4oZdI6z2EL+K2PE=";
           
           nativeBuildInputs = [
             nodejs
@@ -141,6 +141,8 @@
             # Copy package files and source
             cp -r package.json package-lock.json $out/lib/node_modules/runebook-agent/
             cp -r src $out/lib/node_modules/runebook-agent/
+            # Copy workspace packages so that symlinks in node_modules resolve correctly
+            cp -r packages $out/lib/node_modules/runebook-agent/
             cp -r node_modules $out/lib/node_modules/runebook-agent/
             
             # Create wrapper script that uses tsx to run TypeScript directly
