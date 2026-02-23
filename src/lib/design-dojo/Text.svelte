@@ -7,7 +7,9 @@
     variant?: 'code' | 'mono' | 'normal' | 'accent' | 'muted' | 'error' | 'warning';
     as?: string;
     class?: string;
+    style?: string;
     children?: Snippet;
+    [key: string]: any;
   }
 
   let { tui = false, variant = 'normal', as: tag = 'span', class: cls = '', children, ...rest }: Props = $props();
