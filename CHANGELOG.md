@@ -1,3 +1,7 @@
+## [0.4.1] — 2026-02-24
+
+- fix: CSS 403, add node resize + interactive connection drawing (20f8e19)
+
 ## [0.4.0] — 2026-02-23
 
 - feat: replace hand-styled components with design-dojo primitives (#40) (4ffc4b9)
