@@ -46,6 +46,13 @@
   // Selection
   let selectedNodeId = $state<string | null>(null);
 
+  // Constants
+  const MIN_ZOOM = 0.1;
+  const MAX_ZOOM = 5;
+  const ZOOM_TO_FIT_PADDING = 48;
+  const INTERACTIVE_SELECTOR = 'input, textarea, button, select, [contenteditable]';
+  const INTERACTIVE_TEXT_SELECTOR = 'input, textarea, [contenteditable]';
+
   const canvasData = $derived($canvasStore);
 
   // Convert client coordinates to canvas (logical) coordinates
@@ -84,10 +91,9 @@
       maxX = Math.max(maxX, node.position.x + size.width);
       maxY = Math.max(maxY, node.position.y + size.height);
     }
-    const padding = 48;
-    const contentW = maxX - minX + padding * 2;
-    const contentH = maxY - minY + padding * 2;
-    const newZoom = Math.min(2, Math.max(0.1, Math.min(rect.width / contentW, rect.height / contentH)));
+    const contentW = maxX - minX + ZOOM_TO_FIT_PADDING * 2;
+    const contentH = maxY - minY + ZOOM_TO_FIT_PADDING * 2;
+    const newZoom = Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, Math.min(rect.width / contentW, rect.height / contentH)));
     zoom = newZoom;
     panX = (rect.width - (maxX - minX) * newZoom) / 2 - minX * newZoom;
     panY = (rect.height - (maxY - minY) * newZoom) / 2 - minY * newZoom;
@@ -101,7 +107,7 @@
     const mouseX = event.clientX - rect.left;
     const mouseY = event.clientY - rect.top;
     const factor = event.deltaY > 0 ? 0.9 : 1.1;
-    const newZoom = Math.max(0.1, Math.min(5, zoom * factor));
+    const newZoom = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, zoom * factor));
     panX = mouseX - (mouseX - panX) * (newZoom / zoom);
     panY = mouseY - (mouseY - panY) * (newZoom / zoom);
     zoom = newZoom;
@@ -125,7 +131,7 @@
     if (!node) return;
     // Don't drag if clicking on interactive elements
     const target = event.target as HTMLElement;
-    if (target.closest('input, textarea, button, select, [contenteditable]')) return;
+    if (target.closest(INTERACTIVE_SELECTOR)) return;
 
     isDragging = true;
     draggedNodeId = nodeId;
@@ -238,13 +244,13 @@
   }
 
   function handleKeydown(event: KeyboardEvent) {
-    if (event.key === ' ' && !(event.target as HTMLElement)?.closest('input, textarea, [contenteditable]')) {
+    if (event.key === ' ' && !(event.target as HTMLElement)?.closest(INTERACTIVE_TEXT_SELECTOR)) {
       spaceHeld = true;
       event.preventDefault();
       return;
     }
     if (event.key === 'Delete' || event.key === 'Backspace') {
-      if (selectedNodeId && !(event.target as HTMLElement)?.closest('input, textarea, [contenteditable]')) {
+      if (selectedNodeId && !(event.target as HTMLElement)?.closest(INTERACTIVE_TEXT_SELECTOR)) {
         canvasStore.removeNode(selectedNodeId);
         selectedNodeId = null;
       }
@@ -358,7 +364,7 @@
             <div
               class="port input-port"
               class:port-highlight={isConnecting}
-              style="top: {pos.y - node.position.y - 6}px; --port-color: {getNodeAccentColor(node.type)};"
+              style="top: {pos.y - node.position.y - 6}px;"
               onmouseup={(e) => handlePortMouseUp(e, node.id, port.id, 'input')}
               title={port.name}
             ></div>
@@ -370,7 +376,7 @@
             <!-- svelte-ignore a11y_no_static_element_interactions -->
             <div
               class="port output-port"
-              style="top: {pos.y - node.position.y - 6}px; --port-color: {getNodeAccentColor(node.type)};"
+              style="top: {pos.y - node.position.y - 6}px;"
               onmousedown={(e) => handlePortMouseDown(e, node.id, port.id, 'output')}
               title={port.name}
             ></div>
@@ -498,20 +504,21 @@
     box-shadow: var(--shadow-3, 0 8px 24px rgba(0,0,0,0.6));
   }
 
+  /* Per-type accent color: set --node-accent then use it for selection/ports */
+  .node-wrapper--terminal  { --node-accent: var(--node-accent-terminal); }
+  .node-wrapper--input     { --node-accent: var(--node-accent-input); }
+  .node-wrapper--display   { --node-accent: var(--node-accent-display); }
+  .node-wrapper--transform { --node-accent: var(--node-accent-transform); }
+
   .node-wrapper.selected {
-    border-color: var(--brand, #00d4ff);
-    box-shadow: 0 0 0 2px var(--brand, #00d4ff), var(--shadow-3, 0 8px 24px rgba(0,0,0,0.6));
+    border-color: var(--node-accent, var(--brand, #00d4ff));
+    box-shadow: 0 0 0 2px var(--node-accent, var(--brand, #00d4ff)), var(--shadow-3, 0 8px 24px rgba(0,0,0,0.6));
     animation: selectPulse 2s ease-in-out infinite;
   }
 
-  .node-wrapper--terminal.selected { border-color: var(--node-accent-terminal); box-shadow: 0 0 0 2px var(--node-accent-terminal), var(--shadow-3); animation: none; }
-  .node-wrapper--input.selected    { border-color: var(--node-accent-input);    box-shadow: 0 0 0 2px var(--node-accent-input),    var(--shadow-3); animation: none; }
-  .node-wrapper--display.selected  { border-color: var(--node-accent-display);  box-shadow: 0 0 0 2px var(--node-accent-display),  var(--shadow-3); animation: none; }
-  .node-wrapper--transform.selected{ border-color: var(--node-accent-transform);box-shadow: 0 0 0 2px var(--node-accent-transform),var(--shadow-3); animation: none; }
-
   @keyframes selectPulse {
-    0%, 100% { box-shadow: 0 0 0 2px var(--brand), var(--shadow-3); }
-    50%       { box-shadow: 0 0 0 4px var(--brand), var(--shadow-3); }
+    0%, 100% { box-shadow: 0 0 0 2px var(--node-accent, var(--brand)), var(--shadow-3); }
+    50%       { box-shadow: 0 0 0 4px var(--node-accent, var(--brand)), var(--shadow-3); }
   }
 
   .node-content {
@@ -526,7 +533,7 @@
     width: 12px;
     height: 12px;
     background: var(--surface-3, #0f3460);
-    border: 2px solid var(--port-color, var(--brand, #00d4ff));
+    border: 2px solid var(--node-accent, var(--brand, #00d4ff));
     border-radius: 50%;
     cursor: crosshair;
     z-index: 10;
@@ -535,7 +542,7 @@
 
   .port:hover, .port-highlight {
     transform: scale(1.4);
-    background: var(--port-color, var(--brand, #00d4ff));
+    background: var(--node-accent, var(--brand, #00d4ff));
   }
 
   .input-port {
@@ -642,9 +649,15 @@
     line-height: 1;
   }
 
-  .canvas-ctrl-btn:hover {
+  .canvas-ctrl-btn:hover,
+  .canvas-ctrl-btn:focus-visible {
     background: var(--surface-3);
     color: var(--text-1);
+    outline: none;
+  }
+
+  .canvas-ctrl-btn:focus-visible {
+    box-shadow: 0 0 0 2px var(--brand);
   }
 
   .zoom-label {

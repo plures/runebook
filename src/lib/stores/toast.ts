@@ -10,7 +10,9 @@ function createToastStore() {
   const { subscribe, update } = writable<Toast[]>([]);
 
   function add(message: string, type: Toast['type'] = 'info', duration = 3500): string {
-    const id = `t-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+    const id = typeof crypto !== 'undefined' && crypto.randomUUID
+      ? crypto.randomUUID()
+      : `t-${Date.now()}-${Math.random().toString(36).slice(2)}`;
     update(ts => [...ts, { id, message, type }]);
     setTimeout(() => remove(id), duration);
     return id;

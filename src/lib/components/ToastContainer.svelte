@@ -4,7 +4,6 @@
 
 <div class="toast-container" role="status" aria-live="polite">
   {#each $toast as t (t.id)}
-    <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
     <div class="toast toast--{t.type}" role="alert">
       <span class="toast-icon" aria-hidden="true">
         {#if t.type === 'success'}✓{:else if t.type === 'error'}✕{:else if t.type === 'warning'}⚠{:else}ℹ{/if}
