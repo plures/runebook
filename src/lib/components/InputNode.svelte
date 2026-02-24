@@ -1,129 +1,130 @@
 <script lang="ts">
-  import { untrack } from 'svelte';
-  import type { InputNode } from '../types/canvas';
-  import { updateNodeData } from '../stores/canvas';
-  import Box from '../design-dojo/Box.svelte';
-  import Input from '../design-dojo/Input.svelte';
-  import Toggle from '../design-dojo/Toggle.svelte';
-  import Text from '../design-dojo/Text.svelte';
+  import { Handle, Position } from '@xyflow/svelte';
 
   interface Props {
-    node: InputNode;
-    tui?: boolean;
+    data: {
+      label: string;
+      inputType: string;
+      value: any;
+    };
   }
 
-  let { node, tui = false }: Props = $props();
+  let { data }: Props = $props();
+  let value = $state(data.value ?? '');
 
-  // Initialize value from node prop (warning is expected as we need mutable state)
-  let value = $state(node.value ?? '');
-
-  function handleValueChange() {
-    // Update the node's output data for reactive flow
-    if (node.outputs.length > 0) {
-      updateNodeData(node.id, node.outputs[0].id, value);
-    }
+  function handleChange() {
+    data.value = value;
   }
-
-  $effect(() => {
-    // Capture value outside untrack to establish it as the only reactive
-    // dependency. node properties are accessed inside untrack to prevent an
-    // infinite update cycle: Praxis deep-clones context on every dispatch,
-    // which creates a new node prop reference each time, which would otherwise
-    // re-trigger this effect indefinitely.
-    const currentValue = value;
-    untrack(() => {
-      if (node.outputs.length > 0) {
-        updateNodeData(node.id, node.outputs[0].id, currentValue);
-      }
-    });
-  });
 </script>
 
-<Box class="input-node" surface={2} border radius={3} shadow={2} {tui}>
-  <Box class="node-header" surface={3} {tui}>
+<div class="node-shell input-shell">
+  <div class="node-header">
     <span class="node-icon">📝</span>
-    <Text class="node-title">{node.label || 'Input'}</Text>
-  </Box>
-  
-  <Box class="node-body" pad={3}>
-    {#if node.inputType === 'text'}
-      <Input
-        {tui}
-        type="text"
-        bind:value
-        placeholder="Enter text..."
-      />
-    {:else if node.inputType === 'number'}
-      <Input
-        {tui}
+    <span class="node-label">{data.label || 'Input'}</span>
+  </div>
+
+  <div class="node-body">
+    {#if data.inputType === 'checkbox'}
+      <label class="checkbox-wrap">
+        <input type="checkbox" bind:checked={value} onchange={handleChange} />
+        <span class="checkbox-label">{value ? 'true' : 'false'}</span>
+      </label>
+    {:else if data.inputType === 'number'}
+      <input
+        class="field"
         type="number"
         bind:value
-        min={node.min}
-        max={node.max}
-        step={node.step}
+        oninput={handleChange}
       />
-    {:else if node.inputType === 'checkbox'}
-      <Toggle
-        {tui}
-        bind:checked={value}
-        label={node.label}
+    {:else if data.inputType === 'slider'}
+      <input
+        class="slider"
+        type="range"
+        min="0"
+        max="100"
+        bind:value
+        oninput={handleChange}
       />
-    {:else if node.inputType === 'slider'}
-      <div class="slider-container">
-        <Input
-          {tui}
-          type="range"
-          bind:value
-          min={node.min ?? 0}
-          max={node.max ?? 100}
-          step={node.step ?? 1}
-        />
-        <Text variant={1} class="slider-value">{value}</Text>
-      </div>
+      <span class="slider-value">{value}</span>
+    {:else}
+      <input
+        class="field"
+        type="text"
+        bind:value
+        oninput={handleChange}
+        placeholder="Enter value..."
+      />
     {/if}
-  </Box>
-  
-</Box>
+  </div>
+</div>
+
+<Handle type="source" position={Position.Right} />
 
 <style>
-  :global(.input-node) {
-    width: 100%;
-    height: 100%;
+  .node-shell {
+    border-radius: 8px;
+    border: 1px solid rgba(255,255,255,0.1);
+    background: #16213e;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+    overflow: hidden;
+    min-width: 200px;
   }
 
-  :global(.input-node .node-header) {
-    padding: var(--space-2) var(--space-3);
-    border-bottom: 1px solid var(--border-color);
+  .node-header {
     display: flex;
     align-items: center;
-    gap: var(--space-2);
-    border-radius: var(--radius-3) var(--radius-3) 0 0;
+    gap: 6px;
+    padding: 6px 10px;
+    background: #0f1729;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+    font-size: 12px;
+    color: #a0a0b0;
+    font-weight: 500;
   }
 
-  .node-icon {
-    font-size: 18px;
+  .node-icon { font-size: 13px; }
+  .node-label { flex: 1; }
+
+  .node-body {
+    padding: 10px;
   }
 
-  :global(.input-node .node-title) {
-    font-weight: 600;
-    font-size: var(--font-size-1);
+  .field {
+    width: 100%;
+    padding: 6px 8px;
+    background: #0d1117;
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 4px;
+    color: #e0e0e0;
+    font-size: 12px;
+    font-family: inherit;
+    outline: none;
+    box-sizing: border-box;
   }
 
-  :global(.input-node .node-body) {
-    padding: var(--space-3);
+  .field:focus {
+    border-color: #00d4ff;
   }
 
-  .slider-container {
+  .checkbox-wrap {
     display: flex;
-    flex-direction: column;
-    gap: var(--space-2);
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    font-size: 12px;
+    color: #a0a0b0;
   }
 
-  :global(.input-node .slider-value) {
+  .slider {
+    width: 100%;
+    accent-color: #00d4ff;
+  }
+
+  .slider-value {
+    display: block;
     text-align: center;
-    font-weight: 600;
-    color: var(--brand);
+    font-size: 11px;
+    color: #00d4ff;
+    margin-top: 4px;
   }
-
-
 </style>

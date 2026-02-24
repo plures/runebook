@@ -1,16 +1,12 @@
-<script lang="ts">
-  import "$lib/design-dojo/tokens.css";
-</script>
-
 <slot />
 
 <style>
   :global(html, body) {
     margin: 0;
     padding: 0;
-    font-family: var(--font-sans);
-    background: var(--surface-1);
-    color: var(--text-1);
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: #1a1a2e;
+    color: #e0e0e0;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     overflow: hidden;
@@ -22,8 +18,8 @@
   }
 
   :global(::selection) {
-    background: var(--brand);
-    color: var(--surface-1);
+    background: #00d4ff;
+    color: #1a1a2e;
   }
 
   :global(::-webkit-scrollbar) {
@@ -36,11 +32,11 @@
   }
 
   :global(::-webkit-scrollbar-thumb) {
-    background: var(--text-3);
+    background: rgba(255,255,255,0.15);
     border-radius: 3px;
   }
 
   :global(::-webkit-scrollbar-thumb:hover) {
-    background: var(--text-2);
+    background: rgba(255,255,255,0.25);
   }
 </style>
