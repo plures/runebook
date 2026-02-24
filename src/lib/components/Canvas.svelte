@@ -155,8 +155,8 @@
       }
     }
 
-    // Ctrl+T — add Terminal node
-    if (event.ctrlKey && event.key === 't') {
+    // Ctrl+T / Cmd+T — add Terminal node
+    if ((event.ctrlKey || event.metaKey) && event.key === 't') {
       event.preventDefault();
       const node: TerminalNode = {
         id: `terminal-${Date.now()}`,
@@ -172,8 +172,8 @@
       canvasStore.addNode(node);
     }
 
-    // Ctrl+I — add Input node
-    if (event.ctrlKey && event.key === 'i') {
+    // Ctrl+I / Cmd+I — add Input node
+    if ((event.ctrlKey || event.metaKey) && event.key === 'i') {
       event.preventDefault();
       const node: InputNode = {
         id: `input-${Date.now()}`,

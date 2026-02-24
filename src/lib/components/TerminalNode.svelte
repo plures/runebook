@@ -20,6 +20,8 @@
   let isRunning = $state(false);
   let error = $state<string | null>(null);
 
+  const MAX_HISTORY = 50;
+
   // Interactive command input with history
   let commandInput = $state(
     node.command ? `${node.command}${node.args?.length ? ' ' + node.args.join(' ') : ''}` : ''
@@ -35,7 +37,7 @@
 
     // Push to history (deduplicate adjacent duplicates)
     if (commandHistory[0] !== raw) {
-      commandHistory = [raw, ...commandHistory].slice(0, 50);
+      commandHistory = [raw, ...commandHistory].slice(0, MAX_HISTORY);
     }
     historyIndex = -1;
 

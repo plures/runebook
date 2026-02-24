@@ -10,7 +10,7 @@ const BASE_URL = 'http://127.0.0.1:4173/';
 test.describe('terminal node', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto(BASE_URL);
-    await page.locator('.toolbar-btn', { hasText: /Terminal/ }).click();
+    await page.locator('.cmd-btn', { hasText: /Terminal/ }).click();
   });
 
   test('terminal node is rendered with a header', async ({ page }) => {
@@ -18,11 +18,11 @@ test.describe('terminal node', () => {
     await expect(page.locator('.terminal-node .node-title')).toContainText('Terminal');
   });
 
-  test('terminal node displays the command to be executed', async ({ page }) => {
-    await expect(page.locator('.command-display')).toBeVisible();
-    // Default command set in Toolbar.svelte addTerminalNode()
-    await expect(page.locator('.command-display code')).toContainText('echo');
-    await expect(page.locator('.command-display code')).toContainText('Hello, RuneBook!');
+  test('terminal node displays a command input with default command', async ({ page }) => {
+    const input = page.locator('.terminal-node .command-input');
+    await expect(input).toBeVisible();
+    // Default command is set in CommandBar.svelte addTerminalNode()
+    await expect(input).toHaveValue(/echo/);
   });
 
   test('terminal node shows output placeholder before execution', async ({ page }) => {
@@ -31,15 +31,13 @@ test.describe('terminal node', () => {
   });
 
   test('run button is present and enabled before first execution', async ({ page }) => {
-    const runBtn = page.locator('.run-btn');
+    const runBtn = page.locator('.terminal-node .run-btn-sm');
     await expect(runBtn).toBeVisible();
     await expect(runBtn).not.toBeDisabled();
-    await expect(runBtn).toContainText('Run');
   });
 
   test('clear button is present on the terminal node', async ({ page }) => {
-    await expect(page.locator('.clear-btn')).toBeVisible();
-    await expect(page.locator('.clear-btn')).toContainText('Clear');
+    await expect(page.locator('.terminal-node .clear-btn-sm')).toBeVisible();
   });
 
   test('terminal node has an output port', async ({ page }) => {
