@@ -296,7 +296,7 @@ describe('Toolbar', () => {
 
   it('should render the toolbar', () => {
     const { container } = render(Toolbar);
-    expect(container.querySelector('.toolbar')).toBeTruthy();
+    expect(container.querySelector('.dd-status-bar')).toBeTruthy();
   });
 
   it('should have add node buttons', () => {
