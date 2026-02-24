@@ -1,5 +1,5 @@
 <script lang="ts">
-  import "@plures/design-dojo/tokens.css";
+  import "$lib/design-dojo/tokens.css";
 </script>
 
 <slot />
