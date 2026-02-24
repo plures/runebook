@@ -8,6 +8,9 @@ on:
         description: 'Force version bump (patch/minor/major)'
         type: choice
         options: [patch, minor, major]
+permissions:
+  contents: write
+  packages: write
 jobs:
   release:
     uses: plures/.github/.github/workflows/release-reusable.yml@main
