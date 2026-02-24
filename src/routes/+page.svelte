@@ -1,12 +1,24 @@
 <script lang="ts">
   import Canvas from '$lib/components/Canvas.svelte';
-  import Toolbar from '$lib/components/Toolbar.svelte';
+  import CommandBar from '$lib/components/CommandBar.svelte';
+  import { canvasStore } from '$lib/stores/canvas';
+  import { saveCanvas } from '$lib/utils/storage';
 
   const tui = false;
+
+  // Auto-save to LocalStorage whenever the canvas changes (debounced 1 s)
+  let _autoSaveTimer: ReturnType<typeof setTimeout>;
+  $effect(() => {
+    const canvas = $canvasStore;
+    clearTimeout(_autoSaveTimer);
+    _autoSaveTimer = setTimeout(() => {
+      saveCanvas(canvas).catch((e: unknown) => console.error('Auto-save failed:', e));
+    }, 1000);
+  });
 </script>
 
 <div class="app">
-  <Toolbar {tui} />
+  <CommandBar {tui} />
   <div class="canvas-wrapper">
     <Canvas {tui} />
   </div>
@@ -21,12 +33,13 @@
 
   .app {
     display: flex;
+    flex-direction: column;
     height: 100vh;
     width: 100vw;
   }
 
   .canvas-wrapper {
     flex: 1;
-    margin-left: 200px;
+    min-height: 0;
   }
 </style>

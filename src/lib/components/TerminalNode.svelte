@@ -1,6 +1,6 @@
 <script lang="ts">
   import { invoke } from '@tauri-apps/api/core';
-  import { onMount, onDestroy } from 'svelte';
+  import { onMount } from 'svelte';
   import type { TerminalNode } from '../types/canvas';
   import { updateNodeData } from '../stores/canvas';
   import { captureCommandStart, captureCommandResult, isAgentEnabled } from '../agent/integration';
@@ -20,56 +20,91 @@
   let isRunning = $state(false);
   let error = $state<string | null>(null);
 
+  // Interactive command input with history
+  let commandInput = $state(
+    node.command ? `${node.command}${node.args?.length ? ' ' + node.args.join(' ') : ''}` : ''
+  );
+  let commandHistory = $state<string[]>([]);
+  let historyIndex = $state(-1);
+
+  let outputEl: HTMLElement | undefined;
+
   async function executeCommand() {
-    if (isRunning) return;
-    
+    const raw = commandInput.trim();
+    if (!raw || isRunning) return;
+
+    // Push to history (deduplicate adjacent duplicates)
+    if (commandHistory[0] !== raw) {
+      commandHistory = [raw, ...commandHistory].slice(0, 50);
+    }
+    historyIndex = -1;
+
     isRunning = true;
     error = null;
-    output = [];
+
+    // Parse command + args from the input string
+    const [cmd, ...args] = raw.split(/\s+/);
 
     // Capture command start for agent
     let agentEvent: TerminalEvent | null = null;
     if (isAgentEnabled()) {
-      agentEvent = await captureCommandStart(
-        node.command,
-        node.args || [],
-        node.env || {},
-        node.cwd || ''
-      );
+      agentEvent = await captureCommandStart(cmd, args, node.env || {}, node.cwd || '');
     }
 
     try {
-      // Call Tauri backend to execute terminal command
       const result = await invoke<string>('execute_terminal_command', {
-        command: node.command,
-        args: node.args || [],
+        command: cmd,
+        args,
         env: node.env || {},
         cwd: node.cwd || ''
       });
 
       output = [...output, result];
-      
-      // Capture command result for agent
+
       if (agentEvent) {
         await captureCommandResult(agentEvent, result, '', 0);
       }
-      
-      // Update the node's output data for reactive flow
+
       if (node.outputs.length > 0) {
         updateNodeData(node.id, node.outputs[0].id, result);
       }
     } catch (e) {
       const errorMsg = String(e);
       error = errorMsg;
-      
-      // Capture error result for agent
       if (agentEvent) {
         await captureCommandResult(agentEvent, '', errorMsg, 1);
       }
-      
       console.error('Terminal command error:', e);
     } finally {
       isRunning = false;
+      // Auto-scroll output
+      if (outputEl) {
+        outputEl.scrollTop = outputEl.scrollHeight;
+      }
+    }
+  }
+
+  function handleInputKeydown(event: KeyboardEvent) {
+    if (event.key === 'Enter') {
+      event.preventDefault();
+      executeCommand();
+      return;
+    }
+    if (event.key === 'ArrowUp') {
+      event.preventDefault();
+      if (commandHistory.length === 0) return;
+      historyIndex = Math.min(historyIndex + 1, commandHistory.length - 1);
+      commandInput = commandHistory[historyIndex];
+    }
+    if (event.key === 'ArrowDown') {
+      event.preventDefault();
+      if (historyIndex <= 0) {
+        historyIndex = -1;
+        commandInput = '';
+        return;
+      }
+      historyIndex -= 1;
+      commandInput = commandHistory[historyIndex];
     }
   }
 
@@ -79,7 +114,7 @@
   }
 
   onMount(() => {
-    if (node.autoStart) {
+    if (node.autoStart && node.command) {
       executeCommand();
     }
   });
@@ -87,37 +122,49 @@
 
 <Box class="terminal-node" surface={2} border radius={3} shadow={2} {tui}>
   <Box class="node-header" surface={3} {tui}>
-    <span class="node-icon">⚡</span>
+    <span class="node-icon" aria-hidden="true">⚡</span>
     <Text class="node-title">{node.label || 'Terminal'}</Text>
+    {#if node.cwd}
+      <span class="node-cwd" title="Working directory">{node.cwd}</span>
+    {/if}
+    <Button {tui} onclick={clearOutput} class="clear-btn-sm">✕</Button>
   </Box>
-  
-  <Box class="node-body" pad={3}>
-    <Box class="command-display" surface={1} pad={2} radius={2}>
-      <Text mono class="command-text"><code>{node.command} {(node.args || []).join(' ')}</code></Text>
-    </Box>
-    
-    <Box class="output-container" surface={1} pad={2} radius={2}>
-      {#if output.length > 0}
-        {#each output as line}
-          <Text mono variant={1} class="output-line">{line}</Text>
-        {/each}
-      {:else}
-        <Text variant={2} class="output-placeholder">No output yet</Text>
-      {/if}
-      
-      {#if error}
-        <Text class="error-line">{error}</Text>
-      {/if}
-    </Box>
-  </Box>
-  
-  <Box class="node-footer" pad={2}>
-    <Button {tui} variant="primary" onclick={executeCommand} disabled={isRunning} class="run-btn">
-      {isRunning ? '⏳ Running...' : '▶ Run'}
+
+  <div class="output-container" bind:this={outputEl}>
+    {#if output.length > 0}
+      {#each output as line}
+        <pre class="output-line">{line}</pre>
+      {/each}
+    {:else if !isRunning}
+      <Text variant={2} class="output-placeholder">No output yet — type a command below</Text>
+    {/if}
+
+    {#if error}
+      <pre class="error-line">{error}</pre>
+    {/if}
+
+    {#if isRunning}
+      <span class="running-cursor" aria-label="Running">▋</span>
+    {/if}
+  </div>
+
+  <Box class="prompt-bar" surface={3} {tui}>
+    <span class="prompt-symbol" aria-hidden="true">$</span>
+    <input
+      class="command-input"
+      type="text"
+      bind:value={commandInput}
+      onkeydown={handleInputKeydown}
+      placeholder="command args…"
+      disabled={isRunning}
+      autocomplete="off"
+      spellcheck={false}
+      aria-label="Terminal command input"
+    />
+    <Button {tui} variant="primary" onclick={executeCommand} disabled={isRunning} class="run-btn-sm">
+      {isRunning ? '⏳' : '▶'}
     </Button>
-    <Button {tui} onclick={clearOutput} class="clear-btn">Clear</Button>
   </Box>
-  
 </Box>
 
 <style>
@@ -130,16 +177,17 @@
   }
 
   :global(.terminal-node .node-header) {
-    padding: var(--space-2) var(--space-3);
+    padding: var(--space-1) var(--space-3);
     border-bottom: 1px solid var(--border-color);
     display: flex;
     align-items: center;
     gap: var(--space-2);
     border-radius: var(--radius-3) var(--radius-3) 0 0;
+    flex-shrink: 0;
   }
 
   .node-icon {
-    font-size: 18px;
+    font-size: 16px;
   }
 
   :global(.terminal-node .node-title) {
@@ -147,51 +195,116 @@
     font-size: var(--font-size-1);
   }
 
-  :global(.terminal-node .node-body) {
-    padding: var(--space-3);
-  }
-
-  :global(.terminal-node .command-display) {
-    margin-bottom: var(--space-2);
+  .node-cwd {
     font-size: var(--font-size-0);
+    color: #4caf50;
+    font-family: var(--font-mono);
+    flex: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 
-  :global(.terminal-node .command-text) {
-    color: var(--brand);
+  :global(.terminal-node .clear-btn-sm) {
+    margin-left: auto;
+    padding: 0 var(--space-2) !important;
+    height: 22px;
+    font-size: 11px !important;
+    opacity: 0.5;
   }
 
-  :global(.terminal-node .output-container) {
-    max-height: 200px;
+  :global(.terminal-node .clear-btn-sm:hover) {
+    opacity: 1;
+  }
+
+  .output-container {
+    flex: 1;
     overflow-y: auto;
+    padding: var(--space-2) var(--space-3);
     min-height: 60px;
-    font-size: var(--font-size-0);
+    background: var(--surface-1, #111827);
   }
 
-  :global(.terminal-node .output-line) {
-    display: block;
-    margin: 2px 0;
+  .output-line {
+    margin: 0;
+    font-size: var(--font-size-0);
+    font-family: var(--font-mono);
+    white-space: pre-wrap;
     word-break: break-word;
+    color: var(--text-1);
+    line-height: 1.5;
+  }
+
+  .error-line {
+    margin: 0;
+    font-size: var(--font-size-0);
+    font-family: var(--font-mono);
+    white-space: pre-wrap;
+    word-break: break-word;
+    color: var(--error, #f44336);
+    line-height: 1.5;
   }
 
   :global(.terminal-node .output-placeholder) {
     font-style: italic;
+    font-size: var(--font-size-0);
   }
 
-  :global(.terminal-node .error-line) {
-    display: block;
-    margin: 2px 0;
-    color: var(--error);
+  @keyframes blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0; }
   }
 
-  :global(.terminal-node .node-footer) {
-    border-top: 1px solid var(--border-color);
+  .running-cursor {
+    display: inline-block;
+    color: #4caf50;
+    animation: blink 1s step-start infinite;
+    font-size: var(--font-size-0);
+    font-family: var(--font-mono);
+  }
+
+  :global(.terminal-node .prompt-bar) {
     display: flex;
+    align-items: center;
     gap: var(--space-2);
+    padding: var(--space-2) var(--space-3);
+    border-top: 1px solid var(--border-color);
+    border-radius: 0 0 var(--radius-3) var(--radius-3);
+    flex-shrink: 0;
   }
 
-  :global(.terminal-node .run-btn) {
+  .prompt-symbol {
+    color: #4caf50;
+    font-family: var(--font-mono);
+    font-size: var(--font-size-1);
+    font-weight: 700;
+    flex-shrink: 0;
+  }
+
+  .command-input {
     flex: 1;
+    background: transparent;
+    border: none;
+    outline: none;
+    color: var(--text-1);
+    font-family: var(--font-mono);
+    font-size: var(--font-size-0);
+    caret-color: #4caf50;
+    min-width: 0;
   }
 
+  .command-input::placeholder {
+    color: var(--text-3);
+  }
 
+  .command-input:disabled {
+    opacity: 0.5;
+  }
+
+  :global(.terminal-node .run-btn-sm) {
+    padding: 0 var(--space-2) !important;
+    height: 26px;
+    font-size: var(--font-size-0) !important;
+    flex-shrink: 0;
+  }
 </style>

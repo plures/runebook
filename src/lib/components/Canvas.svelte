@@ -5,7 +5,7 @@
   import DisplayNodeComponent from './DisplayNode.svelte';
   import TransformNodeComponent from './TransformNode.svelte';
   import ConnectionLine from './ConnectionLine.svelte';
-  import type { CanvasNode, Connection } from '../types/canvas';
+  import type { CanvasNode, Connection, TerminalNode, InputNode } from '../types/canvas';
   import Box from '../design-dojo/Box.svelte';
 
   interface Props {
@@ -154,6 +154,39 @@
         selectedNodeId = null;
       }
     }
+
+    // Ctrl+T — add Terminal node
+    if (event.ctrlKey && event.key === 't') {
+      event.preventDefault();
+      const node: TerminalNode = {
+        id: `terminal-${Date.now()}`,
+        type: 'terminal',
+        position: { x: 160 + Math.random() * 120, y: 100 + Math.random() * 120 },
+        label: 'Terminal',
+        command: 'echo',
+        args: ['Hello, RuneBook!'],
+        autoStart: false,
+        inputs: [],
+        outputs: [{ id: 'stdout', name: 'stdout', type: 'output' }]
+      };
+      canvasStore.addNode(node);
+    }
+
+    // Ctrl+I — add Input node
+    if (event.ctrlKey && event.key === 'i') {
+      event.preventDefault();
+      const node: InputNode = {
+        id: `input-${Date.now()}`,
+        type: 'input',
+        position: { x: 160 + Math.random() * 120, y: 280 + Math.random() * 120 },
+        label: 'Text Input',
+        inputType: 'text',
+        value: '',
+        inputs: [],
+        outputs: [{ id: 'value', name: 'value', type: 'output' }]
+      };
+      canvasStore.addNode(node);
+    }
   }
 </script>
 
@@ -208,7 +241,7 @@
       {@const size = node.size || { width: 320, height: 200 }}
       <!-- svelte-ignore a11y_no_static_element_interactions -->
       <div
-        class="node-wrapper"
+        class="node-wrapper node-wrapper--{node.type}"
         class:selected={selectedNodeId === node.id}
         style="left: {node.position.x}px; top: {node.position.y}px; width: {size.width}px; height: {size.height}px;"
         onmousedown={(e) => handleNodeMouseDown(e, node.id)}
@@ -374,4 +407,10 @@
   .resize-handle:hover {
     opacity: 0.8;
   }
+
+  /* Per-type node accent stripe */
+  .node-wrapper--terminal { border-top: 2px solid #4caf50; }
+  .node-wrapper--input    { border-top: 2px solid #00d4ff; }
+  .node-wrapper--display  { border-top: 2px solid #7b2fff; }
+  .node-wrapper--transform { border-top: 2px solid #ff9800; }
 </style>
