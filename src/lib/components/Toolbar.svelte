@@ -3,6 +3,14 @@
   import { loadCanvasFromFile, saveCanvasToYAML } from '../utils/yaml-loader';
   import { saveCanvas, loadCanvas, listCanvases, useLocalStorage, usePluresDB, getCurrentAdapter } from '../utils/storage';
   import type { TerminalNode, InputNode, DisplayNode, TransformNode } from '../types/canvas';
+  import StatusBar from '../design-dojo/StatusBar.svelte';
+  import Button from '../design-dojo/Button.svelte';
+
+  interface Props {
+    tui?: boolean;
+  }
+
+  let { tui = false }: Props = $props();
 
   let savedCanvases = $state<{ id: string; name: string; timestamp: number }[]>([]);
   let showSavedList = $state(false);
@@ -161,34 +169,35 @@
   }
 </script>
 
-<div class="toolbar">
+<StatusBar {tui}>
+  <div class="toolbar-inner">
   <div class="toolbar-section">
     <h3>Add Nodes</h3>
-    <button onclick={addTerminalNode} class="toolbar-btn">
+    <Button {tui} onclick={addTerminalNode} class="toolbar-btn">
       ⚡ Terminal
-    </button>
-    <button onclick={addInputNode} class="toolbar-btn">
+    </Button>
+    <Button {tui} onclick={addInputNode} class="toolbar-btn">
       📝 Input
-    </button>
-    <button onclick={addDisplayNode} class="toolbar-btn">
+    </Button>
+    <Button {tui} onclick={addDisplayNode} class="toolbar-btn">
       📊 Display
-    </button>
-    <button onclick={addTransformNode} class="toolbar-btn">
+    </Button>
+    <Button {tui} onclick={addTransformNode} class="toolbar-btn">
       🔄 Transform
-    </button>
+    </Button>
   </div>
   
   <div class="toolbar-section">
     <h3>Canvas</h3>
-    <button onclick={loadExample} class="toolbar-btn">
+    <Button {tui} onclick={loadExample} class="toolbar-btn">
       📂 Load Example
-    </button>
-    <button onclick={saveCanvasToStorage} class="toolbar-btn">
+    </Button>
+    <Button {tui} onclick={saveCanvasToStorage} class="toolbar-btn">
       💾 Save to Storage
-    </button>
-    <button onclick={toggleSavedList} class="toolbar-btn">
+    </Button>
+    <Button {tui} onclick={toggleSavedList} class="toolbar-btn">
       📚 Saved Canvases {showSavedList ? '▼' : '▶'}
-    </button>
+    </Button>
     {#if showSavedList}
       <div class="saved-list">
         {#if savedCanvases.length === 0}
@@ -208,12 +217,12 @@
         {/if}
       </div>
     {/if}
-    <button onclick={saveCanvasToFile} class="toolbar-btn">
+    <Button {tui} onclick={saveCanvasToFile} class="toolbar-btn">
       📥 Export YAML
-    </button>
-    <button onclick={toggleStorageSettings} class="toolbar-btn">
+    </Button>
+    <Button {tui} onclick={toggleStorageSettings} class="toolbar-btn">
       ⚙️ Storage Settings {showStorageSettings ? '▼' : '▶'}
-    </button>
+    </Button>
     {#if showStorageSettings}
       <div class="storage-settings">
         <label class="storage-option">
@@ -241,88 +250,60 @@
         </div>
       </div>
     {/if}
-    <button onclick={clearCanvas} class="toolbar-btn danger">
+    <Button {tui} variant="danger" onclick={clearCanvas} class="toolbar-btn">
       🗑️ Clear
-    </button>
+    </Button>
   </div>
-</div>
+  </div>
+</StatusBar>
 
 <style>
-  .toolbar {
-    position: fixed;
-    left: 0;
-    top: 0;
-    bottom: 0;
-    width: 200px;
-    background: #252526;
-    border-right: 1px solid #3e3e42;
-    padding: 16px;
-    overflow-y: auto;
-    z-index: 1000;
+  .toolbar-inner {
+    padding: var(--space-3);
   }
 
   .toolbar-section {
-    margin-bottom: 24px;
+    margin-bottom: var(--space-5);
   }
 
   .toolbar-section h3 {
-    color: #cccccc;
-    font-size: 12px;
+    color: var(--text-2);
+    font-size: var(--font-size-0);
     text-transform: uppercase;
-    margin: 0 0 12px 0;
+    margin: 0 0 var(--space-3) 0;
     font-weight: 600;
   }
 
-  .toolbar-btn {
+  :global(.toolbar-btn) {
     width: 100%;
-    padding: 10px;
-    margin-bottom: 8px;
-    background: #3a3a3a;
-    color: #e0e0e0;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-    font-size: 13px;
+    margin-bottom: var(--space-2);
     text-align: left;
-    transition: background-color 0.2s;
-  }
-
-  .toolbar-btn:hover {
-    background: #4a4a4a;
-  }
-
-  .toolbar-btn.danger {
-    background: #5a1e1e;
-  }
-
-  .toolbar-btn.danger:hover {
-    background: #7a2e2e;
   }
 
   .saved-list {
-    margin-top: 8px;
-    margin-bottom: 8px;
+    margin-top: var(--space-2);
+    margin-bottom: var(--space-2);
     max-height: 200px;
     overflow-y: auto;
-    border: 1px solid #3e3e42;
-    border-radius: 4px;
-    background: #1e1e1e;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-2);
+    background: var(--surface-1);
   }
 
   .saved-item {
     width: 100%;
-    padding: 8px 10px;
+    padding: var(--space-2) var(--space-3);
     background: transparent;
-    color: #e0e0e0;
+    color: var(--text-1);
     border: none;
-    border-bottom: 1px solid #3e3e42;
+    border-bottom: 1px solid var(--border-color);
     cursor: pointer;
-    font-size: 12px;
+    font-size: var(--font-size-0);
     text-align: left;
-    transition: background-color 0.2s;
+    transition: background-color var(--transition-base);
     display: flex;
     flex-direction: column;
-    gap: 2px;
+    gap: var(--space-1);
   }
 
   .saved-item:last-child {
@@ -330,37 +311,37 @@
   }
 
   .saved-item:hover {
-    background: #2a2a2a;
+    background: var(--surface-2);
   }
 
   .saved-time {
-    font-size: 10px;
-    color: #888;
+    font-size: var(--font-size-0);
+    color: var(--text-3);
   }
 
   .empty-message {
-    padding: 12px;
+    padding: var(--space-3);
     text-align: center;
-    color: #888;
-    font-size: 12px;
+    color: var(--text-3);
+    font-size: var(--font-size-0);
   }
 
   .storage-settings {
-    margin-top: 8px;
-    margin-bottom: 8px;
-    padding: 8px;
-    border: 1px solid #3e3e42;
-    border-radius: 4px;
-    background: #1e1e1e;
+    margin-top: var(--space-2);
+    margin-bottom: var(--space-2);
+    padding: var(--space-2);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-2);
+    background: var(--surface-1);
   }
 
   .storage-option {
     display: flex;
     align-items: center;
-    gap: 8px;
-    padding: 6px 4px;
-    color: #e0e0e0;
-    font-size: 12px;
+    gap: var(--space-2);
+    padding: var(--space-2) var(--space-1);
+    color: var(--text-1);
+    font-size: var(--font-size-0);
     cursor: pointer;
   }
 
@@ -369,10 +350,10 @@
   }
 
   .storage-info {
-    margin-top: 8px;
-    padding-top: 8px;
-    border-top: 1px solid #3e3e42;
-    font-size: 11px;
-    color: #4ec9b0;
+    margin-top: var(--space-2);
+    padding-top: var(--space-2);
+    border-top: 1px solid var(--border-color);
+    font-size: var(--font-size-0);
+    color: var(--brand);
   }
 </style>

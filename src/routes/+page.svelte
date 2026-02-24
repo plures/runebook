@@ -1,12 +1,14 @@
 <script lang="ts">
   import Canvas from '$lib/components/Canvas.svelte';
   import Toolbar from '$lib/components/Toolbar.svelte';
+
+  const tui = false;
 </script>
 
 <div class="app">
-  <Toolbar />
+  <Toolbar {tui} />
   <div class="canvas-wrapper">
-    <Canvas />
+    <Canvas {tui} />
   </div>
 </div>
 

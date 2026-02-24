@@ -1,3 +1,12 @@
+## [0.4.0] — 2026-02-23
+
+- feat: replace hand-styled components with design-dojo primitives (#40) (4ffc4b9)
+- test: Playwright e2e coverage for core RuneBook flows + fix InputNode reactive loop (#38) (766f5cf)
+- chore: add copilot instructions and org standards (6412fee)
+- chore: integrate @plures/design-dojo as UI component library (#31) (d057f91)
+- Add Playwright E2E smoke tests (production-like build) (#26) (14cd86d)
+- Fix node button reactivity by using Praxis store dispatch (#25) (7c29e6a)
+
 # Changelog
 
 All notable changes to RuneBook will be documented in this file.

@@ -1,12 +1,18 @@
 <script lang="ts">
+  import { untrack } from 'svelte';
   import type { InputNode } from '../types/canvas';
   import { updateNodeData } from '../stores/canvas';
+  import Box from '../design-dojo/Box.svelte';
+  import Input from '../design-dojo/Input.svelte';
+  import Toggle from '../design-dojo/Toggle.svelte';
+  import Text from '../design-dojo/Text.svelte';
 
   interface Props {
     node: InputNode;
+    tui?: boolean;
   }
 
-  let { node }: Props = $props();
+  let { node, tui = false }: Props = $props();
 
   // Initialize value from node prop (warning is expected as we need mutable state)
   let value = $state(node.value ?? '');
@@ -19,55 +25,63 @@
   }
 
   $effect(() => {
-    handleValueChange();
+    // Capture value outside untrack to establish it as the only reactive
+    // dependency. node properties are accessed inside untrack to prevent an
+    // infinite update cycle: Praxis deep-clones context on every dispatch,
+    // which creates a new node prop reference each time, which would otherwise
+    // re-trigger this effect indefinitely.
+    const currentValue = value;
+    untrack(() => {
+      if (node.outputs.length > 0) {
+        updateNodeData(node.id, node.outputs[0].id, currentValue);
+      }
+    });
   });
 </script>
 
-<div class="input-node">
-  <div class="node-header">
+<Box class="input-node" surface={2} border radius={3} shadow={2} {tui}>
+  <Box class="node-header" surface={3} {tui}>
     <span class="node-icon">📝</span>
-    <span class="node-title">{node.label || 'Input'}</span>
-  </div>
+    <Text class="node-title">{node.label || 'Input'}</Text>
+  </Box>
   
-  <div class="node-body">
+  <Box class="node-body" pad={3}>
     {#if node.inputType === 'text'}
-      <input 
-        type="text" 
+      <Input
+        {tui}
+        type="text"
         bind:value
         placeholder="Enter text..."
-        class="input-field"
       />
     {:else if node.inputType === 'number'}
-      <input 
-        type="number" 
+      <Input
+        {tui}
+        type="number"
         bind:value
         min={node.min}
         max={node.max}
         step={node.step}
-        class="input-field"
       />
     {:else if node.inputType === 'checkbox'}
-      <label class="checkbox-label">
-        <input 
-          type="checkbox" 
-          bind:checked={value}
-        />
-        <span>{node.label}</span>
-      </label>
+      <Toggle
+        {tui}
+        bind:checked={value}
+        label={node.label}
+      />
     {:else if node.inputType === 'slider'}
       <div class="slider-container">
-        <input 
-          type="range" 
+        <Input
+          {tui}
+          type="range"
           bind:value
           min={node.min ?? 0}
           max={node.max ?? 100}
           step={node.step ?? 1}
-          class="slider"
         />
-        <span class="slider-value">{value}</span>
+        <Text variant={1} class="slider-value">{value}</Text>
       </div>
     {/if}
-  </div>
+  </Box>
   
   <!-- Output ports -->
   <div class="ports">
@@ -77,84 +91,45 @@
       </div>
     {/each}
   </div>
-</div>
+</Box>
 
 <style>
-  .input-node {
-    background: #2d2d2d;
-    border: 2px solid #4a4a4a;
-    border-radius: 8px;
+  :global(.input-node) {
     min-width: 250px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-    color: #e0e0e0;
   }
 
-  .node-header {
-    background: #3a3a3a;
-    padding: 8px 12px;
-    border-bottom: 1px solid #4a4a4a;
+  :global(.input-node .node-header) {
+    padding: var(--space-2) var(--space-3);
+    border-bottom: 1px solid var(--border-color);
     display: flex;
     align-items: center;
-    gap: 8px;
-    border-radius: 6px 6px 0 0;
+    gap: var(--space-2);
+    border-radius: var(--radius-3) var(--radius-3) 0 0;
   }
 
   .node-icon {
     font-size: 18px;
   }
 
-  .node-title {
+  :global(.input-node .node-title) {
     font-weight: 600;
-    font-size: 14px;
+    font-size: var(--font-size-1);
   }
 
-  .node-body {
-    padding: 12px;
-  }
-
-  .input-field {
-    width: 100%;
-    padding: 8px;
-    background: #1e1e1e;
-    border: 1px solid #4a4a4a;
-    border-radius: 4px;
-    color: #e0e0e0;
-    font-size: 14px;
-  }
-
-  .input-field:focus {
-    outline: none;
-    border-color: #0e639c;
-  }
-
-  .checkbox-label {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    cursor: pointer;
-  }
-
-  .checkbox-label input[type="checkbox"] {
-    width: 18px;
-    height: 18px;
-    cursor: pointer;
+  :global(.input-node .node-body) {
+    padding: var(--space-3);
   }
 
   .slider-container {
     display: flex;
     flex-direction: column;
-    gap: 8px;
+    gap: var(--space-2);
   }
 
-  .slider {
-    width: 100%;
-    cursor: pointer;
-  }
-
-  .slider-value {
+  :global(.input-node .slider-value) {
     text-align: center;
     font-weight: 600;
-    color: #4ec9b0;
+    color: var(--brand);
   }
 
   .ports {
@@ -165,8 +140,8 @@
     position: absolute;
     width: 12px;
     height: 12px;
-    background: #4ec9b0;
-    border: 2px solid #2d2d2d;
+    background: var(--brand);
+    border: 2px solid var(--surface-2);
     border-radius: 50%;
     cursor: crosshair;
   }

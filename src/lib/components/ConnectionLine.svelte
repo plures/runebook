@@ -4,9 +4,10 @@
   interface Props {
     connection: Connection;
     nodes: CanvasNode[];
+    tui?: boolean;
   }
 
-  let { connection, nodes }: Props = $props();
+  let { connection, nodes, tui = false }: Props = $props();
 
   function getNodePosition(nodeId: string) {
     const node = nodes.find(n => n.id === nodeId);
@@ -36,7 +37,10 @@
 <path
   d={path()}
   fill="none"
-  stroke="#4ec9b0"
+  stroke="var(--brand)"
   stroke-width="2"
   stroke-linecap="round"
+  data-tui={tui}
+  data-from={connection.from}
+  data-to={connection.to}
 />
