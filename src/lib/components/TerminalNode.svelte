@@ -122,9 +122,11 @@
 
 <style>
   :global(.terminal-node) {
-    min-width: 300px;
-    max-width: 500px;
+    width: 100%;
+    height: 100%;
     font-family: var(--font-mono);
+    display: flex;
+    flex-direction: column;
   }
 
   :global(.terminal-node .node-header) {
