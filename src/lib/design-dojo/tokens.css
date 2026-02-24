@@ -22,6 +22,12 @@
   --brand-2: #7b2fff;
   --accent: #ff6b6b;
 
+  /* ── Node type accents ──────────────────────────────────────── */
+  --node-accent-terminal: #4caf50;
+  --node-accent-input: #00d4ff;
+  --node-accent-display: #7b2fff;
+  --node-accent-transform: #ff9800;
+
   /* ── Status ────────────────────────────────────────────────── */
   --success: #4caf50;
   --warning: #ff9800;
