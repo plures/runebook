@@ -1,6 +1,6 @@
 {
   "name": "@plures/runebook",
-  "version": "0.4.2",
+  "version": "0.5.0",
   "publishConfig": {
     "access": "public",
     "registry": "https://registry.npmjs.org/"
