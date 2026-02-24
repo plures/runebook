@@ -1,3 +1,7 @@
+## [0.4.2] — 2026-02-24
+
+- fix: strip duplicate ports, fill containers, add base styles (db2c96f)
+
 ## [0.4.1] — 2026-02-24
 
 - fix: CSS 403, add node resize + interactive connection drawing (20f8e19)
