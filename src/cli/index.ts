@@ -740,8 +740,10 @@ RuneBook CLI
 
 Usage:
   runebook <command> [subcommand] [options]
+  runebook --tui [canvas.yaml]
 
 Commands:
+  --tui [file]        Launch terminal UI (TUI) mode — optionally load a canvas YAML
   agent <command>     Agent commands (enable, disable, status, suggestions, events, clear, config)
   observer <command>  Observer commands (enable, disable, status, events, tail)
   analyze <command>   Analysis commands (last)
@@ -749,6 +751,8 @@ Commands:
   llm <command>       LLM/MCP commands (status)
 
 Examples:
+  runebook --tui
+  runebook --tui canvas.yaml
   runebook agent enable
   runebook agent status
   runebook suggest status
@@ -764,7 +768,12 @@ Examples:
   
   (async () => {
     try {
-      if (command === 'agent') {
+      if (command === '--tui') {
+        const { launchTUI } = await import('../lib/tui/index');
+        const filePath = args[1]; // Optional canvas YAML path
+        await launchTUI(filePath);
+        return;
+      } else if (command === 'agent') {
         // Agent commands
         if (!subcommand) {
           console.log(`
@@ -1031,7 +1040,7 @@ Commands:
         }
       } else {
         console.error(`Unknown command: ${command}`);
-        console.log('Use "runebook agent", "runebook observer", "runebook suggest", "runebook analyze", "runebook memory", or "runebook llm"');
+        console.log('Use "runebook --tui", "runebook agent", "runebook observer", "runebook suggest", "runebook analyze", "runebook memory", or "runebook llm"');
         process.exit(1);
       }
     } catch (error) {
