@@ -7,13 +7,21 @@
   const tui = false;
 
   // Auto-save to LocalStorage whenever the canvas changes (debounced 1 s)
-  let autoSaveTimer: ReturnType<typeof setTimeout>;
+  let autoSaveTimer: ReturnType<typeof setTimeout> | undefined;
   $effect(() => {
     const canvas = $canvasStore;
-    clearTimeout(autoSaveTimer);
+    if (autoSaveTimer !== undefined) {
+      clearTimeout(autoSaveTimer);
+    }
     autoSaveTimer = setTimeout(() => {
       saveCanvas(canvas).catch((e: unknown) => console.error('Auto-save failed:', e));
     }, 1000);
+
+    return () => {
+      if (autoSaveTimer !== undefined) {
+        clearTimeout(autoSaveTimer);
+      }
+    };
   });
 </script>
 
