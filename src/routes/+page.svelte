@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { untrack } from 'svelte';
   import {
     SvelteFlow,
     Controls,
@@ -53,7 +54,7 @@
         style: 'width: 360px;'
       },
       transform: {
-        data: { label: 'Transform', transformType: 'map', code: 'item' },
+        data: { label: 'Transform', transformType: 'map', code: 'item', input: '', output: '' },
         style: 'width: 320px;'
       }
     };
@@ -90,6 +91,41 @@
     nodes = nodes.filter(n => !nodeIds.has(n.id));
     edges = edges.filter(e => !edgeIds.has(e.id) && !nodeIds.has(e.source) && !nodeIds.has(e.target));
   }
+
+  // Graph execution layer: propagate source node output → target node input/content
+  $effect(() => {
+    // Build a snapshot of source outputs (tracked — reruns when source data changes)
+    const outputMap = new Map<string, string>();
+    for (const node of nodes) {
+      if (node.type === 'input') outputMap.set(node.id, String(node.data.output ?? node.data.value ?? ''));
+      else if (node.type === 'terminal') outputMap.set(node.id, String(node.data.output ?? ''));
+      else if (node.type === 'transform') outputMap.set(node.id, String(node.data.output ?? ''));
+    }
+    const edgeList = edges;
+
+    // Apply to targets without creating a reactive dependency on target data
+    untrack(() => {
+      let changed = false;
+      const updated = nodes.map(node => {
+        const incoming = edgeList.filter(e => e.target === node.id);
+        if (incoming.length === 0) return node;
+        // Use the last connected edge; future work can support multi-input merge
+        const edge = incoming[incoming.length - 1];
+        const output = outputMap.get(edge.source) ?? '';
+
+        if (node.type === 'display' && node.data.content !== output) {
+          changed = true;
+          return { ...node, data: { ...node.data, content: output } };
+        }
+        if (node.type === 'transform' && node.data.input !== output) {
+          changed = true;
+          return { ...node, data: { ...node.data, input: output } };
+        }
+        return node;
+      });
+      if (changed) nodes = updated;
+    });
+  });
 </script>
 
 <div class="app">

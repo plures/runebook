@@ -6,14 +6,19 @@
       label: string;
       inputType: string;
       value: any;
+      output?: any;
     };
   }
 
   let { data }: Props = $props();
   let value = $state(data.value ?? '');
 
+  // Initialise output on first render (defensive for loaded canvases without output field)
+  if (data.output === undefined) data.output = data.value ?? '';
+
   function handleChange() {
     data.value = value;
+    data.output = value;
   }
 </script>
 

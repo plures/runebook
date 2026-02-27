@@ -6,6 +6,8 @@
       label: string;
       transformType: string;
       code: string;
+      input?: string;
+      output?: string;
     };
   }
 
@@ -15,6 +17,22 @@
   function handleChange() {
     data.code = code;
   }
+
+  // Compute output whenever input or code changes
+  $effect(() => {
+    const input = data.input ?? '';
+    if (!input) {
+      data.output = '';
+      return;
+    }
+    try {
+      // eslint-disable-next-line no-new-func
+      const fn = new Function('item', `return (${data.code || 'item'})`);
+      data.output = String(fn(input) ?? '');
+    } catch {
+      data.output = input;
+    }
+  });
 </script>
 
 <Handle type="target" position={Position.Left} />

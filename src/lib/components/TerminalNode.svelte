@@ -9,6 +9,7 @@
       args: string[];
       env: Record<string, string>;
       cwd: string;
+      output?: string;
     };
   }
 
@@ -19,6 +20,11 @@
   let isRunning = $state(false);
   let error = $state<string | null>(null);
   let outputEl: HTMLDivElement | undefined = $state();
+
+  // Expose terminal session output so downstream nodes can consume it
+  $effect(() => {
+    data.output = output.join('\n');
+  });
 
   async function executeCommand() {
     if (isRunning || !commandInput.trim()) return;
