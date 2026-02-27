@@ -49,6 +49,11 @@
     // are not supported; the backend receives each token as a separate argument.
     const [cmd, ...args] = raw.split(/\s+/);
 
+    // Persist the parsed command and args on the node so canvas auto-save
+    // captures the latest executed command instead of the original defaults.
+    node.command = cmd;
+    node.args = args;
+
     // Capture command start for agent
     let agentEvent: TerminalEvent | null = null;
     if (isAgentEnabled()) {

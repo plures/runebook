@@ -1,10 +1,28 @@
 <script lang="ts">
   import Canvas from '$lib/components/Canvas.svelte';
   import CommandBar from '$lib/components/CommandBar.svelte';
+  import TitleBar from '$lib/components/TitleBar.svelte';
+  import SettingsPanel from '$lib/components/SettingsPanel.svelte';
+  import HelpPanel from '$lib/components/HelpPanel.svelte';
   import { canvasStore } from '$lib/stores/canvas';
   import { saveCanvas } from '$lib/utils/storage';
+  import { settingsStore } from '$lib/stores/settings';
+  import { onMount } from 'svelte';
 
   const tui = false;
+
+  let settingsOpen = $state(false);
+  let helpOpen = $state(false);
+  let helpView = $state<'shortcuts' | 'about'>('shortcuts');
+
+  function openHelp(view: 'shortcuts' | 'about') {
+    helpView = view;
+    helpOpen = true;
+  }
+
+  onMount(() => {
+    settingsStore.init();
+  });
 
   // Auto-save to LocalStorage whenever the canvas changes (debounced 1 s)
   let autoSaveTimer: ReturnType<typeof setTimeout> | undefined;
@@ -21,7 +39,7 @@
     // Clear any pending auto-save timer on every effect run
     cleanup();
 
-   // Skip scheduling auto-save on the very first effect run
+    // Skip scheduling auto-save on the very first effect run
     if (!hasInitializedAutoSave) {
       hasInitializedAutoSave = true;
       return cleanup;
@@ -35,12 +53,31 @@
   });
 </script>
 
+<TitleBar {tui} />
+
 <div class="app">
-  <CommandBar {tui} />
+  <CommandBar
+    {tui}
+    onOpenSettings={() => { settingsOpen = true; }}
+    onOpenHelp={openHelp}
+  />
   <div class="canvas-wrapper">
     <Canvas {tui} />
   </div>
 </div>
+
+<SettingsPanel
+  open={settingsOpen}
+  onclose={() => { settingsOpen = false; }}
+  {tui}
+/>
+
+<HelpPanel
+  open={helpOpen}
+  bind:view={helpView}
+  onclose={() => { helpOpen = false; }}
+  {tui}
+/>
 
 <style>
   :global(body) {
@@ -52,8 +89,9 @@
   .app {
     display: flex;
     flex-direction: column;
-    height: 100vh;
+    height: calc(100vh - 40px);
     width: 100vw;
+    margin-top: 40px;
   }
 
   .canvas-wrapper {

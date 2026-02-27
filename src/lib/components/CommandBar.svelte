@@ -12,9 +12,11 @@
 
   interface Props {
     tui?: boolean;
+    onOpenSettings?: () => void;
+    onOpenHelp?: (view: 'shortcuts' | 'about') => void;
   }
 
-  let { tui = false }: Props = $props();
+  let { tui = false, onOpenSettings, onOpenHelp }: Props = $props();
 
   let showSavedList = $state(false);
   let savedCanvases = $state<{ id: string; name: string; timestamp: number }[]>([]);
@@ -94,9 +96,16 @@
       showSavedList = false;
     }
   }
+
+  /** Close the saved-canvases dropdown when pressing Escape. */
+  function handleWindowKeydown(event: KeyboardEvent) {
+    if (showSavedList && event.key === 'Escape') {
+      showSavedList = false;
+    }
+  }
 </script>
 
-<svelte:window onclick={handleWindowClick} />
+<svelte:window onclick={handleWindowClick} onkeydown={handleWindowKeydown} />
 
 <header class="command-bar" data-tauri-drag-region>
   <div class="command-bar__brand" data-tauri-drag-region>
@@ -154,6 +163,19 @@
     <Button {tui} variant="danger" onclick={clearCanvas} class="cmd-btn">
       🗑️ Clear
     </Button>
+    {#if onOpenSettings || onOpenHelp}
+      <div class="command-bar__sep" aria-hidden="true"></div>
+    {/if}
+    {#if onOpenSettings}
+      <Button {tui} onclick={onOpenSettings} class="cmd-btn" aria-label="Open settings">
+        ⚙️
+      </Button>
+    {/if}
+    {#if onOpenHelp}
+      <Button {tui} onclick={() => onOpenHelp('shortcuts')} class="cmd-btn" aria-label="Open help">
+        ⌨️
+      </Button>
+    {/if}
   </div>
 </header>
 
@@ -197,6 +219,15 @@
   .command-bar__actions {
     display: flex;
     gap: var(--space-2);
+  }
+
+  .command-bar__sep {
+    width: 1px;
+    height: 20px;
+    background: var(--border-color);
+    margin: 0 var(--space-1);
+    align-self: center;
+    flex-shrink: 0;
   }
 
   :global(.cmd-btn) {
