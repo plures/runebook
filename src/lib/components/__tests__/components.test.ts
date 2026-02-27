@@ -223,6 +223,41 @@ describe('TerminalNode', () => {
     // Error handling should not throw
     expect(container).toBeTruthy();
   });
+
+  it('should have a visually-hidden error-live region with role=alert', () => {
+    const { container } = render(TerminalNode, { node: makeTerminalNode() });
+    const alertRegion = container.querySelector('[role="alert"]');
+    expect(alertRegion).toBeTruthy();
+    expect(alertRegion?.getAttribute('aria-live')).toBe('assertive');
+    expect(alertRegion?.getAttribute('aria-atomic')).toBe('true');
+  });
+
+  it('should announce error in the aria-live region after a failed command', async () => {
+    const { invoke } = await import('@tauri-apps/api/core') as any;
+    invoke.mockRejectedValueOnce(new Error('Command failed'));
+    const { container } = render(TerminalNode, { node: makeTerminalNode() });
+    const runButton = container.querySelector('.run-btn') as HTMLButtonElement;
+    await fireEvent.click(runButton);
+    const alertRegion = container.querySelector('[role="alert"]');
+    expect(alertRegion?.textContent).toContain('Command failed');
+  });
+
+  it('should show error line with ✗ prefix in the output area', async () => {
+    const { invoke } = await import('@tauri-apps/api/core') as any;
+    invoke.mockRejectedValueOnce(new Error('Command failed'));
+    const { container } = render(TerminalNode, { node: makeTerminalNode() });
+    const runButton = container.querySelector('.run-btn') as HTMLButtonElement;
+    await fireEvent.click(runButton);
+    const errorLine = container.querySelector('.error-line');
+    expect(errorLine).toBeTruthy();
+    expect(errorLine?.textContent).toMatch(/✗/);
+  });
+
+  it('should have aria-label on the clear button', () => {
+    const { container } = render(TerminalNode, { node: makeTerminalNode() });
+    const clearBtn = container.querySelector('.clear-btn');
+    expect(clearBtn?.getAttribute('aria-label')).toBe('Clear');
+  });
 });
 
 describe('TransformNode', () => {

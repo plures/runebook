@@ -106,16 +106,22 @@
       {/if}
       
       {#if error}
-        <Text class="error-line">{error}</Text>
+        <Text class="error-line">✗ {error}</Text>
       {/if}
     </Box>
   </Box>
   
   <Box class="node-footer" pad={2}>
+    <div
+      class="error-live"
+      role="alert"
+      aria-live="assertive"
+      aria-atomic="true"
+    >{error ?? ''}</div>
     <Button {tui} variant="primary" onclick={executeCommand} disabled={isRunning} class="run-btn">
       {isRunning ? '⏳ Running...' : '▶ Run'}
     </Button>
-    <Button {tui} onclick={clearOutput} class="clear-btn">Clear</Button>
+    <Button {tui} onclick={clearOutput} class="clear-btn" aria-label="Clear">Clear</Button>
   </Box>
   
 </Box>
@@ -181,6 +187,19 @@
     display: block;
     margin: 2px 0;
     color: var(--error);
+  }
+
+  .error-live {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    clip-path: inset(50%);
+    white-space: nowrap;
+    border: 0;
   }
 
   :global(.terminal-node .node-footer) {
