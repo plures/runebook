@@ -47,7 +47,7 @@
     } catch (e) {
       const errorMsg = String(e);
       error = errorMsg;
-      output = [...output, `\x1b[31m${errorMsg}\x1b[0m`];
+      output = [...output, `✗ ${errorMsg}`];
     } finally {
       isRunning = false;
       commandInput = '';
@@ -84,9 +84,16 @@
     <button class="clear-btn" onclick={clear} title="Clear">⌫</button>
   </div>
 
+  <div
+    class="error-live"
+    role="alert"
+    aria-live="assertive"
+    aria-atomic="true"
+  >{error ?? ''}</div>
+
   <div class="terminal-body" bind:this={outputEl}>
     {#each output as line}
-      <pre class="output-line">{line}</pre>
+      <pre class="output-line" class:error-line={line.startsWith('✗ ')}>{line}</pre>
     {/each}
 
     <div class="prompt-line">
@@ -230,5 +237,22 @@
   .terminal-body::-webkit-scrollbar-thumb {
     background: rgba(255,255,255,0.1);
     border-radius: 3px;
+  }
+
+  .error-live {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    clip-path: inset(50%);
+    white-space: nowrap;
+    border: 0;
+  }
+
+  .error-line {
+    color: #ff5f57;
   }
 </style>
