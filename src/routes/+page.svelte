@@ -139,7 +139,27 @@
 </script>
 
 <div class="app">
-  <CommandBar onAddNode={addNode} {nodes} {edges} onLoad={(n, e) => { nodes = n; edges = e; }} onClear={() => { nodes = []; edges = []; }} />
+  <CommandBar
+    onAddNode={addNode}
+    {nodes}
+    {edges}
+    onLoad={(n, e) => {
+      nodes = n;
+      edges = e;
+      // resync nodeIdCounter so that nextId() does not generate duplicate IDs
+      const maxNumericId = n.reduce((max, node) => {
+        const parts = String(node.id).split('-');
+        const numericPart = Number(parts[parts.length - 1]);
+        const value = Number.isFinite(numericPart) ? numericPart : 0;
+        return value > max ? value : max;
+      }, 0);
+      nodeIdCounter = maxNumericId + 1;
+    }}
+    onClear={() => {
+      nodes = [];
+      edges = [];
+    }}
+  />
   <div class="flow-wrapper">
     <SvelteFlow
       bind:nodes
