@@ -605,9 +605,6 @@ export class TUIApp extends EventEmitter {
     if ((process.stdout as any).isTTY) {
       // Avoid accumulating multiple resize listeners if start() is called repeatedly
       process.stdout.removeAllListeners('resize');
-      if (this._resizeHandler) {
-        process.stdout.removeListener('resize', this._resizeHandler);
-      }
       this._resizeHandler = () => this.render();
       process.stdout.on('resize', this._resizeHandler);
     }
