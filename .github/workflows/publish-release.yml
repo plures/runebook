@@ -4,13 +4,22 @@ on:
   push:
     tags: ['v*']
   workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Release tag to build (e.g. v1.2.3)'
+        required: true
+        type: string
 
 permissions:
   contents: write
   packages: write
 
+env:
+  RELEASE_TAG: ${{ inputs.tag || github.ref_name }}
+
 jobs:
   build-tauri:
+    if: startsWith(github.ref, 'refs/tags/v') || github.event_name == 'workflow_dispatch'
     strategy:
       fail-fast: false
       matrix:
@@ -55,14 +64,15 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tagName: ${{ github.event.release.tag_name || github.ref_name }}
-          releaseName: 'RuneBook ${{ github.event.release.tag_name || github.ref_name }}'
+          tagName: ${{ env.RELEASE_TAG }}
+          releaseName: 'RuneBook ${{ env.RELEASE_TAG }}'
           releaseBody: 'See the CHANGELOG.md for details.'
           releaseDraft: false
           prerelease: false
           args: ${{ matrix.args }}
 
   build-android:
+    if: startsWith(github.ref, 'refs/tags/v') || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -84,10 +94,10 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NDK_HOME: ${{ env.ANDROID_NDK_HOME }}
       - name: Upload unsigned APK to release
-        if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
+        if: startsWith(github.ref, 'refs/tags/v') || (github.event_name == 'workflow_dispatch' && inputs.tag != '')
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          TAG_NAME: ${{ github.ref_name }}
+          TAG_NAME: ${{ env.RELEASE_TAG }}
         run: |
           gh release upload "$TAG_NAME" \
             src-tauri/gen/android/app/build/outputs/apk/universal/release/app-universal-release-unsigned.apk \
@@ -95,7 +105,7 @@ jobs:
 
   publish-npm:
     runs-on: ubuntu-latest
-    if: github.event_name == 'push'
+    if: startsWith(github.ref, 'refs/tags/v')
     
     steps:
       - name: Checkout repository
@@ -153,7 +163,7 @@ jobs:
         id: version
         shell: bash
         run: |
-          VERSION="${{ github.ref_name }}"
+          VERSION="${{ env.RELEASE_TAG }}"
           VERSION="${VERSION#v}"
           echo "version=$VERSION" >> $GITHUB_OUTPUT
 
@@ -168,7 +178,7 @@ jobs:
 
   nixos-publish:
     runs-on: ubuntu-latest
-    if: github.event_name == 'push'
+    if: startsWith(github.ref, 'refs/tags/v')
     
     steps:
       - name: Checkout repository
@@ -178,7 +188,7 @@ jobs:
         id: version
         shell: bash
         run: |
-          VERSION="${{ github.ref_name }}"
+          VERSION="${{ env.RELEASE_TAG }}"
           VERSION="${VERSION#v}"
           echo "version=$VERSION" >> $GITHUB_OUTPUT
 
