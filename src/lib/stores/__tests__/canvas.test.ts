@@ -12,7 +12,6 @@ const makeTerminalNode = (id: string): CanvasNode => ({
   label: `Node ${id}`,
   inputs: [],
   outputs: [],
-  command: 'echo',
 });
 
 describe('canvasStore', () => {

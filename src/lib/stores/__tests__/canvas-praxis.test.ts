@@ -24,7 +24,6 @@ describe('canvas-praxis store', () => {
     label: `Node ${id}`,
     inputs: [],
     outputs: [],
-    command: 'echo',
   });
 
   describe('addNode', () => {

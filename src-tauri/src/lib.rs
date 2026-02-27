@@ -5,13 +5,197 @@ pub mod memory;
 pub mod orchestrator;
 
 use std::collections::HashMap;
-use std::process::Command;
+use std::io::{Read, Write};
+use std::sync::{Arc, Mutex};
+
+use portable_pty::{native_pty_system, CommandBuilder, PtySize};
+use tauri::{AppHandle, Emitter};
 
 // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
 #[tauri::command]
 fn greet(name: &str) -> String {
     format!("Hello, {}! You've been greeted from Rust!", name)
 }
+
+// ── PTY session management ────────────────────────────────────────────────────
+
+struct PtySession {
+    master: Box<dyn portable_pty::MasterPty + Send>,
+    writer: Box<dyn Write + Send>,
+    child: Box<dyn portable_pty::Child + Send + Sync>,
+}
+
+struct PtyManager {
+    sessions: HashMap<String, PtySession>,
+}
+
+impl PtyManager {
+    fn new() -> Self {
+        Self {
+            sessions: HashMap::new(),
+        }
+    }
+}
+
+type PtyState = Arc<Mutex<PtyManager>>;
+
+#[tauri::command]
+async fn spawn_terminal(
+    state: tauri::State<'_, PtyState>,
+    app: AppHandle,
+    shell: Option<String>,
+    cwd: Option<String>,
+    env: Option<HashMap<String, String>>,
+    cols: Option<u16>,
+    rows: Option<u16>,
+) -> Result<String, String> {
+    let terminal_id = uuid::Uuid::new_v4().to_string();
+
+    let shell_cmd = shell.unwrap_or_else(|| {
+        if cfg!(windows) {
+            "powershell.exe".to_string()
+        } else {
+            std::env::var("SHELL").unwrap_or_else(|_| "/bin/bash".to_string())
+        }
+    });
+
+    let pty_system = native_pty_system();
+    let pty_size = PtySize {
+        rows: rows.unwrap_or(24),
+        cols: cols.unwrap_or(80),
+        pixel_width: 0,
+        pixel_height: 0,
+    };
+
+    let pair = pty_system.openpty(pty_size).map_err(|e| e.to_string())?;
+
+    let mut cmd = CommandBuilder::new(&shell_cmd);
+    if let Some(ref cwd_path) = cwd {
+        if !cwd_path.is_empty() {
+            cmd.cwd(cwd_path);
+        }
+    }
+    if let Some(env_vars) = env {
+        for (k, v) in env_vars {
+            // Validate env var names: only allow alphanumeric and underscore.
+            if k.chars().all(|c| c.is_alphanumeric() || c == '_') {
+                cmd.env(k, v);
+            } else {
+                log::warn!("[spawn_terminal] Skipping invalid env var name: {:?}", k);
+            }
+        }
+    }
+
+    let child = pair.slave.spawn_command(cmd).map_err(|e| e.to_string())?;
+    // Close the slave side in the parent process
+    drop(pair.slave);
+
+    let mut master = pair.master;
+    let writer = master.take_writer().map_err(|e| e.to_string())?;
+    let mut reader = master.try_clone_reader().map_err(|e| e.to_string())?;
+
+    // Spawn a thread to read PTY output and emit Tauri events
+    let tid = terminal_id.clone();
+    let app_clone = app.clone();
+    let state_arc = Arc::clone(state.inner());
+    std::thread::spawn(move || {
+        let mut buf = [0u8; 4096];
+        loop {
+            match reader.read(&mut buf) {
+                Ok(0) | Err(_) => break,
+                Ok(n) => {
+                    let data = String::from_utf8_lossy(&buf[..n]).to_string();
+                    let _ = app_clone.emit(&format!("terminal-output-{}", tid), data);
+                }
+            }
+        }
+        // PTY closed — child process has exited. Retrieve the real exit code.
+        // child.wait() should return immediately since the PTY closed.
+        // portable_pty's ExitStatus only exposes success() (no numeric code),
+        // so we map success → 0 and failure → 1; -1 if the session is gone.
+        let exit_code: i32 = state_arc
+            .lock()
+            .ok()
+            .and_then(|mut mgr| mgr.sessions.get_mut(&tid).map(|s| s.child.wait()))
+            .and_then(|r| r.ok())
+            .map(|status| if status.success() { 0 } else { 1 })
+            .unwrap_or(-1);
+        let _ = app_clone.emit(&format!("terminal-exit-{}", tid), exit_code);
+    });
+
+    let mut mgr = state.lock().map_err(|e| e.to_string())?;
+    mgr.sessions.insert(
+        terminal_id.clone(),
+        PtySession {
+            master,
+            writer,
+            child,
+        },
+    );
+
+    Ok(terminal_id)
+}
+
+#[tauri::command]
+async fn write_terminal(
+    state: tauri::State<'_, PtyState>,
+    terminal_id: String,
+    data: String,
+) -> Result<(), String> {
+    let mut mgr = state.lock().map_err(|e| e.to_string())?;
+    let session = mgr
+        .sessions
+        .get_mut(&terminal_id)
+        .ok_or_else(|| format!("Terminal {} not found", terminal_id))?;
+    session
+        .writer
+        .write_all(data.as_bytes())
+        .map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+async fn resize_terminal(
+    state: tauri::State<'_, PtyState>,
+    terminal_id: String,
+    cols: u16,
+    rows: u16,
+) -> Result<(), String> {
+    // resize() sends a non-blocking TIOCSWINSZ ioctl (SIGWINCH signal) —
+    // it does not perform blocking I/O, so holding the lock during the call
+    // is safe and avoids a window where the session appears "not found".
+    let mgr = state.lock().map_err(|e| e.to_string())?;
+    let session = mgr
+        .sessions
+        .get(&terminal_id)
+        .ok_or_else(|| format!("Terminal {} not found", terminal_id))?;
+    session
+        .master
+        .resize(PtySize {
+            rows,
+            cols,
+            pixel_width: 0,
+            pixel_height: 0,
+        })
+        .map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+async fn kill_terminal(
+    state: tauri::State<'_, PtyState>,
+    terminal_id: String,
+) -> Result<(), String> {
+    let mut mgr = state.lock().map_err(|e| e.to_string())?;
+    if let Some(mut session) = mgr.sessions.remove(&terminal_id) {
+        // First, attempt to terminate the child process.
+        session.child.kill().map_err(|e| e.to_string())?;
+        // Then, wait for the child to exit to ensure it is properly reaped
+        // and does not remain as a zombie process on supported platforms.
+        let _ = session.child.wait();
+    }
+    Ok(())
+}
+
+// ── Memory inspection ─────────────────────────────────────────────────────────
 
 #[tauri::command]
 async fn memory_inspect(
@@ -86,75 +270,21 @@ async fn memory_inspect(
     }
 }
 
-#[tauri::command]
-async fn execute_terminal_command(
-    command: String,
-    args: Vec<String>,
-    env: HashMap<String, String>,
-    cwd: String,
-) -> Result<String, String> {
-    // Basic input validation to prevent common issues
-    if command.trim().is_empty() {
-        return Err("Command cannot be empty".to_string());
-    }
-
-    // Prevent command chaining attacks via common shell operators
-    let dangerous_chars = ['|', ';', '&', '>', '<', '`', '$', '(', ')'];
-    if command.chars().any(|c| dangerous_chars.contains(&c)) {
-        return Err("Command contains potentially dangerous characters. RuneBook executes commands directly without shell interpretation for security.".to_string());
-    }
-
-    // Validate environment variable keys (no special chars)
-    for key in env.keys() {
-        if !key.chars().all(|c| c.is_alphanumeric() || c == '_') {
-            return Err(format!("Invalid environment variable name: {}", key));
-        }
-    }
-
-    // Note: This executes the command directly without a shell, which prevents
-    // shell injection attacks. Command::new does not interpret shell syntax.
-    let mut cmd = Command::new(&command);
-
-    // Add arguments - each arg is passed as-is, not interpreted by a shell
-    cmd.args(&args);
-
-    // Add environment variables
-    for (key, value) in env {
-        cmd.env(key, value);
-    }
-
-    // Set working directory if provided
-    if !cwd.is_empty() {
-        cmd.current_dir(&cwd);
-    }
-
-    // Execute command
-    match cmd.output() {
-        Ok(output) => {
-            let stdout = String::from_utf8_lossy(&output.stdout).to_string();
-            let stderr = String::from_utf8_lossy(&output.stderr).to_string();
-
-            if output.status.success() {
-                Ok(stdout)
-            } else {
-                Err(format!("Command failed: {}\n{}", stderr, stdout))
-            }
-        }
-        Err(e) => Err(format!("Failed to execute command: {}", e)),
-    }
-}
-
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     // Initialize logger (ignore error if already initialized)
     let _ = env_logger::try_init();
 
     tauri::Builder::default()
+        .manage(Arc::new(Mutex::new(PtyManager::new())) as PtyState)
         .plugin(tauri_plugin_opener::init())
         .invoke_handler(tauri::generate_handler![
             greet,
-            execute_terminal_command,
-            memory_inspect
+            memory_inspect,
+            spawn_terminal,
+            write_terminal,
+            resize_terminal,
+            kill_terminal
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
