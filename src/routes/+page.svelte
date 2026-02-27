@@ -73,16 +73,36 @@
   }
 
   function onConnect(connection: Connection) {
+    const source = connection.source!;
+    const target = connection.target!;
+    const sourceHandle = connection.sourceHandle ?? 'default';
+    const targetHandle = connection.targetHandle ?? 'default';
+
+    const edgeId = `e-${source}-${sourceHandle}-${target}-${targetHandle}`;
+
     const edge: Edge = {
-      id: `e-${connection.source}-${connection.target}`,
-      source: connection.source!,
-      target: connection.target!,
+      id: edgeId,
+      source,
+      target,
       sourceHandle: connection.sourceHandle,
       targetHandle: connection.targetHandle,
       animated: true,
       style: 'stroke: var(--brand, #00d4ff); stroke-width: 2px;'
     };
-    edges = [...edges, edge];
+
+    edges = [
+      // remove any existing edge with the same connection (source/target/handles)
+      ...edges.filter(
+        (e) =>
+          !(
+            e.source === source &&
+            e.target === target &&
+            (e.sourceHandle ?? 'default') === sourceHandle &&
+            (e.targetHandle ?? 'default') === targetHandle
+          )
+      ),
+      edge
+    ];
   }
 
   function onDelete({ nodes: deletedNodes, edges: deletedEdges }: { nodes: Node[]; edges: Edge[] }) {
@@ -92,47 +112,55 @@
     edges = edges.filter(e => !edgeIds.has(e.id) && !nodeIds.has(e.source) && !nodeIds.has(e.target));
   }
 
-  // Reactive data propagation: push outputs from source nodes to connected target nodes.
+  // Reactive data propagation: push source outputs to connected target inputs.
+  // Handles: input → transform.input, input → display.content,
+  //          transform.output → transform.input (chained), transform.output → display.content
   $effect(() => {
-    // Read value/output for each node type so the effect re-runs when they change.
-    // `void expr` is used to establish reactive dependencies without consuming the value.
-    for (const node of nodes) {
-      if (node.type === 'input') void (node.data as any).value;
-      if (node.type === 'transform') void (node.data as any).output;
-    }
+    // Read all source values so the effect re-runs on any relevant change.
+    const inputValues = new Map(
+      nodes.filter(n => n.type === 'input').map(n => [n.id, (n.data as any).value])
+    );
+    const transformOutputs = new Map(
+      nodes.filter(n => n.type === 'transform').map(n => [n.id, (n.data as any).output])
+    );
     const currentEdges = edges;
 
-    // Perform propagation outside reactive tracking to avoid loops.
     untrack(() => {
-      for (const edge of currentEdges) {
-        const src = nodes.find(n => n.id === edge.source);
-        const tgt = nodes.find(n => n.id === edge.target);
-        if (!src || !tgt) continue;
+      let changed = false;
+      const next = nodes.map(node => {
+        const edge = currentEdges.find(e => e.target === node.id);
+        if (!edge) return node;
 
-        let output: unknown;
-        if (src.type === 'input') {
-          output = (src.data as any).value;
-        } else if (src.type === 'transform') {
-          output = (src.data as any).output;
-        } else {
-          continue;
+        if (node.type === 'transform') {
+          const newInput = inputValues.get(edge.source) ?? transformOutputs.get(edge.source);
+          if (newInput === undefined || (node.data as any).input === newInput) return node;
+          changed = true;
+          return { ...node, data: { ...node.data, input: newInput } };
         }
 
-        if (tgt.type === 'transform') {
-          (tgt.data as any).input = output;
-        } else if (tgt.type === 'display') {
-          (tgt.data as any).content = output;
+        if (node.type === 'display') {
+          const rawContent = inputValues.has(edge.source)
+            ? inputValues.get(edge.source)
+            : transformOutputs.get(edge.source);
+          if (rawContent === undefined) return node;
+          const newContent = typeof rawContent === 'object' ? rawContent : String(rawContent ?? '');
+          if ((node.data as any).content === newContent) return node;
+          changed = true;
+          return { ...node, data: { ...node.data, content: newContent } };
         }
-      }
+
+        return node;
+      });
+      if (changed) nodes = next;
     });
   });
 </script>
 
 <div class="app">
-  <CommandBar onAddNode={addNode} />
+  <CommandBar onAddNode={addNode} {nodes} {edges} onLoad={(n, e) => { nodes = n; edges = e; }} onClear={() => { nodes = []; edges = []; }} />
   <div class="flow-wrapper">
     <SvelteFlow
-      {nodes}
+      bind:nodes
       {edges}
       {nodeTypes}
       onconnect={onConnect}

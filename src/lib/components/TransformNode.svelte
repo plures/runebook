@@ -1,7 +1,8 @@
 <script lang="ts">
-  import { Handle, Position } from '@xyflow/svelte';
+  import { Handle, Position, useSvelteFlow } from '@xyflow/svelte';
 
   interface Props {
+    id: string;
     data: {
       label: string;
       transformType: string;
@@ -12,11 +13,13 @@
     };
   }
 
-  let { data }: Props = $props();
+  let { id, data }: Props = $props();
   let code = $state(data.code || 'item');
 
+  const { updateNodeData } = useSvelteFlow();
+
   function handleCodeChange() {
-    data.code = code;
+    updateNodeData(id, { code });
   }
 
   // Re-run the transform pipeline whenever input data, transform type, or user code changes.
@@ -28,36 +31,35 @@
     const currentCode = code;
 
     if (input === undefined || input === null) {
-      data.output = undefined;
-      data.error = '';
+      updateNodeData(id, { output: undefined, error: '' });
       return;
     }
 
     try {
       const arr = Array.isArray(input) ? input : [input];
+      let result: unknown;
       if (type === 'map') {
         // eslint-disable-next-line no-new-func
-        const fn = new Function('item', 'index', `return (${currentCode})`);
-        data.output = arr.map((item: unknown, index: number) => fn(item, index));
+        const fn = new Function('item', 'index', `"use strict"; return (${currentCode})`);
+        result = arr.map((item: unknown, index: number) => fn(item, index));
       } else if (type === 'filter') {
         // eslint-disable-next-line no-new-func
-        const fn = new Function('item', 'index', `return (${currentCode})`);
-        data.output = arr.filter((item: unknown, index: number) => Boolean(fn(item, index)));
+        const fn = new Function('item', 'index', `"use strict"; return (${currentCode})`);
+        result = arr.filter((item: unknown, index: number) => Boolean(fn(item, index)));
       } else if (type === 'reduce') {
         // eslint-disable-next-line no-new-func
-        const fn = new Function('acc', 'item', 'index', `return (${currentCode})`);
-        data.output = arr.reduce(
+        const fn = new Function('acc', 'item', 'index', `"use strict"; return (${currentCode})`);
+        result = arr.reduce(
           (acc: unknown, item: unknown, index: number) => fn(acc, item, index),
           null
         );
       } else {
         // 'sudolang' and any future types pass through unchanged until implemented.
-        data.output = input;
+        result = input;
       }
-      data.error = '';
+      updateNodeData(id, { output: result, error: '' });
     } catch (e: unknown) {
-      data.output = undefined;
-      data.error = e instanceof Error ? e.message : 'Transform error';
+      updateNodeData(id, { output: undefined, error: e instanceof Error ? e.message : 'Transform error' });
     }
   });
 </script>
