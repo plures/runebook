@@ -13,6 +13,7 @@ export interface Size {
 
 
 export interface Connection {
+  id?: string; // Handle-based ID: `e-${from}-${fromPort}-${to}-${toPort}`
   from: string; // Source node ID
   to: string; // Target node ID
   fromPort: string; // Output port name

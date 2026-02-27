@@ -23,6 +23,17 @@ export const LoadCanvasEvent = defineEvent<'LOAD_CANVAS', { canvas: Canvas }>('L
 export const ClearCanvasEvent = defineEvent<'CLEAR_CANVAS', {}>('CLEAR_CANVAS');
 export const UpdateNodeDataEvent = defineEvent<'UPDATE_NODE_DATA', { nodeId: string; portId: string; data: any }>('UPDATE_NODE_DATA');
 
+/**
+ * Generate a deterministic, handle-based edge ID that prevents ID collisions
+ * when the same two nodes are connected on different ports.
+ *
+ * Format: `e-${from}-${fromPort}-${to}-${toPort}`
+ * Example: `e-node1-stdout-node2-stdin`
+ */
+export function makeConnectionId(from: string, fromPort: string, to: string, toPort: string): string {
+  return `e-${from}-${fromPort}-${to}-${toPort}`;
+}
+
 // Define rules for canvas operations
 const addNodeRule = defineRule<CanvasContext>({
   id: 'canvas.addNode',
@@ -102,8 +113,24 @@ const addConnectionRule = defineRule<CanvasContext>({
   impl: (state, events) => {
     const evt = events.find(AddConnectionEvent.is);
     if (!evt) return [];
-    
-    state.context.canvas.connections.push(evt.payload.connection);
+
+    const conn = evt.payload.connection;
+    // Auto-generate a handle-based ID when not provided
+    const id = conn.id ?? makeConnectionId(conn.from, conn.fromPort, conn.to, conn.toPort);
+    const connection = { ...conn, id };
+
+    // Deduplicate: skip if a connection with the same endpoints already exists
+    const duplicate = state.context.canvas.connections.some(
+      c =>
+        c.from === connection.from &&
+        c.to === connection.to &&
+        c.fromPort === connection.fromPort &&
+        c.toPort === connection.toPort
+    );
+    if (!duplicate) {
+      state.context.canvas.connections.push(connection);
+    }
+
     return [];
   },
 });

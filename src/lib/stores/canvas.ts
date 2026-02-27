@@ -13,9 +13,12 @@ import {
   LoadCanvasEvent,
   ClearCanvasEvent,
   UpdateNodeDataEvent,
+  makeConnectionId,
 } from './canvas-praxis';
 import { createPraxisStore } from '@plures/praxis/svelte';
 import type { Canvas, CanvasNode, Connection } from '../types/canvas';
+
+export { makeConnectionId };
 
 // Create a Svelte store from the praxis engine.
 // All mutations go through praxisStore.dispatch() so that subscribers are

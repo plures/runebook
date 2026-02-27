@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { canvasStore } from '../stores/canvas';
+  import { canvasStore, makeConnectionId } from '../stores/canvas';
   import TerminalNodeComponent from './TerminalNode.svelte';
   import InputNodeComponent from './InputNode.svelte';
   import DisplayNodeComponent from './DisplayNode.svelte';
@@ -99,15 +99,20 @@
     if (!isConnecting || !connectFrom || portType !== 'input') return;
     if (connectFrom.nodeId === nodeId) return; // No self-connections
 
-    // Check for duplicate
+    const fromNodeId = connectFrom.nodeId;
+    const fromPortId = connectFrom.portId;
+
+    // Check for duplicate (defense-in-depth; store also deduplicates)
     const exists = canvasData.connections.some(
-      c => c.from === connectFrom!.nodeId && c.to === nodeId && c.fromPort === connectFrom!.portId && c.toPort === portId
+      c => c.from === fromNodeId && c.to === nodeId && c.fromPort === fromPortId && c.toPort === portId
     );
     if (!exists) {
+      const id = makeConnectionId(fromNodeId, fromPortId, nodeId, portId);
       canvasStore.addConnection({
-        from: connectFrom.nodeId,
+        id,
+        from: fromNodeId,
         to: nodeId,
-        fromPort: connectFrom.portId,
+        fromPort: fromPortId,
         toPort: portId
       });
     }

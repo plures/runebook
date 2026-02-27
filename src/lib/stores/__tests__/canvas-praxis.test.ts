@@ -96,6 +96,40 @@ describe('canvas-praxis store', () => {
       canvasPraxisStore.addConnection(conn);
       expect(canvasPraxisStore.canvas.connections).toHaveLength(1);
     });
+
+    it('should auto-generate a handle-based ID when not provided', () => {
+      const conn: Connection = { from: 'n1', to: 'n2', fromPort: 'out', toPort: 'in' };
+      canvasPraxisStore.addConnection(conn);
+      expect(canvasPraxisStore.canvas.connections[0].id).toBe('e-n1-out-n2-in');
+    });
+
+    it('should preserve an explicitly provided ID', () => {
+      const conn: Connection = { id: 'custom-id', from: 'n1', to: 'n2', fromPort: 'out', toPort: 'in' };
+      canvasPraxisStore.addConnection(conn);
+      expect(canvasPraxisStore.canvas.connections[0].id).toBe('custom-id');
+    });
+
+    it('should deduplicate identical connections (same from/to/ports)', () => {
+      const conn: Connection = { from: 'n1', to: 'n2', fromPort: 'out', toPort: 'in' };
+      canvasPraxisStore.addConnection(conn);
+      canvasPraxisStore.addConnection(conn);
+      expect(canvasPraxisStore.canvas.connections).toHaveLength(1);
+    });
+
+    it('should allow distinct connections between the same pair of nodes on different ports', () => {
+      canvasPraxisStore.addConnection({ from: 'n1', to: 'n2', fromPort: 'out1', toPort: 'in1' });
+      canvasPraxisStore.addConnection({ from: 'n1', to: 'n2', fromPort: 'out2', toPort: 'in2' });
+      expect(canvasPraxisStore.canvas.connections).toHaveLength(2);
+    });
+
+    it('should generate distinct IDs for connections on different ports', () => {
+      canvasPraxisStore.addConnection({ from: 'n1', to: 'n2', fromPort: 'out1', toPort: 'in1' });
+      canvasPraxisStore.addConnection({ from: 'n1', to: 'n2', fromPort: 'out2', toPort: 'in2' });
+      const ids = canvasPraxisStore.canvas.connections.map(c => c.id);
+      expect(ids[0]).toBe('e-n1-out1-n2-in1');
+      expect(ids[1]).toBe('e-n1-out2-n2-in2');
+      expect(new Set(ids).size).toBe(2);
+    });
   });
 
   describe('removeConnection', () => {
@@ -171,5 +205,22 @@ describe('canvas-praxis store', () => {
       expect(ctx.canvas).toBeDefined();
       expect(ctx.nodeData).toBeDefined();
     });
+  });
+});
+
+describe('makeConnectionId', () => {
+  it('should generate a handle-based ID', async () => {
+    const { makeConnectionId } = await import('../canvas-praxis');
+    expect(makeConnectionId('n1', 'out', 'n2', 'in')).toBe('e-n1-out-n2-in');
+  });
+
+  it('should produce distinct IDs for different port combinations', async () => {
+    const { makeConnectionId } = await import('../canvas-praxis');
+    const id1 = makeConnectionId('n1', 'out', 'n2', 'in');
+    const id2 = makeConnectionId('n1', 'out2', 'n2', 'in');
+    const id3 = makeConnectionId('n1', 'out', 'n2', 'in2');
+    expect(id1).not.toBe(id2);
+    expect(id1).not.toBe(id3);
+    expect(id2).not.toBe(id3);
   });
 });

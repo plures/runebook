@@ -91,6 +91,16 @@ describe('canvasStore', () => {
     expect(values[0].connections).toHaveLength(0);
   });
 
+  it('should deduplicate connections with the same endpoints', () => {
+    const conn: Connection = { from: 'n1', to: 'n2', fromPort: 'out', toPort: 'in' };
+    canvasStore.addConnection(conn);
+    canvasStore.addConnection(conn);
+    const values: any[] = [];
+    const unsub = canvasStore.subscribe(c => values.push(c));
+    unsub();
+    expect(values[0].connections).toHaveLength(1);
+  });
+
   it('should clear the canvas', () => {
     canvasStore.addNode(makeTerminalNode('n1'));
     canvasStore.clear();
