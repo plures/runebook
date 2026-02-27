@@ -120,7 +120,7 @@
           version = "0.2.0";
           src = ./.;
           
-          npmDepsHash = "sha256-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA="; # TODO: recompute after xterm.js packages added
+          npmDepsHash = "sha256-y9Z0rQ4ZQpimeISFRCGDpa2BkLomqKgJo0vvVuv5vW8=";
           
           nativeBuildInputs = [
             nodejs
