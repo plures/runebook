@@ -163,7 +163,14 @@
       spellcheck={false}
       aria-label="Terminal command input"
     />
-    <Button {tui} variant="primary" onclick={executeCommand} disabled={isRunning} class="run-btn-sm">
+    <Button
+      {tui}
+      variant="primary"
+      onclick={executeCommand}
+      disabled={isRunning}
+      class="run-btn-sm"
+      aria-label={isRunning ? 'Command running' : 'Run command'}
+    >
       {isRunning ? '⏳' : '▶'}
     </Button>
   </Box>
