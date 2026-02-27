@@ -632,7 +632,7 @@
   {/if}
 
   <!-- Canvas controls (zoom) -->
-  <div class="canvas-controls" aria-label="Canvas zoom controls">
+  <div class="canvas-controls" role="group" aria-label="Canvas zoom controls">
     <button
       class="canvas-ctrl-btn"
       onclick={() => { zoom = Math.min(MAX_ZOOM, zoom * 1.2); }}
