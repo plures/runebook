@@ -6,7 +6,7 @@
   import HelpPanel from '$lib/components/HelpPanel.svelte';
   import ToastContainer from '$lib/components/ToastContainer.svelte';
   import { settingsStore } from '$lib/stores/settings';
-  import { toolbarStore } from '$lib/stores/toolbar.svelte';
+  import { toolbarStore } from '$lib/stores/toolbar';
   import { onMount } from 'svelte';
 
   const tui = false;
