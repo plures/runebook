@@ -23,3 +23,19 @@ jobs:
             (npm test 2>/dev/null || true) &&
             (npm run build 2>/dev/null || true)
           '
+
+  rust:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+      - name: cargo fmt
+        run: cargo fmt --manifest-path src-tauri/Cargo.toml --all -- --check
+      - name: cargo clippy
+        run: cargo clippy --manifest-path src-tauri/Cargo.toml --all-targets -- -W clippy::all -D warnings
+      - name: cargo test
+        run: cargo test --manifest-path src-tauri/Cargo.toml
