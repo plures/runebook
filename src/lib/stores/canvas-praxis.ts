@@ -27,11 +27,15 @@ export const UpdateNodeDataEvent = defineEvent<'UPDATE_NODE_DATA', { nodeId: str
  * Generate a deterministic, handle-based edge ID that prevents ID collisions
  * when the same two nodes are connected on different ports.
  *
- * Format: `e-${from}-${fromPort}-${to}-${toPort}`
- * Example: `e-node1-stdout-node2-stdin`
+ * Format: `e:${encodeURIComponent(from)}:${encodeURIComponent(fromPort)}:${encodeURIComponent(to)}:${encodeURIComponent(toPort)}`
+ * Example: `e:node1-stdout:stdout:node2-stdin:stdin` (components URL-encoded)
  */
 export function makeConnectionId(from: string, fromPort: string, to: string, toPort: string): string {
-  return `e-${from}-${fromPort}-${to}-${toPort}`;
+  const fromEncoded = encodeURIComponent(from);
+  const fromPortEncoded = encodeURIComponent(fromPort);
+  const toEncoded = encodeURIComponent(to);
+  const toPortEncoded = encodeURIComponent(toPort);
+  return `e:${fromEncoded}:${fromPortEncoded}:${toEncoded}:${toPortEncoded}`;
 }
 
 // Define rules for canvas operations
