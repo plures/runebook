@@ -252,14 +252,19 @@
 
   function duplicateNode(nodeId: string) {
     const node = canvasData.nodes.find(n => n.id === nodeId);
+    const node = canvasData.nodes.find((n) => n.id === nodeId);
     if (!node) return;
     const newId = `${node.type}-${Date.now()}`;
-    const cloned = structuredClone(node);
-    canvasStore.addNode({
-      ...cloned,
-      id: newId,
-      position: { x: node.position.x + 30, y: node.position.y + 30 },
-    });
+
+    // Deep clone the node to avoid sharing nested references (e.g. env, inputs, outputs)
+    const clonedNode = structuredClone(node) as CanvasNode;
+    clonedNode.id = newId;
+    clonedNode.position = {
+      x: node.position.x + 30,
+      y: node.position.y + 30,
+    };
+
+    canvasStore.addNode(clonedNode);
   }
 
   function disconnectAll(nodeId: string) {
