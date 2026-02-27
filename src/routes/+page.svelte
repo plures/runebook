@@ -2,10 +2,10 @@
   import Canvas from '$lib/components/Canvas.svelte';
   import Toolbar from '$lib/components/Toolbar.svelte';
   import ToastContainer from '$lib/components/ToastContainer.svelte';
-  import { toolbarCollapsed } from '$lib/stores/toolbar';
+  import { toolbarStore } from '$lib/stores/toolbar.svelte';
 
   const tui = false;
-  const marginLeft = $derived($toolbarCollapsed ? '52px' : '200px');
+  const marginLeft = $derived(toolbarStore.collapsed ? '52px' : '200px');
 </script>
 
 <div class="app">

@@ -103,9 +103,9 @@
 
   // --- Wheel zoom (registered as non-passive via $effect so preventDefault works) ---
   function handleWheel(event: WheelEvent) {
-    // Don't intercept wheel events over scrollable node internals
+    // Don't intercept wheel events over any interactive/scrollable node internals
     const target = event.target as HTMLElement;
-    if (target.closest('textarea') || target.closest('select')) return;
+    if (target.closest(INTERACTIVE_SELECTOR)) return;
     event.preventDefault();
     if (!canvasEl) return;
     const rect = canvasEl.getBoundingClientRect();

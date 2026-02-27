@@ -5,8 +5,8 @@
   import type { TerminalNode, InputNode, DisplayNode, TransformNode } from '../types/canvas';
   import StatusBar from '../design-dojo/StatusBar.svelte';
   import Button from '../design-dojo/Button.svelte';
-  import { toast } from '../stores/toast';
-  import { toolbarCollapsed } from '../stores/toolbar';
+  import { toast } from '../stores/toast.svelte';
+  import { toolbarStore } from '../stores/toolbar.svelte';
 
   interface Props {
     tui?: boolean;
@@ -19,7 +19,7 @@
   let showStorageSettings = $state(false);
   let currentStorageType = $state<'localStorage' | 'pluresdb'>('localStorage');
 
-  const collapsed = $derived($toolbarCollapsed);
+  const collapsed = $derived(toolbarStore.collapsed);
 
   // Load list of saved canvases on mount
   $effect(() => {
@@ -173,7 +173,7 @@
   }
 
   function toggleCollapse() {
-    toolbarCollapsed.update(v => !v);
+    toolbarStore.toggle();
   }
 </script>
 

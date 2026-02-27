@@ -1,9 +1,9 @@
 <script lang="ts">
-  import { toast } from '../stores/toast';
+  import { toast } from '../stores/toast.svelte';
 </script>
 
 <div class="toast-container">
-  {#each $toast as t (t.id)}
+  {#each toast.toasts as t (t.id)}
     <div class="toast toast--{t.type}" role={t.type === 'error' ? 'alert' : 'status'}>
       <span class="toast-icon" aria-hidden="true">
         {#if t.type === 'success'}✓{:else if t.type === 'error'}✕{:else if t.type === 'warning'}⚠{:else}ℹ{/if}
