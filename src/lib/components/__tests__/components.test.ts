@@ -3,8 +3,9 @@
 // Mocks Tauri invoke for component tests
 
 import { describe, it, expect, vi, afterEach } from 'vitest';
-import { render, cleanup, fireEvent } from '@testing-library/svelte';
-import { canvasStore } from '../../stores/canvas';
+import { render, cleanup, fireEvent, waitFor } from '@testing-library/svelte';
+import { canvasStore, updateNodeData } from '../../stores/canvas';
+import { canvasEngine } from '../../stores/canvas-praxis';
 
 // Mock Tauri invoke
 vi.mock('@tauri-apps/api/core', () => ({
@@ -245,6 +246,79 @@ describe('TransformNode', () => {
       node: makeTransformNode({ transformType: 'filter' }),
     });
     expect(container).toBeTruthy();
+  });
+});
+
+describe('TransformNode pipeline', () => {
+  afterEach(() => {
+    cleanup();
+    canvasStore.clear();
+  });
+
+  it('should publish map output to nodeDataStore when input is connected', async () => {
+    const transform = makeTransformNode({ id: 'tp-map', transformType: 'map', code: 'item * 2' });
+    canvasStore.addNode(makeInputNode({ id: 'tp-in-map' }));
+    canvasStore.addNode(transform);
+    canvasStore.addConnection({ from: 'tp-in-map', to: 'tp-map', fromPort: 'value', toPort: 'input' });
+    updateNodeData('tp-in-map', 'value', [1, 2, 3]);
+
+    render(TransformNode, { node: transform });
+    // Allow effects and microtasks to flush
+    await waitFor(() => {
+      expect(canvasEngine.getContext().nodeData['tp-map:output']).toEqual([2, 4, 6]);
+    });
+  });
+
+  it('should publish filter output to nodeDataStore when input is connected', async () => {
+    const transform = makeTransformNode({ id: 'tp-filter', transformType: 'filter', code: 'item > 2' });
+    canvasStore.addNode(makeInputNode({ id: 'tp-in-filter' }));
+    canvasStore.addNode(transform);
+    canvasStore.addConnection({ from: 'tp-in-filter', to: 'tp-filter', fromPort: 'value', toPort: 'input' });
+    updateNodeData('tp-in-filter', 'value', [1, 2, 3, 4]);
+
+    render(TransformNode, { node: transform });
+    await waitFor(() => {
+      expect(canvasEngine.getContext().nodeData['tp-filter:output']).toEqual([3, 4]);
+    });
+  });
+
+  it('should publish reduce output to nodeDataStore when input is connected', async () => {
+    const transform = makeTransformNode({ id: 'tp-reduce', transformType: 'reduce', code: 'acc + item' });
+    canvasStore.addNode(makeInputNode({ id: 'tp-in-reduce' }));
+    canvasStore.addNode(transform);
+    canvasStore.addConnection({ from: 'tp-in-reduce', to: 'tp-reduce', fromPort: 'value', toPort: 'input' });
+    updateNodeData('tp-in-reduce', 'value', [1, 2, 3, 4]);
+
+    render(TransformNode, { node: transform });
+    await waitFor(() => {
+      expect(canvasEngine.getContext().nodeData['tp-reduce:output']).toBe(10);
+    });
+  });
+
+  it('should show output preview section after processing', async () => {
+    const transform = makeTransformNode({ id: 'tp-preview', transformType: 'map', code: 'item * 3' });
+    canvasStore.addNode(makeInputNode({ id: 'tp-in-preview' }));
+    canvasStore.addNode(transform);
+    canvasStore.addConnection({ from: 'tp-in-preview', to: 'tp-preview', fromPort: 'value', toPort: 'input' });
+    updateNodeData('tp-in-preview', 'value', [2, 4]);
+
+    const { container } = render(TransformNode, { node: transform });
+    await waitFor(() => {
+      expect(container.querySelector('.output-preview')).toBeTruthy();
+    });
+  });
+
+  it('should show error when map is applied to non-array input', async () => {
+    const transform = makeTransformNode({ id: 'tp-err', transformType: 'map', code: 'item * 2' });
+    canvasStore.addNode(makeInputNode({ id: 'tp-in-err' }));
+    canvasStore.addNode(transform);
+    canvasStore.addConnection({ from: 'tp-in-err', to: 'tp-err', fromPort: 'value', toPort: 'input' });
+    updateNodeData('tp-in-err', 'value', 'not-an-array');
+
+    const { container } = render(TransformNode, { node: transform });
+    await waitFor(() => {
+      expect(container.querySelector('.error-message')).toBeTruthy();
+    });
   });
 });
 

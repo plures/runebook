@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { untrack } from 'svelte';
   import type { TransformNode } from '../types/canvas';
   import { canvasStore, nodeDataStore, getNodeInputData, updateNodeData } from '../stores/canvas';
   import Box from '../design-dojo/Box.svelte';
@@ -16,18 +17,40 @@
   let error = $state<string>('');
   let isProcessing = $state(false);
 
+  // Track the last processed (input, code, transformType) combination to prevent
+  // infinite loops: updateNodeData dispatches to Praxis which deep-clones the
+  // context on every dispatch, re-triggering this effect on every write.
+  let _prevInputSig = '';
+  let _prevCode = '';
+  let _prevType = '';
+
   // Subscribe to node data changes and apply transformation
   $effect(() => {
     const canvas = $canvasStore;
     const nodeData = $nodeDataStore;
-    
-    // Get input data from connected nodes
+
+    // Read input outside untrack to establish reactivity on store changes.
+    let inputData: any = undefined;
     if (node.inputs && node.inputs.length > 0) {
-      const inputData = getNodeInputData(node.id, node.inputs[0].id, canvas.connections, nodeData);
+      inputData = getNodeInputData(node.id, node.inputs[0].id, canvas.connections, nodeData);
+    }
+
+    // Use untrack so that reads of node.code / node.transformType inside don't
+    // add the prop as a tracked dependency (Praxis deep-clones on every dispatch,
+    // which would otherwise re-trigger this effect on every store write).
+    // The signature comparison breaks the write-read loop: after updateNodeData
+    // writes the transform output, the effect re-runs but sees the same
+    // input+config → exits early without calling updateNodeData again.
+    untrack(() => {
+      const inputSig = JSON.stringify(inputData);
+      if (inputSig === _prevInputSig && node.code === _prevCode && node.transformType === _prevType) return;
+      _prevInputSig = inputSig;
+      _prevCode = node.code;
+      _prevType = node.transformType;
       if (inputData !== undefined) {
         applyTransform(inputData);
       }
-    }
+    });
   });
 
   async function applyTransform(inputData: any) {
