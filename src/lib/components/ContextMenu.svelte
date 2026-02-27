@@ -72,7 +72,9 @@
 >
   {#each items as item}
     {#if item.separator}
-      <hr class="ctx-separator" />
+      <li class="ctx-separator" role="separator" aria-hidden="true">
+        <hr class="ctx-separator" />
+      </li>
     {:else}
       <li
         class="ctx-item"
