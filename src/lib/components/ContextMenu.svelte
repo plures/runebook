@@ -25,12 +25,16 @@
   let left = $derived.by(() => {
     if (!menuEl || !browser) return x;
     const w = menuEl.offsetWidth || 180;
-    return x + w > window.innerWidth ? x - w : x;
+    const unclamped = x + w > window.innerWidth ? x - w : x;
+    const maxLeft = Math.max(0, window.innerWidth - w);
+    return Math.min(Math.max(0, unclamped), maxLeft);
   });
   let top = $derived.by(() => {
     if (!menuEl || !browser) return y;
     const h = menuEl.offsetHeight || 40 * items.length;
-    return y + h > window.innerHeight ? y - h : y;
+    const unclamped = y + h > window.innerHeight ? y - h : y;
+    const maxTop = Math.max(0, window.innerHeight - h);
+    return Math.min(Math.max(0, unclamped), maxTop);
   });
 
   let browser = $state(false);
