@@ -112,7 +112,7 @@ describe('TUIApp', () => {
   });
 
   it('throws on a YAML file missing required canvas fields', () => {
-    const path = join(tmpdir(), 'invalid.yaml');
+    const path = join(tmpdir(), `invalid-${process.pid}-${Date.now()}.yaml`);
     // Valid YAML but missing the required canvas fields (id, name, nodes)
     writeFileSync(path, 'foo: bar\nbaz: 123\n', 'utf-8');
     try {
