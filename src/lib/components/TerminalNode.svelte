@@ -81,7 +81,7 @@
       <span class="dot dot-green"></span>
     </div>
     <span class="title">{data.label || 'Terminal'}</span>
-    <button class="clear-btn" onclick={clear} title="Clear">⌫</button>
+    <button class="clear-btn" type="button" aria-label="Clear" onclick={clear} title="Clear">⌫</button>
   </div>
 
   <div
