@@ -214,7 +214,7 @@
         <span class="btn-icon" aria-hidden="true">📂</span><span class="btn-text"> Load Example</span>
       </Button>
       <Button {tui} onclick={saveCanvasToStorage} class="toolbar-btn" title="Save canvas to storage">
-        <span class="btn-icon" aria-hidden="true">💾</span><span class="btn-text"> Save</span>
+        <span class="btn-icon" aria-hidden="true">💾</span><span class="btn-text"> Save to Storage</span>
       </Button>
       <Button {tui} onclick={toggleSavedList} class="toolbar-btn" title="View saved canvases">
         <span class="btn-icon" aria-hidden="true">📚</span><span class="btn-text"> Saved {showSavedList ? '▼' : '▶'}</span>
