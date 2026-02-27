@@ -8,18 +8,43 @@ on:
     branches:
       - main
       - develop
+
+permissions:
+  contents: read
+
 jobs:
-  check:
+  frontend:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Install Nix
-        uses: cachix/install-nix-action@v27
-      - name: Run checks in Nix flake dev shell
-        run: |
-          nix develop -c sh -lc '
-            npm ci &&
-            (npm run check 2>/dev/null || true) &&
-            (npm test 2>/dev/null || true) &&
-            (npm run build 2>/dev/null || true)
-          '
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+      - run: npm ci
+      - name: Type check
+        run: npm run check
+      - name: Unit tests
+        run: npm test -- --run
+      - name: Build
+        run: npm run build
+
+  rust:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: src-tauri
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+      - name: Format check
+        run: cargo fmt --check
+      - name: Clippy
+        run: cargo clippy -- -W clippy::all
+      - name: Tests
+        run: cargo test
