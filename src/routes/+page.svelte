@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { untrack } from 'svelte';
   import {
     SvelteFlow,
     Controls,
@@ -17,6 +18,7 @@
   import DisplayNode from '$lib/components/DisplayNode.svelte';
   import TransformNode from '$lib/components/TransformNode.svelte';
   import CommandBar from '$lib/components/CommandBar.svelte';
+  import { runTransform } from '$lib/utils/transform';
 
   const nodeTypes: NodeTypes = {
     terminal: TerminalNode as any,
@@ -53,7 +55,7 @@
         style: 'width: 360px;'
       },
       transform: {
-        data: { label: 'Transform', transformType: 'map', code: 'item' },
+        data: { label: 'Transform', transformType: 'map', code: 'item => item', input: undefined, output: undefined, error: null },
         style: 'width: 320px;'
       }
     };
@@ -90,6 +92,76 @@
     nodes = nodes.filter(n => !nodeIds.has(n.id));
     edges = edges.filter(e => !edgeIds.has(e.id) && !nodeIds.has(e.source) && !nodeIds.has(e.target));
   }
+
+  // --- Transform pipeline ---
+
+  /**
+   * Walk the edge graph and propagate output values from source nodes to their
+   * downstream transform and display nodes.  Runs synchronously; repeated
+   * passes handle arbitrarily long chains.
+   */
+  function propagateData(): void {
+    // Seed the output map with every input node's current value.
+    const outputs = new Map<string, unknown>();
+    for (const node of nodes) {
+      if (node.type === 'input') {
+        let val: unknown = node.data.value;
+        // Attempt JSON parse so arrays / objects flow correctly.
+        if (typeof val === 'string') {
+          try { val = JSON.parse(val); } catch { /* keep as string */ }
+        }
+        outputs.set(node.id, val);
+      }
+    }
+
+    // Multi-pass propagation handles chains (A→B→C etc.).
+    // Break early once a full pass produces no new outputs.
+    const maxPasses = nodes.length + 1;
+    for (let pass = 0; pass < maxPasses; pass++) {
+      let changed = false;
+      for (const edge of edges) {
+        const sourceOutput = outputs.get(edge.source);
+        if (sourceOutput === undefined) continue;
+
+        const targetNode = nodes.find(n => n.id === edge.target);
+        if (!targetNode) continue;
+
+        if (targetNode.type === 'transform') {
+          targetNode.data.input = sourceOutput;
+          const { result, error } = runTransform(
+            String(targetNode.data.transformType ?? 'map'),
+            String(targetNode.data.code ?? ''),
+            sourceOutput
+          );
+          targetNode.data.output = result;
+          targetNode.data.error = error;
+          if (error === null && !outputs.has(targetNode.id)) {
+            outputs.set(targetNode.id, result);
+            changed = true;
+          }
+        } else if (targetNode.type === 'display') {
+          targetNode.data.content = sourceOutput;
+        }
+      }
+      if (!changed) break;
+    }
+  }
+
+  // Re-run propagation whenever input values, transform code/type, or graph
+  // topology changes.  Writes use untrack() to avoid feedback loops.
+  $effect(() => {
+    for (const node of nodes) {
+      if (node.type === 'input') void node.data.value;
+      if (node.type === 'transform') {
+        void node.data.code;
+        void node.data.transformType;
+      }
+    }
+    // Track edge topology.
+    for (const e of edges) void e.id;
+
+    untrack(() => propagateData());
+  });
 </script>
 
 <div class="app">
