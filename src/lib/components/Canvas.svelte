@@ -68,11 +68,11 @@
   // --- Node accent colors for connections and ports ---
   function getNodeAccentColor(nodeType: string): string {
     switch (nodeType) {
-      case 'terminal': return '#4caf50';
-      case 'input':    return '#00d4ff';
-      case 'display':  return '#7b2fff';
-      case 'transform':return '#ff9800';
-      default:         return 'var(--brand)';
+      case 'terminal':  return 'var(--node-accent-terminal)';
+      case 'input':     return 'var(--node-accent-input)';
+      case 'display':   return 'var(--node-accent-display)';
+      case 'transform': return 'var(--node-accent-transform)';
+      default:          return 'var(--brand)';
     }
   }
 
