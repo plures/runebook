@@ -4,7 +4,7 @@
 
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import { render, cleanup, fireEvent } from '@testing-library/svelte';
-import { canvasStore } from '../../stores/canvas';
+import { canvasStore, updateNodeData } from '../../stores/canvas';
 
 // Mock Tauri invoke
 vi.mock('@tauri-apps/api/core', () => ({
@@ -358,9 +358,6 @@ describe('Canvas', () => {
   });
 
   it('should handle multiple node types', () => {
-    // Use terminal nodes only: InputNode's $effect calls updateNodeData which
-    // updates the store, potentially causing canvas re-renders that loop
-    // with DisplayNode's $effect. TerminalNode has no such reactive side effects.
     canvasStore.clear();
     canvasStore.addNode(makeTerminalNode({ id: 'term-1' }));
     canvasStore.addNode(makeTerminalNode({ id: 'term-2' }));
@@ -382,5 +379,79 @@ describe('Canvas', () => {
       fireEvent.mouseUp(canvasEl);
     }
     expect(container.querySelector('.canvas-container')).toBeTruthy();
+  });
+});
+
+describe('Graph execution layer', () => {
+  afterEach(() => {
+    cleanup();
+    canvasStore.clear();
+  });
+
+  it('should render InputNode and DisplayNode together without infinite loop', () => {
+    canvasStore.clear();
+    canvasStore.addNode(makeInputNode({ id: 'input-gl' }));
+    canvasStore.addNode(makeDisplayNode({ id: 'display-gl' }));
+    // Should not throw or loop
+    const { container } = render(Canvas);
+    expect(container.querySelector('.canvas-container')).toBeTruthy();
+    expect(container.querySelectorAll('.node-wrapper').length).toBe(2);
+  });
+
+  it('should propagate InputNode value to connected DisplayNode after source update', () => {
+    canvasStore.clear();
+    // Initialize InputNode with value 'hello' so its $effect publishes 'hello' on mount
+    canvasStore.addNode(makeInputNode({ id: 'src', value: 'hello' }));
+    canvasStore.addNode(makeDisplayNode({ id: 'dst', content: '' }));
+    canvasStore.addConnection({ from: 'src', fromPort: 'value', to: 'dst', toPort: 'input' });
+
+    render(Canvas);
+
+    // The graph execution layer should have updated the display node content
+    let updatedContent = '';
+    const unsub = canvasStore.subscribe((c) => {
+      const node = c.nodes.find((n) => n.id === 'dst');
+      if (node && node.type === 'display') updatedContent = node.content as string;
+    });
+    unsub();
+    expect(updatedContent).toBe('hello');
+  });
+
+  it('should propagate TerminalNode output to connected DisplayNode after source update', () => {
+    canvasStore.clear();
+    canvasStore.addNode(makeTerminalNode({ id: 'term-src', outputs: [{ id: 'stdout', name: 'stdout', type: 'output' }] }));
+    canvasStore.addNode(makeDisplayNode({ id: 'disp-dst', content: '' }));
+    canvasStore.addConnection({ from: 'term-src', fromPort: 'stdout', to: 'disp-dst', toPort: 'input' });
+
+    updateNodeData('term-src', 'stdout', 'terminal output');
+
+    render(Canvas);
+
+    let updatedContent = '';
+    const unsub = canvasStore.subscribe((c) => {
+      const node = c.nodes.find((n) => n.id === 'disp-dst');
+      if (node && node.type === 'display') updatedContent = node.content as string;
+    });
+    unsub();
+    expect(updatedContent).toBe('terminal output');
+  });
+
+  it('should not update DisplayNode content when no connection exists', () => {
+    canvasStore.clear();
+    canvasStore.addNode(makeInputNode({ id: 'isolated-input' }));
+    canvasStore.addNode(makeDisplayNode({ id: 'isolated-display', content: 'original' }));
+    // No connection added
+
+    updateNodeData('isolated-input', 'value', 'should not appear');
+
+    render(Canvas);
+
+    let content = '';
+    const unsub = canvasStore.subscribe((c) => {
+      const node = c.nodes.find((n) => n.id === 'isolated-display');
+      if (node && node.type === 'display') content = node.content as string;
+    });
+    unsub();
+    expect(content).toBe('original');
   });
 });

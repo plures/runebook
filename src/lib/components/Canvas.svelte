@@ -1,5 +1,6 @@
 <script lang="ts">
-  import { canvasStore } from '../stores/canvas';
+  import { untrack } from 'svelte';
+  import { canvasStore, nodeDataStore } from '../stores/canvas';
   import TerminalNodeComponent from './TerminalNode.svelte';
   import InputNodeComponent from './InputNode.svelte';
   import DisplayNodeComponent from './DisplayNode.svelte';
@@ -43,6 +44,24 @@
   } | null>(null);
 
   const canvasData = $derived($canvasStore);
+
+  // Graph execution layer: propagate source node outputs → connected DisplayNode content
+  $effect(() => {
+    const nodeData = $nodeDataStore;
+    const canvas = $canvasStore;
+
+    untrack(() => {
+      for (const conn of canvas.connections) {
+        const sourceValue = nodeData[`${conn.from}:${conn.fromPort}`];
+        if (sourceValue === undefined) continue;
+        const targetNode = canvas.nodes.find((n) => n.id === conn.to);
+        if (!targetNode || targetNode.type !== 'display') continue;
+        const valueStr = String(sourceValue);
+        if ((targetNode as DisplayNode).content === valueStr) continue;
+        canvasStore.updateNode(conn.to, { content: valueStr } as Partial<CanvasNode>);
+      }
+    });
+  });
 
   // --- Node drag ---
   function handleNodeMouseDown(event: MouseEvent, nodeId: string) {

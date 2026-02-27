@@ -16,6 +16,11 @@
   let error = $state<string>('');
   let isProcessing = $state(false);
 
+  // Non-reactive guard: tracks the last processed input signature to prevent
+  // the infinite loop caused by applyTransform writing to nodeDataStore
+  // which would otherwise re-trigger this same effect.
+  let lastInputSig = '';
+
   // Subscribe to node data changes and apply transformation
   $effect(() => {
     const canvas = $canvasStore;
@@ -25,6 +30,9 @@
     if (node.inputs && node.inputs.length > 0) {
       const inputData = getNodeInputData(node.id, node.inputs[0].id, canvas.connections, nodeData);
       if (inputData !== undefined) {
+        const sig = JSON.stringify(inputData);
+        if (lastInputSig === sig) return;
+        lastInputSig = sig;
         applyTransform(inputData);
       }
     }

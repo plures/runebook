@@ -1,11 +1,8 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
   import type { DisplayNode } from '../types/canvas';
-  import { canvasStore, nodeDataStore, getNodeInputData } from '../stores/canvas';
   import Box from '../design-dojo/Box.svelte';
   import Text from '../design-dojo/Text.svelte';
   import Table from '../design-dojo/Table.svelte';
-  import List from '../design-dojo/List.svelte';
 
   interface Props {
     node: DisplayNode;
@@ -14,22 +11,10 @@
 
   let { node, tui = false }: Props = $props();
 
-  // Initialize content from node prop (warning is expected as we need mutable state)
-  let content = $state<any>(node.content || '');
-
-  // Subscribe to node data changes to update content reactively
-  $effect(() => {
-    const canvas = $canvasStore;
-    const nodeData = $nodeDataStore;
-    
-    // Get input data from connected nodes
-    if (node.inputs.length > 0) {
-      const inputData = getNodeInputData(node.id, node.inputs[0].id, canvas.connections, nodeData);
-      if (inputData !== undefined) {
-        content = inputData;
-      }
-    }
-  });
+  // Derive content reactively from the node prop — the graph execution layer
+  // in Canvas.svelte updates node.content via canvasStore.updateNode whenever
+  // a connected source node's output changes.
+  const content = $derived<any>(node.content ?? '');
 
   function formatContent() {
     if (typeof content === 'object') {
