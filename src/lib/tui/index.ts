@@ -314,9 +314,24 @@ export class TUIApp extends EventEmitter {
 
     // ── Three-pane content ──
     const contentRows = rows - 2; // subtract header + status bar
-    const leftW = 20;
-    const rightW = 25;
-    const centerW = Math.max(10, cols - leftW - rightW - 2); // 2 separators
+    const borderCols = 4; // left edge + two internal separators + right edge
+    const available = Math.max(0, cols - borderCols);
+    const baseLeft = 20;
+    const baseRight = 25;
+    const baseCenterMin = 10;
+    let leftW: number, rightW: number, centerW: number;
+    if (available >= baseLeft + baseRight + baseCenterMin) {
+      leftW = baseLeft;
+      rightW = baseRight;
+      centerW = available - leftW - rightW;
+    } else if (available > 0) {
+      const scale = available / (baseLeft + baseRight + baseCenterMin);
+      leftW = Math.max(0, Math.floor(baseLeft * scale));
+      rightW = Math.max(0, Math.floor(baseRight * scale));
+      centerW = Math.max(0, available - leftW - rightW);
+    } else {
+      leftW = 0; rightW = 0; centerW = 0;
+    }
 
     const nodeList = this.buildNodeList(leftW, contentRows);
     const canvas = this.buildCanvasView(centerW, contentRows);
@@ -476,12 +491,12 @@ export class TUIApp extends EventEmitter {
       const ty = Math.max(0, Math.min(Math.floor((to.position.y / VMAX) * (h - BOX_H)), h - 1));
 
       const midY = Math.floor((fy + ty) / 2);
-      for (let y = fy; y <= midY; y++) this.setCell(grid, y, Math.floor(fx), BOX.v);
+      for (let y = Math.min(fy, midY); y <= Math.max(fy, midY); y++) this.setCell(grid, y, Math.floor(fx), BOX.v);
       for (let x = Math.min(Math.floor(fx), Math.floor(tx)); x <= Math.max(Math.floor(fx), Math.floor(tx)); x++) {
         this.setCell(grid, midY, x, BOX.h);
       }
-      for (let y = midY; y < ty; y++) this.setCell(grid, y, Math.floor(tx), BOX.v);
-      if (ty - 1 >= 0) this.setCell(grid, ty - 1, Math.floor(tx), '▼');
+      for (let y = Math.min(midY, ty); y <= Math.max(midY, ty); y++) this.setCell(grid, y, Math.floor(tx), BOX.v);
+      if (ty >= 0) this.setCell(grid, ty, Math.floor(tx), ty >= fy ? '▼' : '▲');
     }
 
     return grid.map(row => row.join(''));
@@ -555,7 +570,6 @@ export class TUIApp extends EventEmitter {
       process.stdout.removeListener('resize', this._resizeHandler);
       this._resizeHandler = null;
     }
-    process.stdin.removeAllListeners();
     if ((process.stdin as any).isTTY && typeof (process.stdin as any).setRawMode === 'function') {
       (process.stdin as any).setRawMode(false);
     }
@@ -627,5 +641,4 @@ export async function launchTUI(filePath?: string): Promise<void> {
   const app = new TUIApp();
   await app.start(filePath);
   console.log('RuneBook TUI exited.');
-  process.exit(0);
 }
