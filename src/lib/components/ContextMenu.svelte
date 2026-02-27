@@ -3,6 +3,7 @@
 
   export interface ContextMenuItem {
     label: string;
+    /** Handler called when the item is activated. Omit for separator items (`separator: true`). */
     action?: () => void;
     disabled?: boolean;
     danger?: boolean;

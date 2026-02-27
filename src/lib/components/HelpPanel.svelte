@@ -30,8 +30,13 @@
   }
 
   function handleTabKeydown(e: KeyboardEvent) {
-    if (e.key === 'ArrowRight') { e.preventDefault(); view = view === 'shortcuts' ? 'about' : 'shortcuts'; }
-    else if (e.key === 'ArrowLeft') { e.preventDefault(); view = view === 'about' ? 'shortcuts' : 'about'; }
+    if (e.key === 'ArrowRight') {
+      e.preventDefault();
+      view = view === 'shortcuts' ? 'about' : 'shortcuts';
+    } else if (e.key === 'ArrowLeft') {
+      e.preventDefault();
+      view = view === 'about' ? 'shortcuts' : 'about';
+    }
   }
 </script>
 
