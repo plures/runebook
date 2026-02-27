@@ -242,7 +242,7 @@
         <span class="btn-icon" aria-hidden="true">📥</span><span class="btn-text"> Export YAML</span>
       </Button>
       <Button {tui} onclick={toggleStorageSettings} class="toolbar-btn" title="Storage settings">
-        <span class="btn-icon" aria-hidden="true">⚙️</span><span class="btn-text"> Storage {showStorageSettings ? '▼' : '▶'}</span>
+        <span class="btn-icon" aria-hidden="true">⚙️</span><span class="btn-text"> Storage Settings {showStorageSettings ? '▼' : '▶'}</span>
       </Button>
       {#if showStorageSettings && !collapsed}
         <div class="storage-settings">
