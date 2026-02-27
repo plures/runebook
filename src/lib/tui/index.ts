@@ -204,17 +204,34 @@ export class TUIApp extends EventEmitter {
         return;
       }
 
+      let stdoutBuffer = '';
+      let stderrBuffer = '';
+
       proc.stdout.on('data', (chunk: Buffer) => {
-        this.state.terminalOutput.push(...chunk.toString().split('\n').filter(Boolean));
+        const text = stdoutBuffer + chunk.toString();
+        const lines = text.split('\n');
+        stdoutBuffer = lines.pop() ?? '';
+        this.state.terminalOutput.push(...lines);
         this.render();
       });
 
       proc.stderr.on('data', (chunk: Buffer) => {
-        this.state.terminalOutput.push(...chunk.toString().split('\n').filter(Boolean));
+        const text = stderrBuffer + chunk.toString();
+        const lines = text.split('\n');
+        stderrBuffer = lines.pop() ?? '';
+        this.state.terminalOutput.push(...lines);
         this.render();
       });
 
       const done = (code: number | null) => {
+        if (stdoutBuffer) {
+          this.state.terminalOutput.push(stdoutBuffer);
+          stdoutBuffer = '';
+        }
+        if (stderrBuffer) {
+          this.state.terminalOutput.push(stderrBuffer);
+          stderrBuffer = '';
+        }
         this.state.terminalOutput.push(`[Exit: ${code ?? 'unknown'}]`);
         this.state.mode = 'normal';
         this.render();
