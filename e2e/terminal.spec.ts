@@ -10,7 +10,7 @@ const BASE_URL = 'http://127.0.0.1:4173/';
 test.describe('terminal node', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto(BASE_URL);
-    await page.locator('.add-btn', { hasText: /Terminal/ }).click();
+    await page.locator('.toolbar-btn', { hasText: /Terminal/ }).click();
   });
 
   test('terminal node is rendered with a title bar', async ({ page }) => {

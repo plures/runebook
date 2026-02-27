@@ -9,8 +9,8 @@ test.describe('canvas interactions', () => {
   });
 
   test('nodes persist on canvas after being added', async ({ page }) => {
-    await page.locator('.add-btn', { hasText: /Terminal/ }).click();
-    await page.locator('.add-btn', { hasText: /Input/ }).click();
+    await page.locator('.toolbar-btn', { hasText: /Terminal/ }).click();
+    await page.locator('.toolbar-btn', { hasText: /Input/ }).click();
     await expect(page.locator('.svelte-flow__node')).toHaveCount(2);
     // Nodes remain after interacting with the canvas
     await page.locator('.svelte-flow').click({ position: { x: 10, y: 10 } });
@@ -18,8 +18,8 @@ test.describe('canvas interactions', () => {
   });
 
   test('connecting two nodes creates an edge', async ({ page }) => {
-    await page.locator('.add-btn', { hasText: /Input/ }).click();
-    await page.locator('.add-btn', { hasText: /Display/ }).click();
+    await page.locator('.toolbar-btn', { hasText: /Input/ }).click();
+    await page.locator('.toolbar-btn', { hasText: /Display/ }).click();
 
     // Hover the source node so its handles become actionable
     await page.locator('.svelte-flow__node-input').hover();
@@ -33,7 +33,7 @@ test.describe('canvas interactions', () => {
   });
 
   test('keyboard Delete removes a selected node', async ({ page }) => {
-    await page.locator('.add-btn', { hasText: /Display/ }).click();
+    await page.locator('.toolbar-btn', { hasText: /Display/ }).click();
     await expect(page.locator('.svelte-flow__node')).toHaveCount(1);
 
     // Click the node header (non-interactive area) to select the node
@@ -53,7 +53,7 @@ test.describe('canvas interactions', () => {
 
   test('MiniMap reflects nodes added to the canvas', async ({ page }) => {
     await expect(page.locator('.svelte-flow__minimap')).toBeVisible();
-    await page.locator('.add-btn', { hasText: /Terminal/ }).click();
+    await page.locator('.toolbar-btn', { hasText: /Terminal/ }).click();
     // MiniMap renders a node shape after a node is added
     await expect(page.locator('.svelte-flow__minimap-node')).toHaveCount(1);
   });

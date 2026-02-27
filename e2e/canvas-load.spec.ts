@@ -20,15 +20,15 @@ test.describe('canvas load', () => {
   });
 
   test('command bar shows all four Add Node buttons', async ({ page }) => {
-    await expect(page.locator('.add-btn', { hasText: /Terminal/ })).toBeVisible();
-    await expect(page.locator('.add-btn', { hasText: /Input/ })).toBeVisible();
-    await expect(page.locator('.add-btn', { hasText: /Display/ })).toBeVisible();
-    await expect(page.locator('.add-btn', { hasText: /Transform/ })).toBeVisible();
+    await expect(page.locator('.toolbar-btn', { hasText: /Terminal/ })).toBeVisible();
+    await expect(page.locator('.toolbar-btn', { hasText: /Input/ })).toBeVisible();
+    await expect(page.locator('.toolbar-btn', { hasText: /Display/ })).toBeVisible();
+    await expect(page.locator('.toolbar-btn', { hasText: /Transform/ })).toBeVisible();
   });
 
-  test('command bar shows hint text', async ({ page }) => {
-    await expect(page.locator('.command-bar .hint')).toBeVisible();
-    await expect(page.locator('.command-bar .hint')).toContainText(/connect|zoom/i);
+  test('command bar shows toolbar buttons in bar-right', async ({ page }) => {
+    await expect(page.locator('.command-bar .bar-right')).toBeVisible();
+    await expect(page.locator('.toolbar-btn', { hasText: /Load Example/ })).toBeVisible();
   });
 
   test('MiniMap is rendered', async ({ page }) => {
