@@ -1,24 +1,22 @@
 <script lang="ts">
-  import { Handle, Position } from '@xyflow/svelte';
+  import { Handle, Position, useSvelteFlow } from '@xyflow/svelte';
 
   interface Props {
+    id: string;
     data: {
       label: string;
       inputType: string;
       value: any;
-      output?: any;
     };
   }
 
-  let { data }: Props = $props();
+  let { id, data }: Props = $props();
   let value = $state(data.value ?? '');
 
-  // Initialise output on first render (defensive for loaded canvases without output field)
-  if (data.output === undefined) data.output = data.value ?? '';
+  const { updateNodeData } = useSvelteFlow();
 
   function handleChange() {
-    data.value = value;
-    data.output = value;
+    updateNodeData(id, { value });
   }
 </script>
 

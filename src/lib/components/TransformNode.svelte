@@ -1,7 +1,8 @@
 <script lang="ts">
-  import { Handle, Position } from '@xyflow/svelte';
+  import { Handle, Position, useSvelteFlow } from '@xyflow/svelte';
 
   interface Props {
+    id: string;
     data: {
       label: string;
       transformType: string;
@@ -11,11 +12,13 @@
     };
   }
 
-  let { data }: Props = $props();
+  let { id, data }: Props = $props();
   let code = $state(data.code || '');
 
+  const { updateNodeData } = useSvelteFlow();
+
   function handleChange() {
-    data.code = code;
+    updateNodeData(id, { code });
   }
 
   // Compute output whenever input or code changes

@@ -73,16 +73,36 @@
   }
 
   function onConnect(connection: Connection) {
+    const source = connection.source!;
+    const target = connection.target!;
+    const sourceHandle = connection.sourceHandle ?? 'default';
+    const targetHandle = connection.targetHandle ?? 'default';
+
+    const edgeId = `e-${source}-${sourceHandle}-${target}-${targetHandle}`;
+
     const edge: Edge = {
-      id: `e-${connection.source}-${connection.target}`,
-      source: connection.source!,
-      target: connection.target!,
+      id: edgeId,
+      source,
+      target,
       sourceHandle: connection.sourceHandle,
       targetHandle: connection.targetHandle,
       animated: true,
       style: 'stroke: var(--brand, #00d4ff); stroke-width: 2px;'
     };
-    edges = [...edges, edge];
+
+    edges = [
+      // remove any existing edge with the same connection (source/target/handles)
+      ...edges.filter(
+        (e) =>
+          !(
+            e.source === source &&
+            e.target === target &&
+            (e.sourceHandle ?? 'default') === sourceHandle &&
+            (e.targetHandle ?? 'default') === targetHandle
+          )
+      ),
+      edge
+    ];
   }
 
   function onDelete({ nodes: deletedNodes, edges: deletedEdges }: { nodes: Node[]; edges: Edge[] }) {
@@ -95,44 +115,48 @@
   // Graph execution layer: propagate source node output → target node input/content
   $effect(() => {
     // Build a snapshot of source outputs (tracked — reruns when source data changes)
-    const outputMap = new Map<string, string>();
-    for (const node of nodes) {
-      if (node.type === 'input') outputMap.set(node.id, String(node.data.output ?? node.data.value ?? ''));
-      else if (node.type === 'terminal') outputMap.set(node.id, String(node.data.output ?? ''));
-      else if (node.type === 'transform') outputMap.set(node.id, String(node.data.output ?? ''));
-    }
-    const edgeList = edges;
+    const currentEdges = edges;
+    const sourceValueMap = new Map(
+      nodes.flatMap(n => {
+        if (n.type === 'input') return [[n.id, String(n.data.value ?? '')]];
+        if (n.type === 'terminal') return [[n.id, String(n.data.output ?? '')]];
+        if (n.type === 'transform') return [[n.id, String(n.data.output ?? '')]];
+        return [];
+      })
+    );
 
     // Apply to targets without creating a reactive dependency on target data
     untrack(() => {
+      const incomingEdgeMap = new Map(currentEdges.map(e => [e.target, e.source]));
       let changed = false;
-      const updated = nodes.map(node => {
-        const incoming = edgeList.filter(e => e.target === node.id);
-        if (incoming.length === 0) return node;
-        // Use the last connected edge; future work can support multi-input merge
-        const edge = incoming[incoming.length - 1];
-        const output = outputMap.get(edge.source) ?? '';
+      const next = nodes.map(node => {
+        const sourceId = incomingEdgeMap.get(node.id);
+        if (sourceId === undefined || !sourceValueMap.has(sourceId)) return node;
+        const newValue = sourceValueMap.get(sourceId) ?? '';
 
-        if (node.type === 'display' && node.data.content !== output) {
+        if (node.type === 'display') {
+          const newContent = newValue;
+          if (node.data.content === newContent) return node;
           changed = true;
-          return { ...node, data: { ...node.data, content: output } };
+          return { ...node, data: { ...node.data, content: newContent } };
         }
-        if (node.type === 'transform' && node.data.input !== output) {
+        if (node.type === 'transform') {
+          if (node.data.input === newValue) return node;
           changed = true;
-          return { ...node, data: { ...node.data, input: output } };
+          return { ...node, data: { ...node.data, input: newValue } };
         }
         return node;
       });
-      if (changed) nodes = updated;
+      if (changed) nodes = next;
     });
   });
 </script>
 
 <div class="app">
-  <CommandBar onAddNode={addNode} />
+  <CommandBar onAddNode={addNode} {nodes} {edges} onLoad={(n, e) => { nodes = n; edges = e; }} onClear={() => { nodes = []; edges = []; }} />
   <div class="flow-wrapper">
     <SvelteFlow
-      {nodes}
+      bind:nodes
       {edges}
       {nodeTypes}
       onconnect={onConnect}
