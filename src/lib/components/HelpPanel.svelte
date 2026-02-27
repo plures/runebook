@@ -1,6 +1,5 @@
 <script lang="ts">
   import Button from '../design-dojo/Button.svelte';
-  import pkg from '../../../package.json';
 
   interface Props {
     open: boolean;
@@ -22,7 +21,8 @@
     { keys: 'Right-click node',   description: 'Node actions menu' },
   ];
 
-  const version = pkg.version;
+  // __APP_VERSION__ is injected at build time by vite.config.js define
+  const version = __APP_VERSION__;
 
   function handleKey(e: KeyboardEvent) {
     if (!open) return;

@@ -45,6 +45,7 @@
     const focusable = Array.from(
       menuEl?.querySelectorAll<HTMLElement>('[role="menuitem"]:not([aria-disabled="true"])') ?? []
     );
+    if (focusable.length === 0) return;
     const idx = focusable.indexOf(document.activeElement as HTMLElement);
     if (e.key === 'ArrowDown') {
       e.preventDefault();
