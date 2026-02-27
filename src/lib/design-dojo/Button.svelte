@@ -7,6 +7,7 @@
     disabled?: boolean;
     onclick?: (e: MouseEvent) => void;
     class?: string;
+    title?: string;
     children?: Snippet;
   }
 
@@ -16,6 +17,7 @@
     disabled = false,
     onclick,
     class: cls = '',
+    title,
     children
   }: Props = $props();
 </script>
@@ -24,6 +26,7 @@
   class="dd-btn dd-btn--{variant} {cls}"
   {disabled}
   {onclick}
+  {title}
   data-tui={tui}
 >
   {@render children?.()}

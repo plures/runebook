@@ -131,10 +131,11 @@
   }
 </script>
 
-<Box class="transform-node" surface={2} border radius={3} shadow={2} style="border-color: var(--accent)" {tui}>
-  <Box class="node-header" surface={3} {tui}>
+<Box class="transform-node" surface={2} border radius={3} shadow={2} {tui}>
+  <Box class="node-header transform-header" surface={3} {tui}>
     <span class="node-icon">🔄</span>
     <Text class="node-title">{node.label || 'Transform'}</Text>
+    <span class="node-badge">transform</span>
   </Box>
   
   <Box class="node-body" pad={3}>
@@ -193,20 +194,35 @@
 
   :global(.transform-node .node-header) {
     padding: var(--space-2) var(--space-3);
-    border-bottom: 1px solid var(--border-color);
+    border-bottom: 1px solid rgba(255, 152, 0, 0.3);
     display: flex;
     align-items: center;
     gap: var(--space-2);
     border-radius: var(--radius-3) var(--radius-3) 0 0;
+    background: linear-gradient(135deg, rgba(255, 152, 0, 0.15) 0%, transparent 100%) !important;
   }
 
   .node-icon {
     font-size: 18px;
+    color: var(--node-accent-transform);
   }
 
   :global(.transform-node .node-title) {
     font-weight: 600;
     font-size: var(--font-size-1);
+    flex: 1;
+  }
+
+  .node-badge {
+    font-size: var(--font-size-0);
+    padding: 1px 6px;
+    border-radius: var(--radius-round);
+    background: rgba(255, 152, 0, 0.15);
+    color: var(--node-accent-transform);
+    border: 1px solid rgba(255, 152, 0, 0.35);
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
   }
 
   :global(.transform-node .node-body) {

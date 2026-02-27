@@ -17,6 +17,20 @@
 
   let { tui = false }: Props = $props();
 
+  // Canvas viewport element (for coordinate conversion)
+  let canvasEl = $state<HTMLDivElement | null>(null);
+
+  // Viewport transform (zoom + pan)
+  let zoom = $state(1);
+  let panX = $state(0);
+  let panY = $state(0);
+
+  // Pan gesture state
+  let isPanning = $state(false);
+  let panStartClient = $state({ x: 0, y: 0 });
+  let panStartPan = $state({ x: 0, y: 0 });
+  let spaceHeld = $state(false);
+
   // Drag state
   let isDragging = $state(false);
   let draggedNodeId = $state<string | null>(null);
@@ -42,23 +56,110 @@
     items: ContextMenuItem[];
   } | null>(null);
 
+  // Constants
+  const MIN_ZOOM = 0.1;
+  const MAX_ZOOM = 5;
+  const ZOOM_TO_FIT_PADDING = 48;
+  const INTERACTIVE_SELECTOR = 'input, textarea, button, select, [contenteditable]';
+
   const canvasData = $derived($canvasStore);
+
+  // Convert client coordinates to canvas (logical) coordinates
+  function clientToCanvas(clientX: number, clientY: number) {
+    if (!canvasEl) return { x: clientX, y: clientY };
+    const rect = canvasEl.getBoundingClientRect();
+    return {
+      x: (clientX - rect.left - panX) / zoom,
+      y: (clientY - rect.top - panY) / zoom,
+    };
+  }
+
+  // --- Node accent colors for connections ---
+  function getNodeAccentColor(nodeType: string): string {
+    switch (nodeType) {
+      case 'terminal':  return 'var(--node-accent-terminal)';
+      case 'input':     return 'var(--node-accent-input)';
+      case 'display':   return 'var(--node-accent-display)';
+      case 'transform': return 'var(--node-accent-transform)';
+      default:          return 'var(--brand)';
+    }
+  }
+
+  // --- Zoom to fit ---
+  function zoomToFit() {
+    if (canvasData.nodes.length === 0 || !canvasEl) {
+      zoom = 1; panX = 0; panY = 0;
+      return;
+    }
+    const rect = canvasEl.getBoundingClientRect();
+    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+    for (const node of canvasData.nodes) {
+      const size = node.size || { width: 320, height: 200 };
+      minX = Math.min(minX, node.position.x);
+      minY = Math.min(minY, node.position.y);
+      maxX = Math.max(maxX, node.position.x + size.width);
+      maxY = Math.max(maxY, node.position.y + size.height);
+    }
+    const contentW = maxX - minX + ZOOM_TO_FIT_PADDING * 2;
+    const contentH = maxY - minY + ZOOM_TO_FIT_PADDING * 2;
+    const newZoom = Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, Math.min(rect.width / contentW, rect.height / contentH)));
+    zoom = newZoom;
+    const paddedMinX = minX - ZOOM_TO_FIT_PADDING;
+    const paddedMinY = minY - ZOOM_TO_FIT_PADDING;
+    panX = (rect.width - contentW * newZoom) / 2 - paddedMinX * newZoom;
+    panY = (rect.height - contentH * newZoom) / 2 - paddedMinY * newZoom;
+  }
+
+  // --- Wheel zoom (registered as non-passive via $effect so preventDefault works) ---
+  function handleWheel(event: WheelEvent) {
+    const target = event.target as HTMLElement;
+    if (target.closest(INTERACTIVE_SELECTOR)) return;
+    event.preventDefault();
+    if (!canvasEl) return;
+    const rect = canvasEl.getBoundingClientRect();
+    const mouseX = event.clientX - rect.left;
+    const mouseY = event.clientY - rect.top;
+    const factor = event.deltaY > 0 ? 0.9 : 1.1;
+    const newZoom = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, zoom * factor));
+    panX = mouseX - (mouseX - panX) * (newZoom / zoom);
+    panY = mouseY - (mouseY - panY) * (newZoom / zoom);
+    zoom = newZoom;
+  }
+
+  // Register wheel listener as non-passive so preventDefault() actually works
+  $effect(() => {
+    if (!canvasEl) return;
+    const el = canvasEl;
+    el.addEventListener('wheel', handleWheel, { passive: false });
+    return () => el.removeEventListener('wheel', handleWheel);
+  });
+
+  // --- Canvas-level mousedown (pan handling) ---
+  function handleCanvasMouseDown(event: MouseEvent) {
+    if (event.button === 1 || (event.button === 0 && spaceHeld)) {
+      isPanning = true;
+      panStartClient = { x: event.clientX, y: event.clientY };
+      panStartPan = { x: panX, y: panY };
+      event.preventDefault();
+    }
+  }
 
   // --- Node drag ---
   function handleNodeMouseDown(event: MouseEvent, nodeId: string) {
+    if (spaceHeld || event.button === 1) return;
     if (isResizing || isConnecting) return;
     const node = canvasData.nodes.find(n => n.id === nodeId);
     if (!node) return;
-    // Don't drag if clicking on interactive elements
     const target = event.target as HTMLElement;
-    if (target.closest('input, textarea, button, select, [contenteditable]')) return;
+    if (target.closest(INTERACTIVE_SELECTOR)) return;
 
     isDragging = true;
     draggedNodeId = nodeId;
     selectedNodeId = nodeId;
+    const canvasPoint = clientToCanvas(event.clientX, event.clientY);
     dragOffset = {
-      x: event.clientX - node.position.x,
-      y: event.clientY - node.position.y
+      x: canvasPoint.x - node.position.x,
+      y: canvasPoint.y - node.position.y,
     };
     event.preventDefault();
     event.stopPropagation();
@@ -78,7 +179,7 @@
 
   // --- Connection drawing ---
   function handlePortMouseDown(event: MouseEvent, nodeId: string, portId: string, portType: 'input' | 'output') {
-    if (portType !== 'output') return; // Can only start connections from output ports
+    if (portType !== 'output') return;
     const node = canvasData.nodes.find(n => n.id === nodeId);
     if (!node) return;
 
@@ -90,16 +191,15 @@
       x: node.position.x + size.width,
       y: node.position.y + size.height / 2
     };
-    connectMousePos = { x: event.clientX, y: event.clientY };
+    connectMousePos = clientToCanvas(event.clientX, event.clientY);
     event.preventDefault();
     event.stopPropagation();
   }
 
   function handlePortMouseUp(event: MouseEvent, nodeId: string, portId: string, portType: 'input' | 'output') {
     if (!isConnecting || !connectFrom || portType !== 'input') return;
-    if (connectFrom.nodeId === nodeId) return; // No self-connections
+    if (connectFrom.nodeId === nodeId) return;
 
-    // Check for duplicate
     const exists = canvasData.connections.some(
       c => c.from === connectFrom!.nodeId && c.to === nodeId && c.fromPort === connectFrom!.portId && c.toPort === portId
     );
@@ -117,9 +217,13 @@
 
   // --- Global mouse handlers ---
   function handleMouseMove(event: MouseEvent) {
-    if (isDragging && draggedNodeId) {
-      const newX = event.clientX - dragOffset.x;
-      const newY = event.clientY - dragOffset.y;
+    if (isPanning) {
+      panX = panStartPan.x + (event.clientX - panStartClient.x);
+      panY = panStartPan.y + (event.clientY - panStartClient.y);
+    } else if (isDragging && draggedNodeId) {
+      const canvasPoint = clientToCanvas(event.clientX, event.clientY);
+      const newX = canvasPoint.x - dragOffset.x;
+      const newY = canvasPoint.y - dragOffset.y;
       canvasStore.updateNodePosition(draggedNodeId, Math.max(0, newX), Math.max(0, newY));
     } else if (isResizing && resizingNodeId) {
       const dx = event.clientX - resizeStart.x;
@@ -128,7 +232,7 @@
       const newH = Math.max(120, resizeStart.h + dy);
       canvasStore.updateNode(resizingNodeId, { size: { width: newW, height: newH } });
     } else if (isConnecting) {
-      connectMousePos = { x: event.clientX, y: event.clientY };
+      connectMousePos = clientToCanvas(event.clientX, event.clientY);
     }
   }
 
@@ -139,6 +243,7 @@
     resizingNodeId = null;
     isConnecting = false;
     connectFrom = null;
+    isPanning = false;
   }
 
   function handleCanvasClick() {
@@ -158,6 +263,13 @@
   }
 
   function handleKeydown(event: KeyboardEvent) {
+    if (event.key === ' ') {
+      if (!event.repeat) spaceHeld = true;
+      const target = event.target as HTMLElement;
+      if (!target.closest('input, textarea, [contenteditable]')) {
+        event.preventDefault();
+      }
+    }
     if (event.key === 'Delete' || event.key === 'Backspace') {
       if (selectedNodeId && !(event.target as HTMLElement)?.closest('input, textarea, [contenteditable]')) {
         event.preventDefault();
@@ -167,6 +279,12 @@
     }
     if (event.key === 'Escape') {
       ctxMenu = null;
+    }
+  }
+
+  function handleKeyup(event: KeyboardEvent) {
+    if (event.key === ' ') {
+      spaceHeld = false;
     }
   }
 
@@ -186,17 +304,13 @@
     };
   }
 
-  // --- Context menus ---
-
   function handleCanvasContextMenu(event: MouseEvent) {
     event.preventDefault();
     const x = event.clientX;
     const y = event.clientY;
-    // Canvas offset (account for left toolbar margin)
-    const target = event.currentTarget as HTMLElement;
-    const rect = target.getBoundingClientRect();
-    const cx = event.clientX - rect.left;
-    const cy = event.clientY - rect.top;
+    const canvasPoint = clientToCanvas(event.clientX, event.clientY);
+    const cx = canvasPoint.x;
+    const cy = canvasPoint.y;
 
     ctxMenu = {
       x,
@@ -271,7 +385,6 @@
     if (!node) return;
     const newId = `${node.type}-${Date.now()}`;
 
-    // Deep clone the node to avoid sharing nested references (e.g. env, inputs, outputs)
     const clonedNode = structuredClone(node) as CanvasNode;
     clonedNode.id = newId;
     clonedNode.position = {
@@ -288,18 +401,56 @@
       canvasStore.removeConnection(c.from, c.to, c.fromPort, c.toPort);
     }
   }
+
+  // --- Minimap calculations ---
+  const MINIMAP_W = 160;
+  const MINIMAP_H = 100;
+
+  function minimapNodeStyle(node: CanvasNode): string {
+    if (canvasData.nodes.length === 0) return '';
+    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+    for (const n of canvasData.nodes) {
+      const s = n.size || { width: 320, height: 200 };
+      minX = Math.min(minX, n.position.x);
+      minY = Math.min(minY, n.position.y);
+      maxX = Math.max(maxX, n.position.x + s.width);
+      maxY = Math.max(maxY, n.position.y + s.height);
+    }
+    const rangeX = Math.max(maxX - minX, 1);
+    const rangeY = Math.max(maxY - minY, 1);
+    const scaleX = MINIMAP_W / rangeX;
+    const scaleY = MINIMAP_H / rangeY;
+    const scale = Math.min(scaleX, scaleY) * 0.9;
+    const size = node.size || { width: 320, height: 200 };
+    const left = ((node.position.x - minX) * scale + (MINIMAP_W - rangeX * scale) / 2);
+    const top  = ((node.position.y - minY) * scale + (MINIMAP_H - rangeY * scale) / 2);
+    const w = Math.max(4, size.width * scale);
+    const h = Math.max(3, size.height * scale);
+    return `left:${left}px;top:${top}px;width:${w}px;height:${h}px;`;
+  }
 </script>
 
 <svelte:window
   onmousemove={handleMouseMove}
   onmouseup={handleMouseUp}
   onkeydown={handleKeydown}
+  onkeyup={handleKeyup}
 />
 
 <!-- svelte-ignore a11y_click_events_have_key_events -->
 <!-- svelte-ignore a11y_no_static_element_interactions -->
-<div class="canvas-container" onclick={handleCanvasClick} oncontextmenu={handleCanvasContextMenu}>
-  <svg class="connections-layer">
+<div
+  class="canvas-container"
+  bind:this={canvasEl}
+  onclick={handleCanvasClick}
+  onmousedown={handleCanvasMouseDown}
+  oncontextmenu={handleCanvasContextMenu}
+  class:panning={spaceHeld || isPanning}
+>
+  <svg
+    class="connections-layer"
+    style="transform: translate({panX}px, {panY}px) scale({zoom}); transform-origin: 0 0;"
+  >
     <!-- Existing connections -->
     {#each canvasData.connections as connection}
       {@const fromNode = canvasData.nodes.find(n => n.id === connection.from)}
@@ -314,7 +465,7 @@
           <path
             d="M {fp.x} {fp.y} C {fp.x + dx} {fp.y}, {tp.x - dx} {tp.y}, {tp.x} {tp.y}"
             fill="none"
-            stroke="var(--brand)"
+            stroke={getNodeAccentColor(fromNode.type)}
             stroke-width="2"
             stroke-linecap="round"
           />
@@ -346,7 +497,10 @@
     {/if}
   </svg>
 
-  <div class="nodes-layer">
+  <div
+    class="nodes-layer"
+    style="transform: translate({panX}px, {panY}px) scale({zoom}); transform-origin: 0 0;"
+  >
     {#each canvasData.nodes as node (node.id)}
       {@const size = node.size || { width: 320, height: 200 }}
       <!-- svelte-ignore a11y_no_static_element_interactions -->
@@ -358,7 +512,7 @@
         oncontextmenu={(e) => handleNodeContextMenu(e, node.id)}
       >
         <!-- Input ports -->
-        {#each node.inputs as port, i}
+        {#each node.inputs as port}
           {@const pos = getPortPos(node, port, 'input')}
           <!-- svelte-ignore a11y_no_static_element_interactions -->
           <div
@@ -371,7 +525,7 @@
         {/each}
 
         <!-- Output ports -->
-        {#each node.outputs as port, i}
+        {#each node.outputs as port}
           {@const pos = getPortPos(node, port, 'output')}
           <!-- svelte-ignore a11y_no_static_element_interactions -->
           <div
@@ -404,6 +558,50 @@
       </div>
     {/each}
   </div>
+
+  <!-- Empty state -->
+  {#if canvasData.nodes.length === 0}
+    <div class="empty-state">
+      <span class="empty-state-icon">🎨</span>
+      <p class="empty-state-title">Canvas is empty</p>
+      <p class="empty-state-hint">Drag nodes from the sidebar or right-click to add</p>
+    </div>
+  {/if}
+
+  <!-- Minimap -->
+  {#if canvasData.nodes.length > 0}
+    <div class="minimap" aria-hidden="true">
+      {#each canvasData.nodes as node (node.id)}
+        <div
+          class="minimap-node minimap-node--{node.type}"
+          style={minimapNodeStyle(node)}
+        ></div>
+      {/each}
+    </div>
+  {/if}
+
+  <!-- Canvas controls (zoom) -->
+  <div class="canvas-controls" aria-label="Canvas zoom controls">
+    <button
+      class="canvas-ctrl-btn"
+      onclick={() => { zoom = Math.min(MAX_ZOOM, zoom * 1.2); }}
+      title="Zoom in"
+      aria-label="Zoom in"
+    >+</button>
+    <span class="zoom-label" aria-live="polite">{Math.round(zoom * 100)}%</span>
+    <button
+      class="canvas-ctrl-btn"
+      onclick={() => { zoom = Math.max(MIN_ZOOM, zoom * 0.8); }}
+      title="Zoom out"
+      aria-label="Zoom out"
+    >−</button>
+    <button
+      class="canvas-ctrl-btn"
+      onclick={zoomToFit}
+      title="Zoom to fit (all nodes)"
+      aria-label="Zoom to fit all nodes"
+    >⊡</button>
+  </div>
 </div>
 
 {#if ctxMenu}
@@ -428,6 +626,10 @@
     cursor: default;
   }
 
+  .canvas-container.panning {
+    cursor: grab;
+  }
+
   .connections-layer {
     position: absolute;
     top: 0;
@@ -436,6 +638,11 @@
     height: 100%;
     pointer-events: none;
     z-index: 1;
+    overflow: visible;
+  }
+
+  .connections-layer path {
+    pointer-events: all;
   }
 
   .nodes-layer {
@@ -454,13 +661,14 @@
     border: 1px solid var(--border-color, rgba(255,255,255,0.1));
     background: var(--surface-2, #16213e);
     box-shadow: var(--shadow-2, 0 4px 8px rgba(0,0,0,0.5));
-    transition: box-shadow 0.15s ease, border-color 0.15s ease;
+    transition: box-shadow 0.15s ease, border-color 0.15s ease, transform 0.1s ease;
     overflow: hidden;
   }
 
   .node-wrapper:hover {
     border-color: var(--border-color-strong, rgba(255,255,255,0.25));
     box-shadow: var(--shadow-3, 0 8px 24px rgba(0,0,0,0.6));
+    transform: translateY(-1px);
   }
 
   .node-wrapper.selected {
@@ -480,7 +688,7 @@
     width: 12px;
     height: 12px;
     background: var(--surface-3, #0f3460);
-    border: 2px solid var(--brand, #00d4ff);
+    border: 2px solid var(--node-accent, var(--brand, #00d4ff));
     border-radius: 50%;
     cursor: crosshair;
     z-index: 10;
@@ -489,7 +697,7 @@
 
   .port:hover, .port-highlight {
     transform: scale(1.4);
-    background: var(--brand, #00d4ff);
+    background: var(--node-accent, var(--brand, #00d4ff));
   }
 
   .input-port {
@@ -527,4 +735,118 @@
   .resize-handle:hover {
     opacity: 0.8;
   }
+
+  /* Empty state */
+  .empty-state {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-3);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .empty-state-icon {
+    font-size: 3rem;
+    opacity: 0.4;
+  }
+
+  .empty-state-title {
+    margin: 0;
+    color: var(--text-2);
+    font-size: var(--font-size-3);
+    font-weight: 600;
+    opacity: 0.7;
+  }
+
+  .empty-state-hint {
+    margin: 0;
+    color: var(--text-3);
+    font-size: var(--font-size-1);
+    text-align: center;
+    max-width: 300px;
+    line-height: 1.5;
+  }
+
+  /* Canvas controls (zoom) */
+  .canvas-controls {
+    position: absolute;
+    bottom: 1rem;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    background: var(--surface-2);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-round);
+    padding: 4px 8px;
+    z-index: 100;
+    box-shadow: var(--shadow-2);
+  }
+
+  .canvas-ctrl-btn {
+    background: none;
+    border: none;
+    color: var(--text-2);
+    cursor: pointer;
+    font-size: var(--font-size-2);
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--radius-2);
+    transition: background var(--transition-fast), color var(--transition-fast);
+    line-height: 1;
+  }
+
+  .canvas-ctrl-btn:hover,
+  .canvas-ctrl-btn:focus-visible {
+    background: var(--surface-3);
+    color: var(--text-1);
+    outline: none;
+  }
+
+  .canvas-ctrl-btn:focus-visible {
+    box-shadow: 0 0 0 2px var(--brand);
+  }
+
+  .zoom-label {
+    font-size: var(--font-size-0);
+    color: var(--text-2);
+    min-width: 38px;
+    text-align: center;
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* Minimap */
+  .minimap {
+    position: absolute;
+    bottom: 3.5rem;
+    right: 1rem;
+    width: 160px;
+    height: 100px;
+    background: var(--surface-2);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-2);
+    overflow: hidden;
+    z-index: 100;
+    opacity: 0.85;
+    box-shadow: var(--shadow-2);
+  }
+
+  .minimap-node {
+    position: absolute;
+    border-radius: 1px;
+    opacity: 0.8;
+  }
+
+  .minimap-node--terminal  { background: var(--node-accent-terminal); }
+  .minimap-node--input     { background: var(--node-accent-input); }
+  .minimap-node--display   { background: var(--node-accent-display); }
+  .minimap-node--transform { background: var(--node-accent-transform); }
 </style>

@@ -4,10 +4,13 @@
   import TitleBar from '$lib/components/TitleBar.svelte';
   import SettingsPanel from '$lib/components/SettingsPanel.svelte';
   import HelpPanel from '$lib/components/HelpPanel.svelte';
+  import ToastContainer from '$lib/components/ToastContainer.svelte';
   import { settingsStore } from '$lib/stores/settings';
+  import { toolbarStore } from '$lib/stores/toolbar.svelte';
   import { onMount } from 'svelte';
 
   const tui = false;
+  const marginLeft = $derived(toolbarStore.collapsed ? '52px' : '200px');
 
   let settingsOpen = $state(false);
   let helpOpen = $state(false);
@@ -31,7 +34,7 @@
     onOpenSettings={() => { settingsOpen = true; }}
     onOpenHelp={openHelp}
   />
-  <div class="canvas-wrapper">
+  <div class="canvas-wrapper" style:margin-left={marginLeft}>
     <Canvas {tui} />
   </div>
 </div>
@@ -49,6 +52,8 @@
   {tui}
 />
 
+<ToastContainer />
+
 <style>
   :global(body) {
     margin: 0;
@@ -65,6 +70,6 @@
 
   .canvas-wrapper {
     flex: 1;
-    margin-left: 200px;
+    transition: margin-left var(--transition-base);
   }
 </style>
