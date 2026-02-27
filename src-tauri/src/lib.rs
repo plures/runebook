@@ -167,7 +167,11 @@ async fn kill_terminal(
 ) -> Result<(), String> {
     let mut mgr = state.lock().map_err(|e| e.to_string())?;
     if let Some(mut session) = mgr.sessions.remove(&terminal_id) {
+        // First, attempt to terminate the child process.
         session.child.kill().map_err(|e| e.to_string())?;
+        // Then, wait for the child to exit to ensure it is properly reaped
+        // and does not remain as a zombie process on supported platforms.
+        let _ = session.child.wait();
     }
     Ok(())
 }
