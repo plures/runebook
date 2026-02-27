@@ -77,7 +77,10 @@ async fn spawn_terminal(
     }
     if let Some(env_vars) = env {
         for (k, v) in env_vars {
-            cmd.env(k, v);
+            // Validate env var names: only allow alphanumeric and underscore.
+            if k.chars().all(|c| c.is_alphanumeric() || c == '_') {
+                cmd.env(k, v);
+            }
         }
     }
 
@@ -92,6 +95,7 @@ async fn spawn_terminal(
     // Spawn a thread to read PTY output and emit Tauri events
     let tid = terminal_id.clone();
     let app_clone = app.clone();
+    let state_arc = Arc::clone(state.inner());
     std::thread::spawn(move || {
         let mut buf = [0u8; 4096];
         loop {
@@ -103,8 +107,18 @@ async fn spawn_terminal(
                 }
             }
         }
-        // Use -1 to indicate that the child exit status is unknown here.
-        let _ = app_clone.emit(&format!("terminal-exit-{}", tid), -1i32);
+        // PTY closed — child process has exited. Retrieve the real exit code.
+        // child.wait() should return immediately since the PTY closed.
+        // portable_pty's ExitStatus only exposes success() (no numeric code),
+        // so we map success → 0 and failure → 1; -1 if the session is gone.
+        let exit_code: i32 = state_arc
+            .lock()
+            .ok()
+            .and_then(|mut mgr| mgr.sessions.get_mut(&tid).map(|s| s.child.wait()))
+            .and_then(|r| r.ok())
+            .map(|status| if status.success() { 0 } else { 1 })
+            .unwrap_or(-1);
+        let _ = app_clone.emit(&format!("terminal-exit-{}", tid), exit_code);
     });
 
     let mut mgr = state.lock().map_err(|e| e.to_string())?;
@@ -144,6 +158,9 @@ async fn resize_terminal(
     cols: u16,
     rows: u16,
 ) -> Result<(), String> {
+    // resize() sends a non-blocking TIOCSWINSZ ioctl (SIGWINCH signal) —
+    // it does not perform blocking I/O, so holding the lock during the call
+    // is safe and avoids a window where the session appears "not found".
     let mgr = state.lock().map_err(|e| e.to_string())?;
     let session = mgr
         .sessions

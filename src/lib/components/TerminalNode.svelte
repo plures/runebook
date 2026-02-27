@@ -8,7 +8,7 @@
   import { listen } from '@tauri-apps/api/event';
   import { onMount, onDestroy } from 'svelte';
   import type { TerminalNode } from '../types/canvas';
-  import { updateNodeData } from '../stores/canvas';
+  import { updateNodeData, canvasStore, nodeDataStore, getNodeInputData } from '../stores/canvas';
 
   interface Props {
     node: TerminalNode;
@@ -88,7 +88,11 @@
     term.onData((data) => {
       const tid = terminalId;
       if (tid && isInTauri()) {
-        invoke('write_terminal', { terminalId: tid, data }).catch(() => {});
+        invoke('write_terminal', { terminalId: tid, data }).catch((e) => {
+          console.error('[terminal] write_terminal failed:', e);
+          status = 'error';
+          terminal?.writeln(`\r\n\x1b[31m[Write error: ${e}]\x1b[0m`);
+        });
       }
     });
 
@@ -105,7 +109,7 @@
     try {
       const shell = node.shell;
       if (shell) {
-        shellName = shell.split('/').pop() ?? shell;
+        shellName = shell.split(/[/\\]/).pop() ?? shell;
       } else {
         shellName = navigator.platform.toLowerCase().includes('win') ? 'powershell' : 'shell';
       }
@@ -162,7 +166,29 @@
           terminalId: tid,
           cols: terminal?.cols ?? 80,
           rows: terminal?.rows ?? 24,
-        }).catch(() => {});
+        }).catch((e) => {
+          console.error('[terminal] resize_terminal failed:', e);
+        });
+      }
+    }
+  });
+
+  // Watch for stdin data from connected nodes and forward to the PTY.
+  // Track previous value to avoid writing the same data on unrelated re-renders.
+  let prevStdinData = $state<string | null>(null);
+  $effect(() => {
+    const canvas = $canvasStore;
+    const nodeData = $nodeDataStore;
+    if (node.inputs.length > 0) {
+      const stdinData = getNodeInputData(node.id, node.inputs[0].id, canvas.connections, nodeData);
+      if (stdinData != null && terminalId && isInTauri()) {
+        const data = typeof stdinData === 'string' ? stdinData : String(stdinData);
+        if (data !== prevStdinData) {
+          prevStdinData = data;
+          invoke('write_terminal', { terminalId, data }).catch((e) => {
+            console.error('[terminal] stdin write_terminal failed:', e);
+          });
+        }
       }
     }
   });
@@ -177,9 +203,12 @@
       flushOutputBuffer();
     }
     for (const fn of unlisteners) fn();
+    unlisteners.length = 0;
     const tid = terminalId;
     if (tid) {
-      invoke('kill_terminal', { terminalId: tid }).catch(() => {});
+      invoke('kill_terminal', { terminalId: tid }).catch((e) => {
+        console.error('[terminal] kill_terminal failed:', e);
+      });
     }
     terminal?.dispose();
   });
