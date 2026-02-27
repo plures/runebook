@@ -150,7 +150,6 @@
       fitView
       colorMode="dark"
       defaultEdgeOptions={{ animated: true, style: 'stroke: #00d4ff; stroke-width: 2px;' }}
-      proOptions={{ hideAttribution: true }}
     >
       <Controls position="bottom-right" />
       <MiniMap
