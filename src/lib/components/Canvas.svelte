@@ -406,24 +406,75 @@
   const MINIMAP_W = 160;
   const MINIMAP_H = 100;
 
-  function minimapNodeStyle(node: CanvasNode): string {
-    if (canvasData.nodes.length === 0) return '';
-    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
-    for (const n of canvasData.nodes) {
-      const s = n.size || { width: 320, height: 200 };
-      minX = Math.min(minX, n.position.x);
-      minY = Math.min(minY, n.position.y);
-      maxX = Math.max(maxX, n.position.x + s.width);
-      maxY = Math.max(maxY, n.position.y + s.height);
+  type MinimapMetrics = {
+    hasNodes: boolean;
+    minX: number;
+    minY: number;
+    scale: number;
+    offsetX: number;
+    offsetY: number;
+  };
+
+  let minimapMetrics: MinimapMetrics = {
+    hasNodes: false,
+    minX: 0,
+    minY: 0,
+    scale: 1,
+    offsetX: 0,
+    offsetY: 0,
+  };
+
+  $: {
+    if (canvasData.nodes.length === 0) {
+      minimapMetrics = {
+        hasNodes: false,
+        minX: 0,
+        minY: 0,
+        scale: 1,
+        offsetX: 0,
+        offsetY: 0,
+      };
+    } else {
+      let minX = Infinity;
+      let minY = Infinity;
+      let maxX = -Infinity;
+      let maxY = -Infinity;
+
+      for (const n of canvasData.nodes) {
+        const s = n.size || { width: 320, height: 200 };
+        minX = Math.min(minX, n.position.x);
+        minY = Math.min(minY, n.position.y);
+        maxX = Math.max(maxX, n.position.x + s.width);
+        maxY = Math.max(maxY, n.position.y + s.height);
+      }
+
+      const rangeX = Math.max(maxX - minX, 1);
+      const rangeY = Math.max(maxY - minY, 1);
+      const scaleX = MINIMAP_W / rangeX;
+      const scaleY = MINIMAP_H / rangeY;
+      const scale = Math.min(scaleX, scaleY) * 0.9;
+      const offsetX = (MINIMAP_W - rangeX * scale) / 2;
+      const offsetY = (MINIMAP_H - rangeY * scale) / 2;
+
+      minimapMetrics = {
+        hasNodes: true,
+        minX,
+        minY,
+        scale,
+        offsetX,
+        offsetY,
+      };
     }
-    const rangeX = Math.max(maxX - minX, 1);
-    const rangeY = Math.max(maxY - minY, 1);
-    const scaleX = MINIMAP_W / rangeX;
-    const scaleY = MINIMAP_H / rangeY;
-    const scale = Math.min(scaleX, scaleY) * 0.9;
+  }
+
+  function minimapNodeStyle(node: CanvasNode): string {
+    if (!minimapMetrics.hasNodes) return '';
+
+    const { minX, minY, scale, offsetX, offsetY } = minimapMetrics;
     const size = node.size || { width: 320, height: 200 };
-    const left = ((node.position.x - minX) * scale + (MINIMAP_W - rangeX * scale) / 2);
-    const top  = ((node.position.y - minY) * scale + (MINIMAP_H - rangeY * scale) / 2);
+
+    const left = (node.position.x - minX) * scale + offsetX;
+    const top = (node.position.y - minY) * scale + offsetY;
     const w = Math.max(4, size.width * scale);
     const h = Math.max(3, size.height * scale);
     return `left:${left}px;top:${top}px;width:${w}px;height:${h}px;`;
