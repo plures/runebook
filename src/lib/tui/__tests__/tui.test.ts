@@ -295,6 +295,44 @@ describe('TUIApp', () => {
     }
   });
 
+  it('q key calls quit (without exiting the test process)', () => {
+    const path = writeTempCanvas();
+    try {
+      const app = new TUIApp();
+      app.loadFromFile(path);
+      const spy = vi.spyOn(app, 'quit').mockImplementation(() => {});
+      app.handleKey('q', Buffer.from([0x71]));
+      expect(spy).toHaveBeenCalledOnce();
+    } finally {
+      unlinkSync(path);
+    }
+  });
+
+  it('r key calls runSelected', () => {
+    const path = writeTempCanvas();
+    try {
+      const app = new TUIApp();
+      app.loadFromFile(path);
+      const spy = vi.spyOn(app as any, 'runSelected');
+      app.handleKey('r', Buffer.from([0x72]));
+      expect(spy).toHaveBeenCalledOnce();
+    } finally {
+      unlinkSync(path);
+    }
+  });
+
+  it('c key calls clearOutput', () => {
+    const path = writeTempCanvas();
+    try {
+      const app = new TUIApp();
+      app.loadFromFile(path);
+      const spy = vi.spyOn(app as any, 'clearOutput');
+      app.handleKey('c', Buffer.from([0x63]));
+      expect(spy).toHaveBeenCalledOnce();
+    } finally {
+      unlinkSync(path);
+    }
+  });
   it('q key calls quit()', () => {
     const path = writeTempCanvas();
     try {
