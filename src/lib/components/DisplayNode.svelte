@@ -11,17 +11,19 @@
 
   let { data }: Props = $props();
 
-  let formatted = $derived(() => {
-    if (data.content == null) return '';
-    if (data.displayType === 'json') {
+  function formatContent(content: any, displayType: string): string {
+    if (!content) return '';
+    if (displayType === 'json') {
       try {
-        return JSON.stringify(JSON.parse(String(data.content)), null, 2);
+        return JSON.stringify(JSON.parse(String(content)), null, 2);
       } catch {
-        return String(data.content);
+        return String(content);
       }
     }
-    return String(data.content);
-  });
+    return String(content);
+  }
+
+  let formatted = $derived(formatContent(data.content, data.displayType));
 </script>
 
 <Handle type="target" position={Position.Left} />
