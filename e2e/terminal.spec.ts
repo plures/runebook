@@ -43,6 +43,6 @@ test.describe('terminal node', () => {
   });
 
   test('terminal node has an output port', async ({ page }) => {
-    await expect(page.locator('.terminal-node .output-port')).toBeVisible();
+    await expect(page.locator('.node-wrapper .output-port')).toBeVisible();
   });
 });

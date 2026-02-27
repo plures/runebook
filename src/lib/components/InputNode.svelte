@@ -83,19 +83,12 @@
     {/if}
   </Box>
   
-  <!-- Output ports -->
-  <div class="ports">
-    {#each node.outputs as port}
-      <div class="port output-port" data-port-id={port.id}>
-        <span class="port-label">{port.name}</span>
-      </div>
-    {/each}
-  </div>
 </Box>
 
 <style>
   :global(.input-node) {
-    min-width: 250px;
+    width: 100%;
+    height: 100%;
   }
 
   :global(.input-node .node-header) {
@@ -132,27 +125,5 @@
     color: var(--brand);
   }
 
-  .ports {
-    position: relative;
-  }
 
-  .port {
-    position: absolute;
-    width: 12px;
-    height: 12px;
-    background: var(--brand);
-    border: 2px solid var(--surface-2);
-    border-radius: 50%;
-    cursor: crosshair;
-  }
-
-  .output-port {
-    right: -8px;
-    top: 50%;
-    transform: translateY(-50%);
-  }
-
-  .port-label {
-    display: none;
-  }
 </style>

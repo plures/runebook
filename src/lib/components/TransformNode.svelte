@@ -183,26 +183,12 @@
     {/if}
   </Box>
   
-  <!-- Input and output ports -->
-  <div class="ports">
-    {#each node.inputs as port}
-      <div class="port input-port" data-port-id={port.id}>
-        <span class="port-label">{port.name}</span>
-      </div>
-    {/each}
-    
-    {#each node.outputs as port}
-      <div class="port output-port" data-port-id={port.id}>
-        <span class="port-label">{port.name}</span>
-      </div>
-    {/each}
-  </div>
 </Box>
 
 <style>
   :global(.transform-node) {
-    min-width: 320px;
-    max-width: 450px;
+    width: 100%;
+    height: 100%;
   }
 
   :global(.transform-node .node-header) {
@@ -295,33 +281,5 @@
     word-break: break-word;
   }
 
-  .ports {
-    position: relative;
-  }
 
-  .port {
-    position: absolute;
-    width: 12px;
-    height: 12px;
-    background: var(--brand);
-    border: 2px solid var(--surface-2);
-    border-radius: 50%;
-    cursor: crosshair;
-  }
-
-  .input-port {
-    left: -8px;
-    top: 50%;
-    transform: translateY(-50%);
-  }
-
-  .output-port {
-    right: -8px;
-    top: 50%;
-    transform: translateY(-50%);
-  }
-
-  .port-label {
-    display: none;
-  }
 </style>

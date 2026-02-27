@@ -1,3 +1,15 @@
+## [0.5.0] — 2026-02-24
+
+- feat: bundle OpenDyslexic Mono Nerd Font as default mono font (e489a15)
+
+## [0.4.2] — 2026-02-24
+
+- fix: strip duplicate ports, fill containers, add base styles (db2c96f)
+
+## [0.4.1] — 2026-02-24
+
+- fix: CSS 403, add node resize + interactive connection drawing (20f8e19)
+
 ## [0.4.0] — 2026-02-23
 
 - feat: replace hand-styled components with design-dojo primitives (#40) (4ffc4b9)

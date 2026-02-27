@@ -6,6 +6,12 @@ export interface Position {
   y: number;
 }
 
+export interface Size {
+  width: number;
+  height: number;
+}
+
+
 export interface Connection {
   from: string; // Source node ID
   to: string; // Target node ID
@@ -24,6 +30,7 @@ export interface BaseNode {
   id: string;
   type: NodeType;
   position: Position;
+  size?: Size;
   label: string;
   inputs: Port[];
   outputs: Port[];

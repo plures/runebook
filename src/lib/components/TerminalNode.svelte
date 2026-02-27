@@ -118,27 +118,15 @@
     <Button {tui} onclick={clearOutput} class="clear-btn">Clear</Button>
   </Box>
   
-  <!-- Input/Output ports -->
-  <div class="ports">
-    {#each node.inputs as port}
-      <div class="port input-port" data-port-id={port.id}>
-        <span class="port-label">{port.name}</span>
-      </div>
-    {/each}
-    
-    {#each node.outputs as port}
-      <div class="port output-port" data-port-id={port.id}>
-        <span class="port-label">{port.name}</span>
-      </div>
-    {/each}
-  </div>
 </Box>
 
 <style>
   :global(.terminal-node) {
-    min-width: 300px;
-    max-width: 500px;
+    width: 100%;
+    height: 100%;
     font-family: var(--font-mono);
+    display: flex;
+    flex-direction: column;
   }
 
   :global(.terminal-node .node-header) {
@@ -205,33 +193,5 @@
     flex: 1;
   }
 
-  .ports {
-    position: relative;
-  }
 
-  .port {
-    position: absolute;
-    width: 12px;
-    height: 12px;
-    background: var(--brand);
-    border: 2px solid var(--surface-2);
-    border-radius: 50%;
-    cursor: crosshair;
-  }
-
-  .input-port {
-    left: -8px;
-    top: 50%;
-    transform: translateY(-50%);
-  }
-
-  .output-port {
-    right: -8px;
-    top: 50%;
-    transform: translateY(-50%);
-  }
-
-  .port-label {
-    display: none;
-  }
 </style>
