@@ -46,8 +46,8 @@ test.describe('node lifecycle', () => {
     await page.locator('.toolbar-btn', { hasText: /Input/ }).click();
     await expect(page.locator('.node-wrapper')).toHaveCount(2);
 
-    // Toolbar "Clear" button has the danger class; the terminal node "Clear" does not
-    await page.locator('.toolbar-btn.danger').click();
+    // Toolbar "Clear" button: Button renders as dd-btn--danger + toolbar-btn
+    await page.locator('.toolbar-btn.dd-btn--danger').click();
 
     await expect(page.locator('.node-wrapper')).toHaveCount(0);
   });
