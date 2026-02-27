@@ -1,16 +1,25 @@
 name: Build and Publish Release
 
 on:
-  release:
-    types: [published]
+  push:
+    tags: ['v*']
   workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Release tag to build (e.g. v1.2.3)'
+        required: true
+        type: string
 
 permissions:
   contents: write
   packages: write
 
+env:
+  RELEASE_TAG: ${{ inputs.tag || github.ref_name }}
+
 jobs:
   build-tauri:
+    if: startsWith(github.ref, 'refs/tags/v') || github.event_name == 'workflow_dispatch'
     strategy:
       fail-fast: false
       matrix:
@@ -55,17 +64,48 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tagName: ${{ github.event.release.tag_name || github.ref_name }}
-          releaseName: 'RuneBook ${{ github.event.release.tag_name || github.ref_name }}'
-          releaseBody: 'See the CHANGELOG.md for details.'
-          releaseDraft: false
-          prerelease: false
+          tagName: ${{ env.RELEASE_TAG }}
           args: ${{ matrix.args }}
 
-  publish-npm:
-    needs: build-tauri
+  build-android:
+    if: startsWith(github.ref, 'refs/tags/v') || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
-    if: github.event_name == 'release' && github.event.action == 'published'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+      - uses: android-actions/setup-android@v3
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-linux-android,armv7-linux-androideabi,x86_64-linux-android
+      - run: npm ci
+      - name: Initialize Tauri Android project
+        run: npx tauri android init --ci
+        env:
+          NDK_HOME: ${{ env.ANDROID_NDK_HOME }}
+      - run: npx tauri android build
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NDK_HOME: ${{ env.ANDROID_NDK_HOME }}
+      - name: Upload unsigned APK to release
+        if: startsWith(github.ref, 'refs/tags/v') || (github.event_name == 'workflow_dispatch' && inputs.tag != '')
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG_NAME: ${{ env.RELEASE_TAG }}
+        run: |
+          gh release upload "$TAG_NAME" \
+            src-tauri/gen/android/app/build/outputs/apk/universal/release/app-universal-release-unsigned.apk \
+            --clobber
+
+  publish-npm:
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/v')
     
     steps:
       - name: Checkout repository
@@ -87,9 +127,8 @@ jobs:
         continue-on-error: true
 
   publish-github-packages:
-    needs: build-tauri
     runs-on: ubuntu-latest
-    if: github.event_name == 'release' && github.event.action == 'published'
+    if: startsWith(github.ref, 'refs/tags/v')
     
     steps:
       - name: Checkout repository
@@ -112,9 +151,8 @@ jobs:
         continue-on-error: true
 
   winget-publish:
-    needs: build-tauri
     runs-on: windows-latest
-    if: github.event_name == 'release' && github.event.action == 'published'
+    if: startsWith(github.ref, 'refs/tags/v')
     
     steps:
       - name: Checkout repository
@@ -124,7 +162,7 @@ jobs:
         id: version
         shell: bash
         run: |
-          VERSION="${{ github.event.release.tag_name }}"
+          VERSION="${{ env.RELEASE_TAG }}"
           VERSION="${VERSION#v}"
           echo "version=$VERSION" >> $GITHUB_OUTPUT
 
@@ -138,9 +176,8 @@ jobs:
         continue-on-error: true
 
   nixos-publish:
-    needs: build-tauri
     runs-on: ubuntu-latest
-    if: github.event_name == 'release' && github.event.action == 'published'
+    if: startsWith(github.ref, 'refs/tags/v')
     
     steps:
       - name: Checkout repository
@@ -150,7 +187,7 @@ jobs:
         id: version
         shell: bash
         run: |
-          VERSION="${{ github.event.release.tag_name }}"
+          VERSION="${{ env.RELEASE_TAG }}"
           VERSION="${VERSION#v}"
           echo "version=$VERSION" >> $GITHUB_OUTPUT
 
