@@ -1,11 +1,26 @@
 // Re-export the praxis-based canvas store for backward compatibility
 // This maintains the same API while using Praxis reactive engine underneath
 
-import { canvasPraxisStore, canvasPraxisStoreInstance, canvasEngine } from './canvas-praxis';
-import type { Canvas, Connection } from '../types/canvas';
+import {
+  canvasEngine,
+  type CanvasContext,
+  AddNodeEvent,
+  RemoveNodeEvent,
+  UpdateNodeEvent,
+  UpdateNodePositionEvent,
+  AddConnectionEvent,
+  RemoveConnectionEvent,
+  LoadCanvasEvent,
+  ClearCanvasEvent,
+  UpdateNodeDataEvent,
+} from './canvas-praxis';
+import { createPraxisStore } from '@plures/praxis/svelte';
+import type { Canvas, CanvasNode, Connection } from '../types/canvas';
 
-// Use the praxis store from canvas-praxis instead of creating a new one
-const praxisStore = canvasPraxisStoreInstance;
+// Create a Svelte store from the praxis engine.
+// All mutations go through praxisStore.dispatch() so that subscribers are
+// notified both in Svelte component contexts and in plain Node/test environments.
+const praxisStore = createPraxisStore<CanvasContext>(canvasEngine);
 
 // Create a derived store for just the canvas
 export const canvasStore = {
@@ -14,15 +29,15 @@ export const canvasStore = {
       fn(state.context.canvas);
     });
   },
-  set: (canvas: Canvas) => canvasPraxisStore.loadCanvas(canvas),
-  addNode: canvasPraxisStore.addNode,
-  removeNode: canvasPraxisStore.removeNode,
-  updateNode: canvasPraxisStore.updateNode,
-  updateNodePosition: canvasPraxisStore.updateNodePosition,
-  addConnection: canvasPraxisStore.addConnection,
-  removeConnection: canvasPraxisStore.removeConnection,
-  loadCanvas: canvasPraxisStore.loadCanvas,
-  clear: canvasPraxisStore.clear
+  set: (canvas: Canvas) => praxisStore.dispatch([LoadCanvasEvent.create({ canvas })]),
+  addNode: (node: CanvasNode) => praxisStore.dispatch([AddNodeEvent.create({ node })]),
+  removeNode: (nodeId: string) => praxisStore.dispatch([RemoveNodeEvent.create({ nodeId })]),
+  updateNode: (nodeId: string, updates: Partial<CanvasNode>) => praxisStore.dispatch([UpdateNodeEvent.create({ nodeId, updates })]),
+  updateNodePosition: (nodeId: string, x: number, y: number) => praxisStore.dispatch([UpdateNodePositionEvent.create({ nodeId, x, y })]),
+  addConnection: (connection: Connection) => praxisStore.dispatch([AddConnectionEvent.create({ connection })]),
+  removeConnection: (from: string, to: string, fromPort: string, toPort: string) => praxisStore.dispatch([RemoveConnectionEvent.create({ from, to, fromPort, toPort })]),
+  loadCanvas: (canvas: Canvas) => praxisStore.dispatch([LoadCanvasEvent.create({ canvas })]),
+  clear: () => praxisStore.dispatch([ClearCanvasEvent.create({})]),
 };
 
 // Create a derived store for node data
@@ -45,7 +60,7 @@ export const nodeDataStore = {
 
 // Helper to update node output data
 export function updateNodeData(nodeId: string, portId: string, data: any) {
-  canvasPraxisStore.updateNodeData(nodeId, portId, data);
+  praxisStore.dispatch([UpdateNodeDataEvent.create({ nodeId, portId, data })]);
 }
 
 // Helper to get node input data from connections

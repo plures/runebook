@@ -1,3 +1,7 @@
+## [0.5.0] — 2026-02-24
+
+- feat: bundle OpenDyslexic Mono Nerd Font as default mono font (e489a15)
+
 ## [0.4.2] — 2026-02-24
 
 - fix: strip duplicate ports, fill containers, add base styles (db2c96f)
