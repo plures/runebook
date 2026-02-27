@@ -3,9 +3,8 @@
 import { EventEmitter } from 'events';
 import { readFileSync, writeFileSync } from 'fs';
 import { spawn } from 'child_process';
-import yaml from 'js-yaml';
 import type { Canvas, CanvasNode } from '../types/canvas';
-import { saveCanvasToYAML } from '../utils/yaml-loader';
+import { saveCanvasToYAML, parseCanvasFromYAML } from '../utils/yaml-loader';
 
 // ─── Box-drawing characters ───────────────────────────────────────────────────
 
@@ -91,18 +90,7 @@ export class TUIApp extends EventEmitter {
   /** Load a canvas from a YAML file path */
   loadFromFile(filePath: string): void {
     const content = readFileSync(filePath, 'utf-8');
-    const data = yaml.load(content) as any;
-    if (!data || !data.id || !data.name || !Array.isArray(data.nodes) || !Array.isArray(data.connections)) {
-      throw new Error('Invalid canvas YAML: missing required fields (id, name, nodes, connections)');
-    }
-    this.state.canvas = {
-      id: data.id,
-      name: data.name,
-      description: data.description ?? '',
-      nodes: data.nodes,
-      connections: data.connections,
-      version: data.version ?? '1.0.0',
-    };
+    this.state.canvas = parseCanvasFromYAML(content);
     this.state.filePath = filePath;
     this.state.message = `Loaded: ${filePath}`;
   }
@@ -622,11 +610,15 @@ export class TUIApp extends EventEmitter {
       process.stdout.on('resize', this._resizeHandler);
     }
 
-    this.render();
-
-    return new Promise(resolve => {
-      this.once('quit', resolve);
-    });
+    try {
+      this.render();
+      await new Promise<void>(resolve => {
+        this.once('quit', resolve);
+      });
+    } catch (err) {
+      this.quit();
+      throw err;
+    }
   }
 }
 
