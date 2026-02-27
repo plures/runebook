@@ -170,16 +170,14 @@
             <div class="empty-message">No saved canvases</div>
           {:else}
             {#each savedCanvases as saved}
-              <!-- svelte-ignore a11y_interactive_supports_focus -->
-              <!-- svelte-ignore a11y_click_events_have_key_events -->
-              <div
+              <Button
+                {tui}
                 class="saved-item"
-                role="button"
                 onclick={() => loadFromStorage(saved.id)}
               >
                 <span>{saved.name}</span>
                 <span class="saved-time">{new Date(saved.timestamp).toLocaleDateString()}</span>
-              </div>
+              </Button>
             {/each}
           {/if}
         </div>
