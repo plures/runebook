@@ -93,7 +93,7 @@
 </script>
 
 <div class="app">
-  <CommandBar onAddNode={addNode} />
+  <CommandBar onAddNode={addNode} {nodes} {edges} onLoad={(n, e) => { nodes = n; edges = e; }} onClear={() => { nodes = []; edges = []; }} />
   <div class="flow-wrapper">
     <SvelteFlow
       {nodes}
