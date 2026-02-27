@@ -217,7 +217,7 @@
         <span class="btn-icon" aria-hidden="true">💾</span><span class="btn-text"> Save to Storage</span>
       </Button>
       <Button {tui} onclick={toggleSavedList} class="toolbar-btn" title="View saved canvases">
-        <span class="btn-icon" aria-hidden="true">📚</span><span class="btn-text"> Saved {showSavedList ? '▼' : '▶'}</span>
+        <span class="btn-icon" aria-hidden="true">📚</span><span class="btn-text"> Saved Canvases {showSavedList ? '▼' : '▶'}</span>
       </Button>
       {#if showSavedList && !collapsed}
         <div class="saved-list">
