@@ -238,6 +238,11 @@ export class TUIApp {
       this.render();
       return;
     }
+    if (hex === '1b5b5a') {
+      this.selectPrev();
+      this.render();
+      return;
+    }
 
     // Arrow keys (ESC [ A/B/C/D)
     if (hex === '1b5b41') { this.selectPrev(); this.render(); return; } // ↑
