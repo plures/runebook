@@ -58,7 +58,7 @@
 
   .app {
     display: flex;
-    height: calc(100vh - 40px);
+    height: 100vh;
     width: 100vw;
     margin-top: 40px;
   }
