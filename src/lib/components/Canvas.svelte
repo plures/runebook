@@ -418,9 +418,25 @@
   <!-- Zoom indicator + controls -->
   <div class="canvas-controls">
     <button class="canvas-ctrl-btn" onclick={zoomToFit} title="Zoom to fit (all nodes)">⊡</button>
-    <button class="canvas-ctrl-btn" onclick={() => { zoom = Math.min(5, zoom * 1.2); }} title="Zoom in">+</button>
+    <button
+      class="canvas-ctrl-btn"
+      onclick={() => {
+        zoom = Math.min(MAX_ZOOM, zoom * 1.2);
+      }}
+      title="Zoom in"
+    >
+      +
+    </button>
     <span class="zoom-label">{zoomPct}%</span>
-    <button class="canvas-ctrl-btn" onclick={() => { zoom = Math.max(0.1, zoom / 1.2); }} title="Zoom out">−</button>
+    <button
+      class="canvas-ctrl-btn"
+      onclick={() => {
+        zoom = Math.max(MIN_ZOOM, zoom / 1.2);
+      }}
+      title="Zoom out"
+    >
+      −
+    </button>
   </div>
 
   <!-- Minimap -->
