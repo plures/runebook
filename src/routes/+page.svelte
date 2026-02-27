@@ -72,8 +72,9 @@
   }
 
   function onConnect(connection: Connection) {
+    const uid = crypto.randomUUID();
     const edge: Edge = {
-      id: `e-${connection.source}-${connection.target}`,
+      id: `e-${connection.source}-${connection.target}-${uid}`,
       source: connection.source!,
       target: connection.target!,
       sourceHandle: connection.sourceHandle,
