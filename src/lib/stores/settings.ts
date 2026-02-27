@@ -70,7 +70,7 @@ function applySettings(s: AppSettings): void {
 }
 
 function createSettingsStore() {
-  const { subscribe, set, update } = writable<AppSettings>(loadFromStorage());
+  const { subscribe, update } = writable<AppSettings>(loadFromStorage());
 
   return {
     subscribe,
