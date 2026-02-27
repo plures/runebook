@@ -11,6 +11,7 @@
     type Connection
   } from '@xyflow/svelte';
   import '@xyflow/svelte/dist/style.css';
+  import { untrack } from 'svelte';
 
   import TerminalNode from '$lib/components/TerminalNode.svelte';
   import InputNode from '$lib/components/InputNode.svelte';
@@ -110,13 +111,38 @@
     nodes = nodes.filter(n => !nodeIds.has(n.id));
     edges = edges.filter(e => !edgeIds.has(e.id) && !nodeIds.has(e.source) && !nodeIds.has(e.target));
   }
+
+  // Propagate input node values to connected display nodes through edges
+  $effect(() => {
+    const currentEdges = edges;
+    const sourceValueMap = new Map(
+      nodes
+        .filter(n => n.type === 'input')
+        .map(n => [n.id, n.data.value])
+    );
+
+    untrack(() => {
+      const incomingEdgeMap = new Map(currentEdges.map(e => [e.target, e.source]));
+      let changed = false;
+      const next = nodes.map(node => {
+        if (node.type !== 'display') return node;
+        const sourceId = incomingEdgeMap.get(node.id);
+        if (sourceId === undefined || !sourceValueMap.has(sourceId)) return node;
+        const newContent = String(sourceValueMap.get(sourceId) ?? '');
+        if (node.data.content === newContent) return node;
+        changed = true;
+        return { ...node, data: { ...node.data, content: newContent } };
+      });
+      if (changed) nodes = next;
+    });
+  });
 </script>
 
 <div class="app">
   <CommandBar onAddNode={addNode} />
   <div class="flow-wrapper">
     <SvelteFlow
-      {nodes}
+      bind:nodes
       {edges}
       {nodeTypes}
       onconnect={onConnect}
