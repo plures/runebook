@@ -72,16 +72,36 @@
   }
 
   function onConnect(connection: Connection) {
+    const source = connection.source!;
+    const target = connection.target!;
+    const sourceHandle = connection.sourceHandle ?? 'default';
+    const targetHandle = connection.targetHandle ?? 'default';
+
+    const edgeId = `e-${source}-${sourceHandle}-${target}-${targetHandle}`;
+
     const edge: Edge = {
-      id: `e-${connection.source}-${connection.target}`,
-      source: connection.source!,
-      target: connection.target!,
+      id: edgeId,
+      source,
+      target,
       sourceHandle: connection.sourceHandle,
       targetHandle: connection.targetHandle,
       animated: true,
       style: 'stroke: var(--brand, #00d4ff); stroke-width: 2px;'
     };
-    edges = [...edges, edge];
+
+    edges = [
+      // remove any existing edge with the same connection (source/target/handles)
+      ...edges.filter(
+        (e) =>
+          !(
+            e.source === source &&
+            e.target === target &&
+            (e.sourceHandle ?? 'default') === sourceHandle &&
+            (e.targetHandle ?? 'default') === targetHandle
+          )
+      ),
+      edge
+    ];
   }
 
   function onDelete({ nodes: deletedNodes, edges: deletedEdges }: { nodes: Node[]; edges: Edge[] }) {
