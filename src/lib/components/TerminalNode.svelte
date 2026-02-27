@@ -25,6 +25,26 @@
   let status = $state<'starting' | 'running' | 'exited' | 'error'>('starting');
   let unlisteners: Array<() => void> = [];
 
+  // Buffer for throttling updateNodeData calls on streaming PTY output
+  let outputBuffer = '';
+  let flushTimer: ReturnType<typeof setTimeout> | null = null;
+  const FLUSH_INTERVAL_MS = 100;
+
+  function flushOutputBuffer() {
+    if (outputBuffer && node.outputs.length > 0) {
+      updateNodeData(node.id, node.outputs[0].id, outputBuffer);
+    }
+    outputBuffer = '';
+    flushTimer = null;
+  }
+
+  function bufferOutput(chunk: string) {
+    outputBuffer += chunk;
+    if (flushTimer == null) {
+      flushTimer = setTimeout(flushOutputBuffer, FLUSH_INTERVAL_MS);
+    }
+  }
+
   function isInTauri(): boolean {
     return typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window;
   }
@@ -63,6 +83,15 @@
     terminal = term;
     fitAddon = fit;
 
+    // Register onData immediately so keystrokes are never dropped,
+    // even during the async connectPty() handshake.
+    term.onData((data) => {
+      const tid = terminalId;
+      if (tid && isInTauri()) {
+        invoke('write_terminal', { terminalId: tid, data }).catch(() => {});
+      }
+    });
+
     if (isInTauri()) {
       await connectPty();
     } else {
@@ -70,13 +99,6 @@
       term.writeln('\x1b[2m(PTY unavailable in web preview)\x1b[0m');
       status = 'error';
     }
-
-    term.onData((data) => {
-      const tid = terminalId;
-      if (tid && isInTauri()) {
-        invoke('write_terminal', { terminalId: tid, data }).catch(() => {});
-      }
-    });
   }
 
   async function connectPty() {
@@ -104,9 +126,9 @@
 
       const unlistenOutput = await listen<string>(`terminal-output-${id}`, (event) => {
         terminal?.write(event.payload);
-        if (node.outputs.length > 0) {
-          updateNodeData(node.id, node.outputs[0].id, event.payload);
-        }
+        // Buffer output chunks and flush to connected nodes on a timer to
+        // avoid triggering a Praxis reactive update on every PTY data event.
+        bufferOutput(event.payload);
       });
 
       const unlistenExit = await listen<number>(`terminal-exit-${id}`, () => {
@@ -121,11 +143,18 @@
     }
   }
 
-  // Re-fit xterm.js and resize the PTY when the node is resized
+  // Re-fit xterm.js and resize the PTY when the node dimensions change.
+  // Track primitive width/height to avoid spurious triggers from Praxis
+  // producing new object identities on every store update.
+  let prevWidth = $state(node.size?.width ?? 0);
+  let prevHeight = $state(node.size?.height ?? 0);
+
   $effect(() => {
-    // Track node.size as a reactive dependency
-    const _size = node.size;
-    if (fitAddon && _size) {
+    const w = node.size?.width ?? 0;
+    const h = node.size?.height ?? 0;
+    if ((w !== prevWidth || h !== prevHeight) && fitAddon) {
+      prevWidth = w;
+      prevHeight = h;
       fitAddon.fit();
       const tid = terminalId;
       if (tid) {
@@ -143,6 +172,10 @@
   });
 
   onDestroy(() => {
+    if (flushTimer != null) {
+      clearTimeout(flushTimer);
+      flushOutputBuffer();
+    }
     for (const fn of unlisteners) fn();
     const tid = terminalId;
     if (tid) {

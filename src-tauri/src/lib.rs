@@ -8,7 +8,7 @@ use std::collections::HashMap;
 use std::io::{Read, Write};
 use std::sync::{Arc, Mutex};
 
-use portable_pty::{native_pty_system, CommandBuilder, PtySize, PtySystem};
+use portable_pty::{native_pty_system, CommandBuilder, PtySize};
 use tauri::{AppHandle, Emitter};
 
 // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
@@ -20,7 +20,7 @@ fn greet(name: &str) -> String {
 // ── PTY session management ────────────────────────────────────────────────────
 
 struct PtySession {
-    master: Box<dyn portable_pty::MasterPty + Send + Sync>,
+    master: Box<dyn portable_pty::MasterPty + Send>,
     writer: Box<dyn Write + Send>,
     child: Box<dyn portable_pty::Child + Send + Sync>,
 }
