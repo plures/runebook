@@ -10,39 +10,35 @@ const BASE_URL = 'http://127.0.0.1:4173/';
 test.describe('terminal node', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto(BASE_URL);
-    await page.locator('.toolbar-btn', { hasText: /Terminal/ }).click();
+    await page.locator('.add-btn', { hasText: /Terminal/ }).click();
   });
 
-  test('terminal node is rendered with a header', async ({ page }) => {
-    await expect(page.locator('.terminal-node')).toBeVisible();
-    await expect(page.locator('.terminal-node .node-title')).toContainText('Terminal');
+  test('terminal node is rendered with a title bar', async ({ page }) => {
+    await expect(page.locator('.terminal-shell')).toBeVisible();
+    await expect(page.locator('.terminal-shell .title')).toContainText('Terminal');
   });
 
-  test('terminal node displays the command to be executed', async ({ page }) => {
-    await expect(page.locator('.command-display')).toBeVisible();
-    // Default command set in Toolbar.svelte addTerminalNode()
-    await expect(page.locator('.command-display code')).toContainText('echo');
-    await expect(page.locator('.command-display code')).toContainText('Hello, RuneBook!');
+  test('terminal node has a command input field', async ({ page }) => {
+    await expect(page.locator('.command-input')).toBeVisible();
+    await expect(page.locator('.command-input')).not.toBeDisabled();
   });
 
-  test('terminal node shows output placeholder before execution', async ({ page }) => {
-    await expect(page.locator('.output-placeholder')).toBeVisible();
-    await expect(page.locator('.output-placeholder')).toContainText('No output yet');
-  });
-
-  test('run button is present and enabled before first execution', async ({ page }) => {
-    const runBtn = page.locator('.run-btn');
-    await expect(runBtn).toBeVisible();
-    await expect(runBtn).not.toBeDisabled();
-    await expect(runBtn).toContainText('Run');
+  test('terminal node shows output area', async ({ page }) => {
+    await expect(page.locator('.terminal-body')).toBeVisible();
   });
 
   test('clear button is present on the terminal node', async ({ page }) => {
-    await expect(page.locator('.clear-btn')).toBeVisible();
-    await expect(page.locator('.clear-btn')).toContainText('Clear');
+    await expect(page.locator('.terminal-shell .clear-btn')).toBeVisible();
   });
 
-  test('terminal node has an output port', async ({ page }) => {
-    await expect(page.locator('.node-wrapper .output-port')).toBeVisible();
+  test('command input accepts typed text', async ({ page }) => {
+    const input = page.locator('.command-input');
+    await input.fill('echo hello');
+    await expect(input).toHaveValue('echo hello');
+  });
+
+  test('terminal node has input and output connection handles', async ({ page }) => {
+    await expect(page.locator('.svelte-flow__node-terminal .svelte-flow__handle-left')).toBeVisible();
+    await expect(page.locator('.svelte-flow__node-terminal .svelte-flow__handle-right')).toBeVisible();
   });
 });
