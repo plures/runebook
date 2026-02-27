@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { untrack } from 'svelte';
   import type { TransformNode } from '../types/canvas';
   import { canvasStore, nodeDataStore, getNodeInputData, updateNodeData } from '../stores/canvas';
   import Box from '../design-dojo/Box.svelte';
@@ -15,6 +16,8 @@
   let output = $state<any>('');
   let error = $state<string>('');
   let isProcessing = $state(false);
+  // Guard to prevent applyTransform → updateNodeData → $nodeDataStore → effect loop
+  let lastInputDataSig = $state('');
 
   // Subscribe to node data changes and apply transformation
   $effect(() => {
@@ -25,7 +28,13 @@
     if (node.inputs && node.inputs.length > 0) {
       const inputData = getNodeInputData(node.id, node.inputs[0].id, canvas.connections, nodeData);
       if (inputData !== undefined) {
-        applyTransform(inputData);
+        const sig = JSON.stringify(inputData);
+        untrack(() => {
+          if (sig !== lastInputDataSig) {
+            lastInputDataSig = sig;
+            applyTransform(inputData);
+          }
+        });
       }
     }
   });

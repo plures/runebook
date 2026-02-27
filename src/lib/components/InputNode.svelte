@@ -1,7 +1,7 @@
 <script lang="ts">
   import { untrack } from 'svelte';
   import type { InputNode } from '../types/canvas';
-  import { updateNodeData } from '../stores/canvas';
+  import { canvasStore, updateNodeData } from '../stores/canvas';
   import Box from '../design-dojo/Box.svelte';
   import Input from '../design-dojo/Input.svelte';
   import Toggle from '../design-dojo/Toggle.svelte';
@@ -14,15 +14,7 @@
 
   let { node, tui = false }: Props = $props();
 
-  // Initialize value from node prop (warning is expected as we need mutable state)
   let value = $state(node.value ?? '');
-
-  function handleValueChange() {
-    // Update the node's output data for reactive flow
-    if (node.outputs.length > 0) {
-      updateNodeData(node.id, node.outputs[0].id, value);
-    }
-  }
 
   $effect(() => {
     // Capture value outside untrack to establish it as the only reactive
@@ -35,6 +27,8 @@
       if (node.outputs.length > 0) {
         updateNodeData(node.id, node.outputs[0].id, currentValue);
       }
+      // Persist value back to the canvas store so it survives save/load.
+      canvasStore.updateNode(node.id, { value: currentValue });
     });
   });
 </script>
@@ -82,6 +76,10 @@
       </div>
     {/if}
   </Box>
+
+  {#if node.outputs.length > 0}
+    <div class="output-port" title="Output: {node.outputs[0].name}" aria-hidden="true"></div>
+  {/if}
   
 </Box>
 
@@ -89,6 +87,20 @@
   :global(.input-node) {
     width: 100%;
     height: 100%;
+    position: relative;
+  }
+
+  .output-port {
+    position: absolute;
+    right: -6px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 12px;
+    height: 12px;
+    background: var(--surface-3, #0f3460);
+    border: 2px solid var(--brand, #00d4ff);
+    border-radius: 50%;
+    pointer-events: none;
   }
 
   :global(.input-node .node-header) {
