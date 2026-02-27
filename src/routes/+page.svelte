@@ -19,12 +19,12 @@
   import TransformNode from '$lib/components/TransformNode.svelte';
   import CommandBar from '$lib/components/CommandBar.svelte';
 
-  const nodeTypes: NodeTypes = {
-    terminal: TerminalNode as any,
-    input: InputNode as any,
-    display: DisplayNode as any,
-    transform: TransformNode as any
-  };
+  const nodeTypes = {
+    terminal: TerminalNode,
+    input: InputNode,
+    display: DisplayNode,
+    transform: TransformNode
+  } satisfies NodeTypes;
 
   let nodes = $state<Node[]>([]);
   let edges = $state<Edge[]>([]);
