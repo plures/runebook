@@ -11,6 +11,7 @@
     type Connection
   } from '@xyflow/svelte';
   import '@xyflow/svelte/dist/style.css';
+  import { untrack } from 'svelte';
 
   import TerminalNode from '$lib/components/TerminalNode.svelte';
   import InputNode from '$lib/components/InputNode.svelte';
@@ -72,17 +73,36 @@
   }
 
   function onConnect(connection: Connection) {
-    const uid = crypto.randomUUID();
+    const source = connection.source!;
+    const target = connection.target!;
+    const sourceHandle = connection.sourceHandle ?? 'default';
+    const targetHandle = connection.targetHandle ?? 'default';
+
+    const edgeId = `e-${source}-${sourceHandle}-${target}-${targetHandle}`;
+
     const edge: Edge = {
-      id: `e-${connection.source}-${connection.target}-${uid}`,
-      source: connection.source!,
-      target: connection.target!,
+      id: edgeId,
+      source,
+      target,
       sourceHandle: connection.sourceHandle,
       targetHandle: connection.targetHandle,
       animated: true,
       style: 'stroke: var(--brand, #00d4ff); stroke-width: 2px;'
     };
-    edges = [...edges, edge];
+
+    edges = [
+      // remove any existing edge with the same connection (source/target/handles)
+      ...edges.filter(
+        (e) =>
+          !(
+            e.source === source &&
+            e.target === target &&
+            (e.sourceHandle ?? 'default') === sourceHandle &&
+            (e.targetHandle ?? 'default') === targetHandle
+          )
+      ),
+      edge
+    ];
   }
 
   function onDelete({ nodes: deletedNodes, edges: deletedEdges }: { nodes: Node[]; edges: Edge[] }) {
@@ -91,13 +111,38 @@
     nodes = nodes.filter(n => !nodeIds.has(n.id));
     edges = edges.filter(e => !edgeIds.has(e.id) && !nodeIds.has(e.source) && !nodeIds.has(e.target));
   }
+
+  // Propagate input node values to connected display nodes through edges
+  $effect(() => {
+    const currentEdges = edges;
+    const sourceValueMap = new Map(
+      nodes
+        .filter(n => n.type === 'input')
+        .map(n => [n.id, n.data.value])
+    );
+
+    untrack(() => {
+      const incomingEdgeMap = new Map(currentEdges.map(e => [e.target, e.source]));
+      let changed = false;
+      const next = nodes.map(node => {
+        if (node.type !== 'display') return node;
+        const sourceId = incomingEdgeMap.get(node.id);
+        if (sourceId === undefined || !sourceValueMap.has(sourceId)) return node;
+        const newContent = String(sourceValueMap.get(sourceId) ?? '');
+        if (node.data.content === newContent) return node;
+        changed = true;
+        return { ...node, data: { ...node.data, content: newContent } };
+      });
+      if (changed) nodes = next;
+    });
+  });
 </script>
 
 <div class="app">
-  <CommandBar onAddNode={addNode} />
+  <CommandBar onAddNode={addNode} {nodes} {edges} onLoad={(n, e) => { nodes = n; edges = e; }} onClear={() => { nodes = []; edges = []; }} />
   <div class="flow-wrapper">
     <SvelteFlow
-      {nodes}
+      bind:nodes
       {edges}
       {nodeTypes}
       onconnect={onConnect}

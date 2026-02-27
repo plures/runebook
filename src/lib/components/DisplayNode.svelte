@@ -12,7 +12,7 @@
   let { data }: Props = $props();
 
   let formatted = $derived(() => {
-    if (!data.content) return '';
+    if (data.content == null) return '';
     if (data.displayType === 'json') {
       try {
         return JSON.stringify(JSON.parse(String(data.content)), null, 2);
@@ -34,7 +34,7 @@
   </div>
 
   <div class="display-body">
-    {#if data.content}
+    {#if data.content != null}
       <pre class="content">{formatted}</pre>
     {:else}
       <div class="empty">Waiting for input...</div>
