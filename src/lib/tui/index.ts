@@ -69,6 +69,9 @@ export class TUIApp extends EventEmitter {
   private state: TUIState;
   private out: NodeJS.WritableStream;
   private _exiting = false;
+  private _stdinHandler: ((data: Buffer | string) => void) | null = null;
+  private _resizeHandler: (() => void) | null = null;
+  private _activeProc: ReturnType<typeof spawn> | null = null;
 
   constructor(options: TUIOptions = {}) {
     super();
@@ -89,15 +92,15 @@ export class TUIApp extends EventEmitter {
   loadFromFile(filePath: string): void {
     const content = readFileSync(filePath, 'utf-8');
     const data = yaml.load(content) as any;
-    if (!data || !data.id || !data.name || !Array.isArray(data.nodes)) {
-      throw new Error('Invalid canvas YAML: missing required fields (id, name, nodes)');
+    if (!data || !data.id || !data.name || !Array.isArray(data.nodes) || !Array.isArray(data.connections)) {
+      throw new Error('Invalid canvas YAML: missing required fields (id, name, nodes, connections)');
     }
     this.state.canvas = {
       id: data.id,
       name: data.name,
       description: data.description ?? '',
-      nodes: data.nodes ?? [],
-      connections: Array.isArray(data.connections) ? data.connections : [],
+      nodes: data.nodes,
+      connections: data.connections,
       version: data.version ?? '1.0.0',
     };
     this.state.filePath = filePath;
@@ -204,6 +207,7 @@ export class TUIApp extends EventEmitter {
         return;
       }
 
+      this._activeProc = proc;
       let stdoutBuffer = '';
       let stderrBuffer = '';
 
@@ -232,6 +236,7 @@ export class TUIApp extends EventEmitter {
           this.state.terminalOutput.push(stderrBuffer);
           stderrBuffer = '';
         }
+        this._activeProc = null;
         this.state.terminalOutput.push(`[Exit: ${code ?? 'unknown'}]`);
         this.state.mode = 'normal';
         this.render();
@@ -548,6 +553,20 @@ export class TUIApp extends EventEmitter {
   quit(): void {
     if (this._exiting) return;
     this._exiting = true;
+    if (this._activeProc) {
+      try {
+        this._activeProc.kill();
+      } catch { /* ignore */ }
+      this._activeProc = null;
+    }
+    if (this._stdinHandler) {
+      process.stdin.removeListener('data', this._stdinHandler);
+      this._stdinHandler = null;
+    }
+    if (this._resizeHandler) {
+      process.stdout.removeListener('resize', this._resizeHandler);
+      this._resizeHandler = null;
+    }
     process.stdin.removeAllListeners();
     if ((process.stdin as any).isTTY && typeof (process.stdin as any).setRawMode === 'function') {
       (process.stdin as any).setRawMode(false);
@@ -560,7 +579,13 @@ export class TUIApp extends EventEmitter {
   /** Start the interactive TUI. Returns a Promise that resolves when the TUI quits. */
   async start(filePath?: string): Promise<void> {
     if (filePath) {
-      this.loadFromFile(filePath);
+      try {
+        this.loadFromFile(filePath);
+      } catch (err) {
+        const message = err instanceof Error ? err.message : String(err);
+        process.stderr.write(`RuneBook TUI error: ${message}\n`);
+        return;
+      }
     } else {
       this.state.canvas = {
         id: `canvas-${Date.now()}`,
@@ -580,13 +605,21 @@ export class TUIApp extends EventEmitter {
     process.stdin.resume();
     process.stdin.setEncoding('utf-8');
 
-    process.stdin.on('data', (data: string | Buffer) => {
+    if (this._stdinHandler) {
+      process.stdin.removeListener('data', this._stdinHandler);
+    }
+    this._stdinHandler = (data: string | Buffer) => {
       const raw = Buffer.isBuffer(data) ? data : Buffer.from(data as string);
       this.handleKey(raw.toString('utf-8'), raw);
-    });
+    };
+    process.stdin.on('data', this._stdinHandler);
 
     if ((process.stdout as any).isTTY) {
-      process.stdout.on('resize', () => this.render());
+      if (this._resizeHandler) {
+        process.stdout.removeListener('resize', this._resizeHandler);
+      }
+      this._resizeHandler = () => this.render();
+      process.stdout.on('resize', this._resizeHandler);
     }
 
     this.render();
