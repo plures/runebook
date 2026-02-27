@@ -12,28 +12,42 @@
 
   let { id, data }: Props = $props();
   let code = $state(data.code || '');
+  let transformType = $state(data.transformType || 'map');
 
   const { updateNodeData } = useSvelteFlow();
 
-  function handleChange() {
+  function handleCodeChange() {
     updateNodeData(id, { code });
+  }
+
+  function handleTypeChange() {
+    updateNodeData(id, { transformType });
   }
 </script>
 
 <Handle type="target" position={Position.Left} />
 
-<div class="node-shell transform-shell">
+<div class="node-wrapper node-shell transform-node">
   <div class="node-header">
     <span class="node-icon">🔄</span>
     <span class="node-label">{data.label || 'Transform'}</span>
-    <span class="type-badge">{data.transformType || 'map'}</span>
   </div>
 
   <div class="node-body">
+    <select
+      class="type-select"
+      bind:value={transformType}
+      onchange={handleTypeChange}
+    >
+      <option value="map">map</option>
+      <option value="filter">filter</option>
+      <option value="reduce">reduce</option>
+      <option value="sort">sort</option>
+    </select>
     <textarea
       class="code-editor"
       bind:value={code}
-      oninput={handleChange}
+      oninput={handleCodeChange}
       placeholder="item => item"
       spellcheck="false"
       rows="4"
@@ -44,7 +58,7 @@
 <Handle type="source" position={Position.Right} />
 
 <style>
-  .node-shell {
+  .node-wrapper.node-shell {
     border-radius: 8px;
     border: 1px solid rgba(255,255,255,0.1);
     background: #16213e;
@@ -68,18 +82,28 @@
   .node-icon { font-size: 13px; }
   .node-label { flex: 1; }
 
-  .type-badge {
-    font-size: 10px;
-    padding: 1px 6px;
-    background: rgba(123,47,255,0.2);
-    color: #b388ff;
-    border-radius: 3px;
-    text-transform: uppercase;
-    font-weight: 600;
-  }
-
   .node-body {
     padding: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .type-select {
+    width: 100%;
+    padding: 4px 6px;
+    background: #0d1117;
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 4px;
+    color: #e0e0e0;
+    font-size: 12px;
+    font-family: inherit;
+    outline: none;
+    box-sizing: border-box;
+  }
+
+  .type-select:focus {
+    border-color: #7b2fff;
   }
 
   .code-editor {

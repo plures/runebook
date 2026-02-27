@@ -41,7 +41,7 @@
 
     const defaults: Record<string, Partial<Node>> = {
       terminal: {
-        data: { label: 'Terminal', command: '', args: [], env: {}, cwd: '' },
+        data: { label: 'Terminal', command: "echo Hello, RuneBook!", args: [], env: {}, cwd: '' },
         style: 'width: 480px;'
       },
       input: {
@@ -69,6 +69,16 @@
     };
 
     nodes = [...nodes, node];
+  }
+
+  function loadCanvas(newNodes: Node[], newEdges: Edge[]) {
+    nodes = newNodes;
+    edges = newEdges;
+  }
+
+  function clearCanvas() {
+    nodes = [];
+    edges = [];
   }
 
   function onConnect(connection: Connection) {
@@ -113,8 +123,8 @@
 </script>
 
 <div class="app">
-  <CommandBar onAddNode={addNode} />
-  <div class="flow-wrapper">
+  <CommandBar onAddNode={addNode} {nodes} {edges} onLoad={loadCanvas} onClear={clearCanvas} />
+  <div class="canvas-container flow-wrapper">
     <SvelteFlow
       {nodes}
       {edges}
@@ -221,5 +231,10 @@
   :global(.svelte-flow__node.selected .node-shell) {
     border-color: #00d4ff !important;
     box-shadow: 0 0 0 2px #00d4ff, 0 8px 24px rgba(0,0,0,0.6) !important;
+  }
+
+  :global(.canvas-container) {
+    flex: 1;
+    position: relative;
   }
 </style>

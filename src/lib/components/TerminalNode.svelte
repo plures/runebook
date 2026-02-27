@@ -14,24 +14,21 @@
 
   let { data }: Props = $props();
 
-  let commandInput = $state(data.command || '');
   let output = $state<string[]>([]);
   let isRunning = $state(false);
   let error = $state<string | null>(null);
   let outputEl: HTMLDivElement | undefined = $state();
 
   async function executeCommand() {
-    if (isRunning || !commandInput.trim()) return;
+    if (isRunning || !data.command.trim()) return;
     isRunning = true;
     error = null;
 
-    // Parse command + args from the input
-    const parts = commandInput.trim().split(/\s+/);
+    const parts = data.command.trim().split(/\s+/);
     const cmd = parts[0];
     const args = parts.slice(1);
 
-    // Show the command in output like a real terminal
-    output = [...output, `$ ${commandInput}`];
+    output = [...output, `$ ${data.command}`];
 
     try {
       const result = await invoke<string>('execute_terminal_command', {
@@ -47,21 +44,12 @@
     } catch (e) {
       const errorMsg = String(e);
       error = errorMsg;
-      output = [...output, `\x1b[31m${errorMsg}\x1b[0m`];
+      output = [...output, `Error: ${errorMsg}`];
     } finally {
       isRunning = false;
-      commandInput = '';
-      // Scroll to bottom
       requestAnimationFrame(() => {
         if (outputEl) outputEl.scrollTop = outputEl.scrollHeight;
       });
-    }
-  }
-
-  function handleKeydown(e: KeyboardEvent) {
-    if (e.key === 'Enter') {
-      e.preventDefault();
-      executeCommand();
     }
   }
 
@@ -73,42 +61,44 @@
 
 <Handle type="target" position={Position.Left} />
 
-<div class="node-shell terminal-shell">
+<div class="node-wrapper node-shell terminal-node">
   <div class="title-bar">
     <div class="dots">
       <span class="dot dot-red"></span>
       <span class="dot dot-yellow"></span>
       <span class="dot dot-green"></span>
     </div>
-    <span class="title">{data.label || 'Terminal'}</span>
-    <button class="clear-btn" onclick={clear} title="Clear">⌫</button>
+    <span class="node-title">{data.label || 'Terminal'}</span>
+    <button class="clear-btn" onclick={clear} title="Clear output">Clear</button>
+  </div>
+
+  <div class="command-display">
+    <code>$ {data.command}</code>
   </div>
 
   <div class="terminal-body" bind:this={outputEl}>
-    {#each output as line}
-      <pre class="output-line">{line}</pre>
-    {/each}
+    {#if output.length === 0}
+      <div class="output-placeholder">No output yet</div>
+    {:else}
+      {#each output as line}
+        <pre class="output-line">{line}</pre>
+      {/each}
+    {/if}
+  </div>
 
-    <div class="prompt-line">
-      <span class="prompt">$</span>
-      <input
-        class="command-input"
-        type="text"
-        bind:value={commandInput}
-        onkeydown={handleKeydown}
-        placeholder={isRunning ? 'running...' : 'type a command...'}
-        disabled={isRunning}
-        spellcheck="false"
-        autocomplete="off"
-      />
+  <div class="action-bar">
+    <button class="run-btn" onclick={executeCommand} disabled={isRunning} title="Run command">
+      {isRunning ? 'Running…' : 'Run'}
+    </button>
+    <div class="output-port" title="Output port">
+      <span class="port-label">▶</span>
+      <Handle type="source" position={Position.Right} />
     </div>
   </div>
 </div>
 
-<Handle type="source" position={Position.Right} />
-
 <style>
-  .node-shell {
+  .node-wrapper.node-shell {
     border-radius: 8px;
     border: 1px solid rgba(255,255,255,0.1);
     background: #16213e;
@@ -144,7 +134,7 @@
   .dot-yellow { background: #febc2e; }
   .dot-green { background: #28c840; }
 
-  .title {
+  .node-title {
     flex: 1;
     text-align: center;
     font-size: 11px;
@@ -152,29 +142,33 @@
     font-weight: 500;
   }
 
-  .clear-btn {
-    background: none;
-    border: none;
-    color: #606070;
-    cursor: pointer;
-    font-size: 14px;
-    padding: 2px 4px;
-    border-radius: 3px;
+  .command-display {
+    padding: 6px 10px;
+    background: #0a0f1a;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+    font-size: 12px;
   }
 
-  .clear-btn:hover {
-    color: #e0e0e0;
-    background: rgba(255,255,255,0.06);
+  .command-display code {
+    color: #00d4ff;
+    font-family: inherit;
   }
 
   .terminal-body {
     padding: 8px 10px;
-    min-height: 120px;
-    max-height: 400px;
+    min-height: 80px;
+    max-height: 300px;
     overflow-y: auto;
     background: #0d1117;
     font-size: 12px;
     line-height: 1.5;
+  }
+
+  .output-placeholder {
+    color: #3a3a4a;
+    font-size: 12px;
+    font-style: italic;
+    padding: 12px 0;
   }
 
   .output-line {
@@ -187,37 +181,65 @@
     font-size: inherit;
   }
 
-  .prompt-line {
+  .action-bar {
     display: flex;
     align-items: center;
     gap: 6px;
-    margin-top: 2px;
+    padding: 6px 10px;
+    background: #0f1729;
+    border-top: 1px solid rgba(255,255,255,0.06);
   }
 
-  .prompt {
-    color: #28c840;
-    font-weight: 600;
-    flex-shrink: 0;
-  }
-
-  .command-input {
-    flex: 1;
-    background: transparent;
+  .run-btn {
+    padding: 4px 12px;
+    background: #28c840;
     border: none;
-    outline: none;
-    color: #e0e0e0;
+    border-radius: 4px;
+    color: #0a0f1a;
+    font-size: 11px;
+    font-weight: 600;
+    cursor: pointer;
     font-family: inherit;
-    font-size: inherit;
-    caret-color: #00d4ff;
-    padding: 0;
   }
 
-  .command-input::placeholder {
-    color: #3a3a4a;
+  .run-btn:hover:not(:disabled) {
+    background: #34d952;
   }
 
-  .command-input:disabled {
+  .run-btn:disabled {
     opacity: 0.5;
+    cursor: default;
+  }
+
+  .clear-btn {
+    background: none;
+    border: none;
+    color: #606070;
+    cursor: pointer;
+    font-size: 11px;
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-family: inherit;
+  }
+
+  .clear-btn:hover {
+    color: #e0e0e0;
+    background: rgba(255,255,255,0.06);
+  }
+
+  .output-port {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    position: relative;
+  }
+
+  .port-label {
+    font-size: 9px;
+    color: rgba(0,212,255,0.7);
+    letter-spacing: 0.5px;
+    line-height: 1;
   }
 
   /* Scrollbar */

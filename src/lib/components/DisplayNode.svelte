@@ -26,14 +26,14 @@
 
 <Handle type="target" position={Position.Left} />
 
-<div class="node-shell display-shell">
+<div class="node-wrapper node-shell display-node">
   <div class="node-header">
     <span class="node-icon">📊</span>
     <span class="node-label">{data.label || 'Display'}</span>
     <span class="type-badge">{data.displayType || 'text'}</span>
   </div>
 
-  <div class="display-body">
+  <div class="text-display display-body">
     {#if data.content}
       <pre class="content">{formatted}</pre>
     {:else}

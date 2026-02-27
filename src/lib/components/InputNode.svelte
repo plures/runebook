@@ -20,7 +20,7 @@
   }
 </script>
 
-<div class="node-shell input-shell">
+<div class="node-wrapper node-shell input-node">
   <div class="node-header">
     <span class="node-icon">📝</span>
     <span class="node-label">{data.label || 'Input'}</span>
@@ -34,7 +34,7 @@
       </label>
     {:else if data.inputType === 'number'}
       <input
-        class="field"
+        class="dd-input"
         type="number"
         bind:value
         oninput={handleChange}
@@ -51,7 +51,7 @@
       <span class="slider-value">{value}</span>
     {:else}
       <input
-        class="field"
+        class="dd-input"
         type="text"
         bind:value
         oninput={handleChange}
@@ -92,7 +92,7 @@
     padding: 10px;
   }
 
-  .field {
+  .dd-input {
     width: 100%;
     padding: 6px 8px;
     background: #0d1117;
@@ -105,7 +105,7 @@
     box-sizing: border-box;
   }
 
-  .field:focus {
+  .dd-input:focus {
     border-color: #00d4ff;
   }
 
