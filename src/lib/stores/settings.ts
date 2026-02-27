@@ -57,7 +57,6 @@ function saveToStorage(s: AppSettings): void {
 function applySettings(s: AppSettings): void {
   if (!browser) return;
   const root = document.documentElement;
-  root.style.setProperty('--canvas-font-size', `${s.fontSize}px`);
   root.style.setProperty('--font-mono', FONT_STACKS[s.fontFamily] ?? FONT_STACKS['JetBrains Mono']);
 }
 
