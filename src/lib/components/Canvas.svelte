@@ -95,8 +95,10 @@
     const contentH = maxY - minY + ZOOM_TO_FIT_PADDING * 2;
     const newZoom = Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, Math.min(rect.width / contentW, rect.height / contentH)));
     zoom = newZoom;
-    panX = (rect.width - (maxX - minX) * newZoom) / 2 - minX * newZoom;
-    panY = (rect.height - (maxY - minY) * newZoom) / 2 - minY * newZoom;
+    const paddedMinX = minX - ZOOM_TO_FIT_PADDING;
+    const paddedMinY = minY - ZOOM_TO_FIT_PADDING;
+    panX = (rect.width - contentW * newZoom) / 2 - paddedMinX * newZoom;
+    panY = (rect.height - contentH * newZoom) / 2 - paddedMinY * newZoom;
   }
 
   // --- Wheel zoom ---
