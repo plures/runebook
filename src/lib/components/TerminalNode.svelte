@@ -129,7 +129,14 @@
     {#if node.cwd}
       <span class="node-cwd" title="Working directory">{node.cwd}</span>
     {/if}
-    <Button {tui} onclick={clearOutput} class="clear-btn-sm">✕</Button>
+    <Button
+      {tui}
+      onclick={clearOutput}
+      class="clear-btn-sm"
+      aria-label="Clear terminal output"
+    >
+      ✕
+    </Button>
   </Box>
 
   <div class="output-container" bind:this={outputEl}>
