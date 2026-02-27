@@ -8,20 +8,30 @@
 
   // Auto-save to LocalStorage whenever the canvas changes (debounced 1 s)
   let autoSaveTimer: ReturnType<typeof setTimeout> | undefined;
+  let hasInitializedAutoSave = false;
   $effect(() => {
     const canvas = $canvasStore;
-    if (autoSaveTimer !== undefined) {
-      clearTimeout(autoSaveTimer);
-    }
-    autoSaveTimer = setTimeout(() => {
-      saveCanvas(canvas).catch((e: unknown) => console.error('Auto-save failed:', e));
-    }, 1000);
 
-    return () => {
+    const cleanup = () => {
       if (autoSaveTimer !== undefined) {
         clearTimeout(autoSaveTimer);
       }
     };
+
+    // Clear any pending auto-save timer on every effect run
+    cleanup();
+
+   // Skip scheduling auto-save on the very first effect run
+    if (!hasInitializedAutoSave) {
+      hasInitializedAutoSave = true;
+      return cleanup;
+    }
+
+    autoSaveTimer = setTimeout(() => {
+      saveCanvas(canvas).catch((e: unknown) => console.error('Auto-save failed:', e));
+    }, 1000);
+
+    return cleanup;
   });
 </script>
 
