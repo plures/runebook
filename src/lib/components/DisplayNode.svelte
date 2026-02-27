@@ -35,7 +35,7 @@
 
   <div class="display-body">
     {#if data.content}
-      <pre class="content">{formatted()}</pre>
+      <pre class="content">{formatted}</pre>
     {:else}
       <div class="empty">Waiting for input...</div>
     {/if}
