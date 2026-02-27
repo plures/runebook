@@ -13,9 +13,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with: { node-version: '20' }
-      - run: npm ci
-      - run: npm run check 2>/dev/null || true
-      - run: npm test 2>/dev/null || true
-      - run: npm run build 2>/dev/null || true
+      - name: Install Nix
+        uses: cachix/install-nix-action@v27
+      - name: Run checks in Nix flake dev shell
+        run: |
+          nix develop -c sh -lc '
+            npm ci &&
+            (npm run check 2>/dev/null || true) &&
+            (npm test 2>/dev/null || true) &&
+            (npm run build 2>/dev/null || true)
+          '
