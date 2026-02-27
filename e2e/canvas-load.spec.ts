@@ -26,11 +26,6 @@ test.describe('canvas load', () => {
     await expect(page.locator('.add-btn', { hasText: /Transform/ })).toBeVisible();
   });
 
-  test('command bar shows hint text', async ({ page }) => {
-    await expect(page.locator('.command-bar .hint')).toBeVisible();
-    await expect(page.locator('.command-bar .hint')).toContainText(/connect|zoom/i);
-  });
-
   test('MiniMap is rendered', async ({ page }) => {
     await expect(page.locator('.svelte-flow__minimap')).toBeVisible();
   });

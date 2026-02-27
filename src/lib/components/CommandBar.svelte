@@ -116,36 +116,36 @@
       <span class="logo">◇ RuneBook</span>
     </div>
     <div class="bar-center">
-      <button class="toolbar-btn" onclick={() => onAddNode('terminal')} title="Add Terminal">
+      <button type="button" class="toolbar-btn add-btn" onclick={() => onAddNode('terminal')} title="Add Terminal">
         <span class="btn-icon">⚡</span> Terminal
       </button>
-      <button class="toolbar-btn" onclick={() => onAddNode('input')} title="Add Input">
+      <button type="button" class="toolbar-btn add-btn" onclick={() => onAddNode('input')} title="Add Input">
         <span class="btn-icon">📝</span> Input
       </button>
-      <button class="toolbar-btn" onclick={() => onAddNode('transform')} title="Add Transform">
+      <button type="button" class="toolbar-btn add-btn" onclick={() => onAddNode('transform')} title="Add Transform">
         <span class="btn-icon">🔄</span> Transform
       </button>
-      <button class="toolbar-btn" onclick={() => onAddNode('display')} title="Add Display">
+      <button type="button" class="toolbar-btn add-btn" onclick={() => onAddNode('display')} title="Add Display">
         <span class="btn-icon">📊</span> Display
       </button>
     </div>
     <div class="bar-right">
-      <button class="toolbar-btn" onclick={loadExample} title="Load Example Canvas">
+      <button type="button" class="toolbar-btn" onclick={loadExample} title="Load Example Canvas">
         📂 Load Example
       </button>
-      <button class="toolbar-btn" onclick={saveCanvasToStorage} title="Save to Storage">
+      <button type="button" class="toolbar-btn" onclick={saveCanvasToStorage} title="Save to Storage">
         💾 Save to Storage
       </button>
-      <button class="toolbar-btn" onclick={toggleSavedList} title="Browse Saved Canvases">
+      <button type="button" class="toolbar-btn" onclick={toggleSavedList} title="Browse Saved Canvases">
         📚 Saved Canvases {showSavedList ? '▼' : '▶'}
       </button>
-      <button class="toolbar-btn" onclick={saveCanvasToFile} title="Export Canvas as JSON">
+      <button type="button" class="toolbar-btn" onclick={saveCanvasToFile} title="Export Canvas as YAML">
         📥 Export YAML
       </button>
-      <button class="toolbar-btn" onclick={toggleStorageSettings} title="Storage Settings">
+      <button type="button" class="toolbar-btn" onclick={toggleStorageSettings} title="Storage Settings">
         ⚙️ Storage Settings {showStorageSettings ? '▼' : '▶'}
       </button>
-      <button class="toolbar-btn dd-btn--danger" onclick={clearCanvas} title="Clear Canvas">
+      <button type="button" class="toolbar-btn dd-btn--danger" onclick={clearCanvas} title="Clear Canvas">
         🗑️ Clear
       </button>
     </div>
@@ -157,7 +157,7 @@
         <div class="empty-message">No saved canvases</div>
       {:else}
         {#each savedCanvases as saved}
-          <button class="saved-item" onclick={() => loadCanvasFromStorage(saved.id)}>
+          <button type="button" class="saved-item" onclick={() => loadCanvasFromStorage(saved.id)}>
             {saved.name}
             <span class="saved-time">{new Date(saved.timestamp).toLocaleDateString()}</span>
           </button>

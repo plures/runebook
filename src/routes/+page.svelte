@@ -112,17 +112,50 @@
     edges = edges.filter(e => !edgeIds.has(e.id) && !nodeIds.has(e.source) && !nodeIds.has(e.target));
   }
 
-  // Propagate input node values to connected display nodes through edges
+  function syncCounterFromNodes(loadedNodes: Node[]) {
+    const maxNumericId = loadedNodes.reduce((max, node) => {
+      const parts = String(node.id).split('-');
+      const numericPart = Number(parts[parts.length - 1]);
+      const value = Number.isFinite(numericPart) ? numericPart : 0;
+      return value > max ? value : max;
+    }, 0);
+    nodeIdCounter = maxNumericId + 1;
+  }
+
+  // Propagate values between connected nodes:
+  // input.value → display.content / transform.input
+  // terminal.value → display.content / transform.input
+  // transform (executes code on input) → display.content
   $effect(() => {
     const currentEdges = edges;
-    const sourceValueMap = new Map(
+    const sourceValueMap = new Map<string, any>(
       nodes
-        .filter(n => n.type === 'input')
-        .map(n => [n.id, n.data.value])
+        .filter(n => n.type === 'input' || n.type === 'terminal')
+        .map(n => [n.id, n.data.value ?? ''])
     );
 
     untrack(() => {
       const incomingEdgeMap = new Map(currentEdges.map(e => [e.target, e.source]));
+
+      // Resolve transform outputs: evaluate code with upstream input value
+      for (const node of nodes) {
+        if (node.type !== 'transform') continue;
+        const sourceId = incomingEdgeMap.get(node.id);
+        if (sourceId === undefined) continue;
+        const inputVal = sourceValueMap.get(sourceId);
+        if (inputVal === undefined) continue;
+        try {
+          // new Function is intentional: TransformNode is a user-scripting sandbox in a desktop (Tauri) context.
+          // eslint-disable-next-line no-new-func
+          const fn = new Function('input', `return (${node.data.code || 'input'})`);
+          const result = fn(inputVal);
+          sourceValueMap.set(node.id, String(result ?? ''));
+        } catch (err) {
+          // Surface the error string so connected display nodes can show it
+          sourceValueMap.set(node.id, `[transform error: ${err instanceof Error ? err.message : String(err)}]`);
+        }
+      }
+
       let changed = false;
       const next = nodes.map(node => {
         if (node.type !== 'display') return node;
@@ -139,7 +172,7 @@
 </script>
 
 <div class="app">
-  <CommandBar onAddNode={addNode} {nodes} {edges} onLoad={(n, e) => { nodes = n; edges = e; }} onClear={() => { nodes = []; edges = []; }} />
+  <CommandBar onAddNode={addNode} {nodes} {edges} onLoad={(n, e) => { nodes = n; edges = e; syncCounterFromNodes(n); }} onClear={() => { nodes = []; edges = []; }} />
   <div class="flow-wrapper">
     <SvelteFlow
       bind:nodes

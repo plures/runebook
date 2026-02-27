@@ -1,8 +1,9 @@
 <script lang="ts">
-  import { Handle, Position } from '@xyflow/svelte';
+  import { Handle, Position, useSvelteFlow } from '@xyflow/svelte';
   import { invoke } from '@tauri-apps/api/core';
 
   interface Props {
+    id: string;
     data: {
       label: string;
       command: string;
@@ -12,13 +13,15 @@
     };
   }
 
-  let { data }: Props = $props();
+  let { id, data }: Props = $props();
 
   let commandInput = $state(data.command || '');
   let output = $state<string[]>([]);
   let isRunning = $state(false);
   let error = $state<string | null>(null);
   let outputEl: HTMLDivElement | undefined = $state();
+
+  const { updateNodeData } = useSvelteFlow();
 
   async function executeCommand() {
     if (isRunning || !commandInput.trim()) return;
@@ -43,11 +46,13 @@
 
       if (result) {
         output = [...output, result];
+        updateNodeData(id, { value: result });
       }
     } catch (e) {
       const errorMsg = String(e);
       error = errorMsg;
       output = [...output, errorMsg];
+      updateNodeData(id, { value: errorMsg });
     } finally {
       isRunning = false;
       commandInput = '';
@@ -101,6 +106,7 @@
         disabled={isRunning}
         spellcheck="false"
         autocomplete="off"
+        aria-label="Terminal command input"
       />
     </div>
   </div>
