@@ -46,7 +46,7 @@
 <!-- svelte-ignore a11y_no_static_element_interactions -->
 <div class="ctx-backdrop" onclick={onclose}></div>
 
-<menu
+<ul
   bind:this={menuEl}
   class="ctx-menu"
   style="left: {left}px; top: {top}px;"
@@ -56,20 +56,21 @@
     {#if item.separator}
       <hr class="ctx-separator" />
     {:else}
-      <!-- svelte-ignore a11y_interactive_supports_focus -->
       <li
         class="ctx-item"
         class:ctx-item--danger={item.danger}
         class:ctx-item--disabled={item.disabled}
         role="menuitem"
+        tabindex={item.disabled ? -1 : 0}
         aria-disabled={item.disabled}
         onclick={() => { if (!item.disabled) { item.action(); onclose(); } }}
+        onkeydown={(e) => { if ((e.key === 'Enter' || e.key === ' ') && !item.disabled) { item.action(); onclose(); } }}
       >
         {item.label}
       </li>
     {/if}
   {/each}
-</menu>
+</ul>
 
 <style>
   .ctx-backdrop {

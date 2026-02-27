@@ -9,7 +9,7 @@
     tui?: boolean;
   }
 
-  let { open, view, onclose, tui = false }: Props = $props();
+  let { open, view = $bindable<'shortcuts' | 'about'>('shortcuts'), onclose, tui = false }: Props = $props();
 
   const shortcuts = [
     { keys: 'Delete / Backspace', description: 'Remove selected node' },
@@ -32,23 +32,21 @@
 
   <div class="help-dialog" role="dialog" aria-modal="true" aria-label="Help" data-tui={tui}>
     <div class="help-header">
-      <div class="help-tabs">
-        <!-- svelte-ignore a11y_interactive_supports_focus -->
-        <span
+      <div class="help-tabs" role="tablist">
+        <button
           class="help-tab"
           class:help-tab--active={view === 'shortcuts'}
           role="tab"
           aria-selected={view === 'shortcuts'}
           onclick={() => { view = 'shortcuts'; }}
-        >⌨️ Shortcuts</span>
-        <!-- svelte-ignore a11y_interactive_supports_focus -->
-        <span
+        >⌨️ Shortcuts</button>
+        <button
           class="help-tab"
           class:help-tab--active={view === 'about'}
           role="tab"
           aria-selected={view === 'about'}
           onclick={() => { view = 'about'; }}
-        >ℹ️ About</span>
+        >ℹ️ About</button>
       </div>
       <Button {tui} onclick={onclose} class="help-close">✕</Button>
     </div>
@@ -151,6 +149,8 @@
     cursor: pointer;
     user-select: none;
     transition: background var(--transition-fast), color var(--transition-fast);
+    border: none;
+    background: transparent;
   }
 
   .help-tab:hover {
