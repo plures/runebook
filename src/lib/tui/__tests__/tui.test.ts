@@ -396,6 +396,50 @@ describe('TUIApp', () => {
     expect(() => app.render()).not.toThrow();
   });
 
+  it('render() shows Output pane when terminal output is present', () => {
+    const chunks: string[] = [];
+    const fakeOut = {
+      write: (s: string) => { chunks.push(s); },
+      columns: 100,
+      rows: 24,
+    } as any;
+
+    const path = writeTempCanvas();
+    try {
+      const app = new TUIApp({ output: fakeOut });
+      app.loadFromFile(path);
+      (app as any).state.terminalOutput = ['hello world'];
+      app.render();
+      const output = chunks.join('');
+      expect(output).toContain('Output');
+      expect(output).toContain('hello world');
+    } finally {
+      unlinkSync(path);
+    }
+  });
+
+  it('render() shows Output pane when mode is run', () => {
+    const chunks: string[] = [];
+    const fakeOut = {
+      write: (s: string) => { chunks.push(s); },
+      columns: 100,
+      rows: 24,
+    } as any;
+
+    const path = writeTempCanvas();
+    try {
+      const app = new TUIApp({ output: fakeOut });
+      app.loadFromFile(path);
+      (app as any).state.mode = 'run';
+      app.render();
+      const output = chunks.join('');
+      expect(output).toContain('Output');
+      expect(output).toContain('RUN');
+    } finally {
+      unlinkSync(path);
+    }
+  });
+
   // ── mode ──────────────────────────────────────────────────────────────────────
 
   it('starts in normal mode', () => {

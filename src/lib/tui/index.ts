@@ -196,10 +196,16 @@ export class TUIApp extends EventEmitter {
 
       let proc: ReturnType<typeof spawn>;
       try {
-        proc = spawn(cmd, termNode.args ?? [], {
+        // Split command string into executable + args; combine with explicit args.
+        // Spawn without a shell to prevent command-injection attacks.
+        // Note: simple whitespace splitting is used; quoted arguments (e.g. `echo "hello world"`)
+        // are not supported. Use termNode.args for arguments containing spaces.
+        const parts = cmd.trim().split(/\s+/);
+        const executable = parts[0];
+        const cmdArgs = [...parts.slice(1), ...(termNode.args ?? [])];
+        proc = spawn(executable, cmdArgs, {
           cwd: termNode.cwd ?? process.cwd(),
           env: { ...process.env, ...(termNode.env ?? {}) } as NodeJS.ProcessEnv,
-          shell: true,
         });
       } catch (err) {
         this.state.mode = 'normal';
@@ -304,7 +310,9 @@ export class TUIApp extends EventEmitter {
 
     const nodeList = this.buildNodeList(listW, contentH);
     const canvasLines = this.buildCanvas(canvasW, contentH);
-    const props = this.buildProperties(propsW, contentH);
+    const props = this.state.mode === 'run' || this.state.terminalOutput.length > 0
+      ? this.buildOutput(propsW, contentH)
+      : this.buildProperties(propsW, contentH);
 
     // Status bar
     const modeStr = this.state.mode.toUpperCase();
@@ -437,6 +445,29 @@ export class TUIApp extends EventEmitter {
         if (lines.length >= h) break;
         lines.push(pad(` ${k}: ${v}`, w));
       }
+    }
+
+    while (lines.length < h) lines.push(' '.repeat(w));
+    return lines;
+  }
+
+  private buildOutput(w: number, h: number): string[] {
+    const title = this.state.mode === 'run' ? ' Output (running…)' : ' Output';
+    const lines: string[] = [];
+    lines.push(A.bold + A.green + pad(title, w) + A.reset);
+    lines.push(A.dim + BOX.h.repeat(w) + A.reset);
+
+    // Show the most recent lines that fit
+    const outputLines = this.state.terminalOutput;
+    const visibleCount = Math.max(0, h - lines.length);
+    const startIdx = Math.max(0, outputLines.length - visibleCount);
+    for (let i = startIdx; i < outputLines.length; i++) {
+      if (lines.length >= h) break;
+      lines.push(pad(' ' + outputLines[i], w));
+    }
+
+    if (outputLines.length === 0) {
+      lines.push(A.dim + pad(' (no output)', w) + A.reset);
     }
 
     while (lines.length < h) lines.push(' '.repeat(w));
