@@ -1,5 +1,6 @@
 import { writable } from 'svelte/store';
 import { browser } from '$app/environment';
+import { useLocalStorage, usePluresDB } from '../utils/storage';
 
 const STORAGE_KEY = 'runebook-settings';
 
@@ -61,6 +62,11 @@ function applySettings(s: AppSettings): void {
   root.style.setProperty('--canvas-show-grid', s.showGrid ? '1' : '0');
   root.style.setProperty('--canvas-grid-size', `${s.gridSize}`);
   root.style.setProperty('--canvas-snap-to-grid', s.snapToGrid ? '1' : '0');
+  if (s.storageType === 'pluresdb') {
+    usePluresDB();
+  } else {
+    useLocalStorage();
+  }
 }
 
 function createSettingsStore() {

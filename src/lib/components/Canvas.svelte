@@ -170,6 +170,22 @@
     }
   }
 
+  function handleConnectionContextMenu(event: MouseEvent, conn: Connection) {
+    event.preventDefault();
+    event.stopPropagation();
+    ctxMenu = {
+      x: event.clientX,
+      y: event.clientY,
+      items: [
+        {
+          label: '🗑️ Delete connection',
+          danger: true,
+          action: () => canvasStore.removeConnection(conn.from, conn.to, conn.fromPort, conn.toPort),
+        },
+      ],
+    };
+  }
+
   // --- Context menus ---
 
   function handleCanvasContextMenu(event: MouseEvent) {
@@ -301,6 +317,16 @@
             stroke="var(--brand)"
             stroke-width="2"
             stroke-linecap="round"
+          />
+          <!-- Wider transparent hit area for right-click -->
+          <!-- svelte-ignore a11y_no_static_element_interactions -->
+          <path
+            d="M {fp.x} {fp.y} C {fp.x + dx} {fp.y}, {tp.x - dx} {tp.y}, {tp.x} {tp.y}"
+            fill="none"
+            stroke="transparent"
+            stroke-width="12"
+            style="pointer-events: stroke; cursor: context-menu"
+            oncontextmenu={(e) => handleConnectionContextMenu(e, connection)}
           />
         {/if}
       {/if}
