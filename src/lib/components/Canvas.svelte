@@ -251,7 +251,6 @@
   }
 
   function duplicateNode(nodeId: string) {
-    const node = canvasData.nodes.find(n => n.id === nodeId);
     const node = canvasData.nodes.find((n) => n.id === nodeId);
     if (!node) return;
     const newId = `${node.type}-${Date.now()}`;
