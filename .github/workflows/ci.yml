@@ -50,8 +50,8 @@ jobs:
           toolchain: stable
           components: rustfmt, clippy
       - name: Check formatting
-        run: nix develop -c cargo fmt --all -- --check
+        run: nix develop .. -c cargo fmt --all -- --check
       - name: Clippy
-        run: nix develop -c cargo clippy --workspace -- -D warnings
+        run: nix develop .. -c cargo clippy --workspace -- -D warnings
       - name: Test
-        run: nix develop -c cargo test --workspace
+        run: nix develop .. -c cargo test --workspace
