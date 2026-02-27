@@ -9,6 +9,7 @@
   import type { CanvasNode, Connection } from '../types/canvas';
   import type { ContextMenuItem } from './ContextMenu.svelte';
   import type { TerminalNode, InputNode, DisplayNode, TransformNode } from '../types/canvas';
+  import { createTerminalNode, createInputNode } from '../utils/node-factory';
   import Box from '../design-dojo/Box.svelte';
 
   interface Props {
@@ -158,8 +159,12 @@
   }
 
   function handleKeydown(event: KeyboardEvent) {
+    const inEditableElement = !!(event.target as HTMLElement)?.closest(
+      'input, textarea, [contenteditable]'
+    );
+
     if (event.key === 'Delete' || event.key === 'Backspace') {
-      if (selectedNodeId && !(event.target as HTMLElement)?.closest('input, textarea, [contenteditable]')) {
+      if (selectedNodeId && !inEditableElement) {
         event.preventDefault();
         canvasStore.removeNode(selectedNodeId);
         selectedNodeId = null;
@@ -167,6 +172,16 @@
     }
     if (event.key === 'Escape') {
       ctxMenu = null;
+    }
+    // Ctrl/Cmd+T → add Terminal node
+    if ((event.ctrlKey || event.metaKey) && event.key === 't' && !inEditableElement) {
+      event.preventDefault();
+      canvasStore.addNode(createTerminalNode());
+    }
+    // Ctrl/Cmd+I → add Input node
+    if ((event.ctrlKey || event.metaKey) && event.key === 'i' && !inEditableElement) {
+      event.preventDefault();
+      canvasStore.addNode(createInputNode());
     }
   }
 
@@ -351,7 +366,7 @@
       {@const size = node.size || { width: 320, height: 200 }}
       <!-- svelte-ignore a11y_no_static_element_interactions -->
       <div
-        class="node-wrapper"
+        class="node-wrapper node-wrapper--{node.type}"
         class:selected={selectedNodeId === node.id}
         style="left: {node.position.x}px; top: {node.position.y}px; width: {size.width}px; height: {size.height}px;"
         onmousedown={(e) => handleNodeMouseDown(e, node.id)}
@@ -527,4 +542,10 @@
   .resize-handle:hover {
     opacity: 0.8;
   }
+
+  /* Per-type node accent stripe */
+  .node-wrapper--terminal  { border-top: 2px solid #4caf50; }
+  .node-wrapper--input     { border-top: 2px solid #00d4ff; }
+  .node-wrapper--display   { border-top: 2px solid #7b2fff; }
+  .node-wrapper--transform { border-top: 2px solid #ff9800; }
 </style>

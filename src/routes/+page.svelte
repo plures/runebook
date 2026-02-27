@@ -1,9 +1,11 @@
 <script lang="ts">
   import Canvas from '$lib/components/Canvas.svelte';
-  import Toolbar from '$lib/components/Toolbar.svelte';
+  import CommandBar from '$lib/components/CommandBar.svelte';
   import TitleBar from '$lib/components/TitleBar.svelte';
   import SettingsPanel from '$lib/components/SettingsPanel.svelte';
   import HelpPanel from '$lib/components/HelpPanel.svelte';
+  import { canvasStore } from '$lib/stores/canvas';
+  import { saveCanvas } from '$lib/utils/storage';
   import { settingsStore } from '$lib/stores/settings';
   import { onMount } from 'svelte';
 
@@ -21,12 +23,40 @@
   onMount(() => {
     settingsStore.init();
   });
+
+  // Auto-save to LocalStorage whenever the canvas changes (debounced 1 s)
+  let autoSaveTimer: ReturnType<typeof setTimeout> | undefined;
+  let hasInitializedAutoSave = false;
+  $effect(() => {
+    const canvas = $canvasStore;
+
+    const cleanup = () => {
+      if (autoSaveTimer !== undefined) {
+        clearTimeout(autoSaveTimer);
+      }
+    };
+
+    // Clear any pending auto-save timer on every effect run
+    cleanup();
+
+    // Skip scheduling auto-save on the very first effect run
+    if (!hasInitializedAutoSave) {
+      hasInitializedAutoSave = true;
+      return cleanup;
+    }
+
+    autoSaveTimer = setTimeout(() => {
+      saveCanvas(canvas).catch((e: unknown) => console.error(`Auto-save failed for canvas "${canvas.name}":`, e));
+    }, 1000);
+
+    return cleanup;
+  });
 </script>
 
 <TitleBar {tui} />
 
 <div class="app">
-  <Toolbar
+  <CommandBar
     {tui}
     onOpenSettings={() => { settingsOpen = true; }}
     onOpenHelp={openHelp}
@@ -58,13 +88,14 @@
 
   .app {
     display: flex;
-    height: 100vh;
+    flex-direction: column;
+    height: calc(100vh - 40px);
     width: 100vw;
     margin-top: 40px;
   }
 
   .canvas-wrapper {
     flex: 1;
-    margin-left: 200px;
+    min-height: 0;
   }
 </style>

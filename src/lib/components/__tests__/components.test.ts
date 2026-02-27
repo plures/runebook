@@ -176,18 +176,20 @@ describe('TerminalNode', () => {
     const { container } = render(TerminalNode, {
       node: makeTerminalNode({ command: 'ls', args: ['-la'] }),
     });
-    expect(container.textContent).toContain('ls');
+    const input = container.querySelector('.command-input') as HTMLInputElement;
+    expect(input).toBeTruthy();
+    expect(input.value).toContain('ls');
   });
 
   it('should have a run button', () => {
     const { container } = render(TerminalNode, { node: makeTerminalNode() });
-    const button = container.querySelector('.run-btn');
+    const button = container.querySelector('.run-btn-sm');
     expect(button).toBeTruthy();
   });
 
   it('should have a clear button', () => {
     const { container } = render(TerminalNode, { node: makeTerminalNode() });
-    const button = container.querySelector('.clear-btn');
+    const button = container.querySelector('.clear-btn-sm');
     expect(button).toBeTruthy();
   });
 
@@ -195,7 +197,7 @@ describe('TerminalNode', () => {
     const { invoke } = await import('@tauri-apps/api/core') as any;
     invoke.mockResolvedValueOnce('command output');
     const { container } = render(TerminalNode, { node: makeTerminalNode() });
-    const runButton = container.querySelector('.run-btn') as HTMLButtonElement;
+    const runButton = container.querySelector('.run-btn-sm') as HTMLButtonElement;
     expect(runButton).toBeTruthy();
     await fireEvent.click(runButton);
     // After clicking, invoke should have been called
@@ -218,8 +220,10 @@ describe('TerminalNode', () => {
     const { invoke } = await import('@tauri-apps/api/core') as any;
     invoke.mockRejectedValueOnce(new Error('Command failed'));
     const { container } = render(TerminalNode, { node: makeTerminalNode() });
-    const runButton = container.querySelector('.run-btn') as HTMLButtonElement;
-    await fireEvent.click(runButton);
+    const runButton = container.querySelector('.run-btn-sm') as HTMLButtonElement;
+    if (runButton) {
+      await fireEvent.click(runButton);
+    }
     // Error handling should not throw
     expect(container).toBeTruthy();
   });

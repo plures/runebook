@@ -19,17 +19,17 @@ test.describe('canvas load', () => {
     await expect(page.locator('.node-wrapper')).toHaveCount(0);
   });
 
-  test('toolbar shows all four Add Nodes buttons', async ({ page }) => {
-    await expect(page.locator('.toolbar-btn', { hasText: /Terminal/ })).toBeVisible();
-    await expect(page.locator('.toolbar-btn', { hasText: /Input/ })).toBeVisible();
-    await expect(page.locator('.toolbar-btn', { hasText: /Display/ })).toBeVisible();
-    await expect(page.locator('.toolbar-btn', { hasText: /Transform/ })).toBeVisible();
+  test('command bar shows all four Add Nodes buttons', async ({ page }) => {
+    await expect(page.locator('.cmd-btn', { hasText: /Terminal/ })).toBeVisible();
+    await expect(page.locator('.cmd-btn', { hasText: /Input/ })).toBeVisible();
+    await expect(page.locator('.cmd-btn', { hasText: /Display/ })).toBeVisible();
+    await expect(page.locator('.cmd-btn', { hasText: /Transform/ })).toBeVisible();
   });
 
-  test('toolbar shows canvas action buttons', async ({ page }) => {
-    await expect(page.locator('.toolbar-btn', { hasText: /Load Example/ })).toBeVisible();
-    await expect(page.locator('.toolbar-btn', { hasText: /Save to Storage/ })).toBeVisible();
-    await expect(page.locator('.toolbar-btn', { hasText: /Saved Canvases/ })).toBeVisible();
-    await expect(page.locator('.toolbar-btn', { hasText: /Export YAML/ })).toBeVisible();
+  test('command bar shows canvas action buttons', async ({ page }) => {
+    await expect(page.locator('.cmd-btn', { hasText: /Load Example/ })).toBeVisible();
+    await expect(page.locator('.cmd-btn', { hasText: /Save to Storage/ })).toBeVisible();
+    await expect(page.locator('.cmd-btn', { hasText: /Saved Canvases/ })).toBeVisible();
+    await expect(page.locator('.cmd-btn', { hasText: /Export YAML/ })).toBeVisible();
   });
 });
