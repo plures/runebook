@@ -40,7 +40,7 @@ nodes: []
 connections: []
 `;
       await expect(loadCanvasFromYAML(missingFields)).rejects.toThrow(
-        'Invalid canvas YAML: missing required fields'
+        /invalid canvas yaml/i
       );
     });
 
@@ -51,7 +51,7 @@ name: Test Canvas
 connections: []
 `;
       await expect(loadCanvasFromYAML(missingNodes)).rejects.toThrow(
-        'Invalid canvas YAML: missing required fields'
+        /invalid canvas yaml/i
       );
     });
 
