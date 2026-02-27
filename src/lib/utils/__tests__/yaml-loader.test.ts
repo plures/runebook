@@ -1,7 +1,7 @@
 // Tests for yaml-loader utility
 
 import { describe, it, expect, vi } from 'vitest';
-import { loadCanvasFromYAML, saveCanvasToYAML, loadCanvasFromFile } from '../yaml-loader';
+import { loadCanvasFromYAML, parseCanvasFromYAML, saveCanvasToYAML, loadCanvasFromFile } from '../yaml-loader';
 import type { Canvas } from '../../types/canvas';
 
 const validCanvas: Canvas = {
@@ -40,7 +40,7 @@ nodes: []
 connections: []
 `;
       await expect(loadCanvasFromYAML(missingFields)).rejects.toThrow(
-        'Invalid canvas YAML: missing required fields'
+        /invalid canvas yaml/i
       );
     });
 
@@ -51,7 +51,7 @@ name: Test Canvas
 connections: []
 `;
       await expect(loadCanvasFromYAML(missingNodes)).rejects.toThrow(
-        'Invalid canvas YAML: missing required fields'
+        /invalid canvas yaml/i
       );
     });
 
@@ -70,6 +70,88 @@ connections: []
     it('should throw for invalid YAML', async () => {
       const invalidYAML = '{ invalid: yaml: content: [';
       await expect(loadCanvasFromYAML(invalidYAML)).rejects.toThrow();
+    });
+  });
+
+  describe('parseCanvasFromYAML (element validation)', () => {
+    it('should reject a node missing an id', () => {
+      const yaml = `
+id: c1
+name: Canvas
+nodes:
+  - type: terminal
+    position: {x: 0, y: 0}
+    label: Test
+    inputs: []
+    outputs: []
+connections: []
+`;
+      expect(() => parseCanvasFromYAML(yaml)).toThrow(/invalid canvas yaml/i);
+    });
+
+    it('should reject a node with an invalid type', () => {
+      const yaml = `
+id: c1
+name: Canvas
+nodes:
+  - id: n1
+    type: unknown
+    position: {x: 0, y: 0}
+    label: Test
+    inputs: []
+    outputs: []
+connections: []
+`;
+      expect(() => parseCanvasFromYAML(yaml)).toThrow(/invalid canvas yaml/i);
+    });
+
+    it('should reject a node with a missing position', () => {
+      const yaml = `
+id: c1
+name: Canvas
+nodes:
+  - id: n1
+    type: terminal
+    label: Test
+    inputs: []
+    outputs: []
+connections: []
+`;
+      expect(() => parseCanvasFromYAML(yaml)).toThrow(/invalid canvas yaml/i);
+    });
+
+    it('should reject a connection missing a required field', () => {
+      const yaml = `
+id: c1
+name: Canvas
+nodes: []
+connections:
+  - from: n1
+    to: n2
+    fromPort: out
+`;
+      expect(() => parseCanvasFromYAML(yaml)).toThrow(/invalid canvas yaml/i);
+    });
+
+    it('should accept valid nodes and connections', () => {
+      const yaml = `
+id: c1
+name: Canvas
+nodes:
+  - id: n1
+    type: terminal
+    label: Terminal
+    position: {x: 10, y: 20}
+    inputs: []
+    outputs: []
+    command: echo hi
+connections:
+  - from: n1
+    to: n1
+    fromPort: out
+    toPort: in
+`;
+      expect(() => parseCanvasFromYAML(yaml)).not.toThrow();
     });
   });
 
