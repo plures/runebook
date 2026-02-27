@@ -8,9 +8,7 @@
     type NodeTypes,
     type Node,
     type Edge,
-    type Connection,
-    type OnConnect,
-    useSvelteFlow
+    type Connection
   } from '@xyflow/svelte';
   import '@xyflow/svelte/dist/style.css';
 
