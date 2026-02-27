@@ -21,10 +21,13 @@ test.describe('canvas interactions', () => {
     await page.locator('.add-btn', { hasText: /Input/ }).click();
     await page.locator('.add-btn', { hasText: /Display/ }).click();
 
+    // Hover the source node so its handles become actionable
+    await page.locator('.svelte-flow__node-input').hover();
     const sourceHandle = page.locator('.svelte-flow__node-input .svelte-flow__handle-right');
-    const targetHandle = page.locator('.svelte-flow__node-display .svelte-flow__handle-left');
+    await expect(sourceHandle).toBeVisible({ timeout: 5000 });
 
-    await sourceHandle.dragTo(targetHandle);
+    const targetHandle = page.locator('.svelte-flow__node-display .svelte-flow__handle-left');
+    await sourceHandle.dragTo(targetHandle, { force: true });
 
     await expect(page.locator('.svelte-flow__edge')).toHaveCount(1);
   });
@@ -33,10 +36,13 @@ test.describe('canvas interactions', () => {
     await page.locator('.add-btn', { hasText: /Display/ }).click();
     await expect(page.locator('.svelte-flow__node')).toHaveCount(1);
 
-    await page.locator('.svelte-flow__node-display').click();
+    // Click the node header (non-interactive area) to select the node
+    await page.locator('.display-shell .node-header').click();
+    // Wait for SvelteFlow to mark the node as selected
+    await expect(page.locator('.svelte-flow__node-display.selected')).toBeVisible({ timeout: 3000 });
     await page.keyboard.press('Delete');
 
-    await expect(page.locator('.svelte-flow__node')).toHaveCount(0);
+    await expect(page.locator('.svelte-flow__node')).toHaveCount(0, { timeout: 10000 });
   });
 
   test('Controls panel exposes zoom-in and zoom-out buttons', async ({ page }) => {

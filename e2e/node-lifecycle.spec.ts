@@ -45,10 +45,12 @@ test.describe('node lifecycle', () => {
     await page.locator('.add-btn', { hasText: /Input/ }).click();
     await expect(page.locator('.svelte-flow__node')).toHaveCount(2);
 
-    // Click the terminal node header to select it, then delete
-    await page.locator('.svelte-flow__node-terminal').click();
+    // Click the title bar (not the command-input area) to select the terminal node
+    await page.locator('.terminal-shell .title-bar').click();
+    // Wait for SvelteFlow to mark the node as selected
+    await expect(page.locator('.svelte-flow__node-terminal.selected')).toBeVisible({ timeout: 3000 });
     await page.keyboard.press('Delete');
 
-    await expect(page.locator('.svelte-flow__node')).toHaveCount(1);
+    await expect(page.locator('.svelte-flow__node')).toHaveCount(1, { timeout: 10000 });
   });
 });
