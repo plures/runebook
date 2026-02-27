@@ -17,6 +17,7 @@
   import DisplayNode from '$lib/components/DisplayNode.svelte';
   import TransformNode from '$lib/components/TransformNode.svelte';
   import CommandBar from '$lib/components/CommandBar.svelte';
+  import { buildGraphIndex, resolveNodeOutput } from '$lib/utils/dataFlow';
 
   const nodeTypes: NodeTypes = {
     terminal: TerminalNode as any,
@@ -90,6 +91,40 @@
     nodes = nodes.filter(n => !nodeIds.has(n.id));
     edges = edges.filter(e => !edgeIds.has(e.id) && !nodeIds.has(e.source) && !nodeIds.has(e.target));
   }
+
+  // ── Graph execution / data-flow propagation ────────────────────────────────
+
+  /** Reactive effect: whenever node data or edges change, re-run the graph and
+   *  push the resolved values into every display node's `data.content`. */
+  $effect(() => {
+    const { nodeMap, edgesByTarget } = buildGraphIndex(nodes, edges);
+
+    // Read each upstream data property to register it as a Svelte reactive
+    // dependency so this effect re-runs whenever those values change.
+    for (const node of nodes) {
+      if (node.type === 'input') void node.data.value;
+      else if (node.type === 'transform') void node.data.code;
+      else if (node.type === 'terminal') void node.data.output;
+    }
+
+    // One memo map per effect execution; safe to share across display nodes
+    // within the same run because the graph state is frozen for this tick.
+    const memo = new Map<string, unknown>();
+
+    // Propagate resolved outputs into display nodes.
+    for (const node of nodes) {
+      if (node.type === 'display') {
+        const inEdges = edgesByTarget.get(node.id) ?? [];
+        if (inEdges.length > 0) {
+          const value = resolveNodeOutput(inEdges[0].source, nodeMap, edgesByTarget, memo);
+          const newContent = value !== undefined ? String(value) : '';
+          if (node.data.content !== newContent) {
+            node.data.content = newContent;
+          }
+        }
+      }
+    }
+  });
 </script>
 
 <div class="app">

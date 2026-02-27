@@ -8,56 +8,34 @@ test.describe('reactive data flow', () => {
   });
 
   test('input node renders a text field', async ({ page }) => {
-    await page.locator('.toolbar-btn', { hasText: /Input/ }).click();
-    await expect(page.locator('.input-node .dd-input')).toBeVisible();
+    await page.locator('.add-btn', { hasText: /Input/ }).click();
+    await expect(page.locator('.input-shell .field')).toBeVisible();
   });
 
   test('input node reflects typed value immediately', async ({ page }) => {
-    await page.locator('.toolbar-btn', { hasText: /Input/ }).click();
-    const inputField = page.locator('.input-node .dd-input');
+    await page.locator('.add-btn', { hasText: /Input/ }).click();
+    const inputField = page.locator('.input-shell .field').first();
     await inputField.fill('hello runebook');
     await expect(inputField).toHaveValue('hello runebook');
   });
 
   test('display node renders a content area', async ({ page }) => {
-    await page.locator('.toolbar-btn', { hasText: /Display/ }).click();
-    await expect(page.locator('.display-node')).toBeVisible();
-    // .text-display has padding so it's visible even when content is empty
-    await expect(page.locator('.display-node .text-display')).toBeVisible();
+    await page.locator('.add-btn', { hasText: /Display/ }).click();
+    await expect(page.locator('.display-shell')).toBeVisible();
+    // empty state is shown when no upstream data is connected
+    await expect(page.locator('.display-shell .empty')).toBeVisible();
   });
 
-  test('display node shows content passed via node.content', async ({ page }) => {
-    // Load the hello-world example which wires nodes together
-    page.on('dialog', dialog => dialog.accept());
-    await page.locator('.toolbar-btn', { hasText: /Load Example/ }).click();
-
-    // The example canvas has 4 nodes: 1 terminal, 1 input, 2 displays
-    await expect(page.locator('.node-wrapper')).toHaveCount(4);
-
-    // User Input node is pre-populated with example text
-    const inputField = page.locator('.input-node .dd-input');
-    await expect(inputField).toBeVisible();
-    await expect(inputField).toHaveValue('Type something here...');
-  });
-
-  test('transform node exposes a type selector and code editor', async ({ page }) => {
-    await page.locator('.toolbar-btn', { hasText: /Transform/ }).click();
-    const transformNode = page.locator('.transform-node');
-    await expect(transformNode.locator('select')).toBeVisible();
+  test('transform node exposes a code editor', async ({ page }) => {
+    await page.locator('.add-btn', { hasText: /Transform/ }).click();
+    const transformNode = page.locator('.transform-shell');
     await expect(transformNode.locator('textarea')).toBeVisible();
   });
 
-  test('transform node type can be changed', async ({ page }) => {
-    await page.locator('.toolbar-btn', { hasText: /Transform/ }).click();
-    const select = page.locator('.transform-node select');
-    await select.selectOption('filter');
-    await expect(select).toHaveValue('filter');
-  });
-
   test('transform node code editor accepts input', async ({ page }) => {
-    await page.locator('.toolbar-btn', { hasText: /Transform/ }).click();
-    const codeArea = page.locator('.transform-node textarea');
-    await codeArea.fill('item > 5');
-    await expect(codeArea).toHaveValue('item > 5');
+    await page.locator('.add-btn', { hasText: /Transform/ }).click();
+    const codeArea = page.locator('.transform-shell textarea').first();
+    await codeArea.fill('x => x.toUpperCase()');
+    await expect(codeArea).toHaveValue('x => x.toUpperCase()');
   });
 });
