@@ -266,12 +266,12 @@
     if (event.key === ' ') {
       if (!event.repeat) spaceHeld = true;
       const target = event.target as HTMLElement;
-      if (!target.closest('input, textarea, [contenteditable]')) {
+      if (!target.closest(INTERACTIVE_SELECTOR)) {
         event.preventDefault();
       }
     }
     if (event.key === 'Delete' || event.key === 'Backspace') {
-      if (selectedNodeId && !(event.target as HTMLElement)?.closest('input, textarea, [contenteditable]')) {
+      if (selectedNodeId && !(event.target as HTMLElement)?.closest(INTERACTIVE_SELECTOR)) {
         event.preventDefault();
         canvasStore.removeNode(selectedNodeId);
         selectedNodeId = null;
