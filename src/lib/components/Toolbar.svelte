@@ -8,9 +8,11 @@
 
   interface Props {
     tui?: boolean;
+    onOpenSettings?: () => void;
+    onOpenHelp?: (view: 'shortcuts' | 'about') => void;
   }
 
-  let { tui = false }: Props = $props();
+  let { tui = false, onOpenSettings, onOpenHelp }: Props = $props();
 
   let savedCanvases = $state<{ id: string; name: string; timestamp: number }[]>([]);
   let showSavedList = $state(false);
@@ -252,6 +254,19 @@
     {/if}
     <Button {tui} variant="danger" onclick={clearCanvas} class="toolbar-btn">
       🗑️ Clear
+    </Button>
+  </div>
+
+  <div class="toolbar-section toolbar-section--meta">
+    <h3>App</h3>
+    <Button {tui} onclick={() => onOpenSettings?.()} class="toolbar-btn">
+      ⚙️ Settings
+    </Button>
+    <Button {tui} onclick={() => onOpenHelp?.('shortcuts')} class="toolbar-btn">
+      ⌨️ Shortcuts
+    </Button>
+    <Button {tui} onclick={() => onOpenHelp?.('about')} class="toolbar-btn">
+      ℹ️ About
     </Button>
   </div>
   </div>

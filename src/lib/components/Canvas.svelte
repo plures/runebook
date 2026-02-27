@@ -5,7 +5,10 @@
   import DisplayNodeComponent from './DisplayNode.svelte';
   import TransformNodeComponent from './TransformNode.svelte';
   import ConnectionLine from './ConnectionLine.svelte';
+  import ContextMenu from './ContextMenu.svelte';
   import type { CanvasNode, Connection } from '../types/canvas';
+  import type { ContextMenuItem } from './ContextMenu.svelte';
+  import type { TerminalNode, InputNode, DisplayNode, TransformNode } from '../types/canvas';
   import Box from '../design-dojo/Box.svelte';
 
   interface Props {
@@ -31,6 +34,13 @@
 
   // Selection
   let selectedNodeId = $state<string | null>(null);
+
+  // Context menu state
+  let ctxMenu = $state<{
+    x: number;
+    y: number;
+    items: ContextMenuItem[];
+  } | null>(null);
 
   const canvasData = $derived($canvasStore);
 
@@ -150,9 +160,132 @@
   function handleKeydown(event: KeyboardEvent) {
     if (event.key === 'Delete' || event.key === 'Backspace') {
       if (selectedNodeId && !(event.target as HTMLElement)?.closest('input, textarea, [contenteditable]')) {
+        event.preventDefault();
         canvasStore.removeNode(selectedNodeId);
         selectedNodeId = null;
       }
+    }
+    if (event.key === 'Escape') {
+      ctxMenu = null;
+    }
+  }
+
+  function handleConnectionContextMenu(event: MouseEvent, conn: Connection) {
+    event.preventDefault();
+    event.stopPropagation();
+    ctxMenu = {
+      x: event.clientX,
+      y: event.clientY,
+      items: [
+        {
+          label: '🗑️ Delete connection',
+          danger: true,
+          action: () => canvasStore.removeConnection(conn.from, conn.to, conn.fromPort, conn.toPort),
+        },
+      ],
+    };
+  }
+
+  // --- Context menus ---
+
+  function handleCanvasContextMenu(event: MouseEvent) {
+    event.preventDefault();
+    const x = event.clientX;
+    const y = event.clientY;
+    // Canvas offset (account for left toolbar margin)
+    const target = event.currentTarget as HTMLElement;
+    const rect = target.getBoundingClientRect();
+    const cx = event.clientX - rect.left;
+    const cy = event.clientY - rect.top;
+
+    ctxMenu = {
+      x,
+      y,
+      items: [
+        { label: '⚡ Add Terminal Node',   action: () => addNodeAt('terminal',  cx, cy) },
+        { label: '📝 Add Input Node',     action: () => addNodeAt('input',     cx, cy) },
+        { label: '📊 Add Display Node',   action: () => addNodeAt('display',   cx, cy) },
+        { label: '🔄 Add Transform Node', action: () => addNodeAt('transform', cx, cy) },
+      ],
+    };
+  }
+
+  function handleNodeContextMenu(event: MouseEvent, nodeId: string) {
+    event.preventDefault();
+    event.stopPropagation();
+    selectedNodeId = nodeId;
+    ctxMenu = {
+      x: event.clientX,
+      y: event.clientY,
+      items: [
+        {
+          label: '🗑️ Delete',
+          danger: true,
+          action: () => { canvasStore.removeNode(nodeId); selectedNodeId = null; },
+        },
+        {
+          label: '📋 Duplicate',
+          action: () => duplicateNode(nodeId),
+        },
+        { separator: true, label: '', action: () => {} },
+        {
+          label: '✂️ Disconnect all',
+          action: () => disconnectAll(nodeId),
+        },
+      ],
+    };
+  }
+
+  function addNodeAt(type: 'terminal' | 'input' | 'display' | 'transform', x: number, y: number) {
+    const id = `${type}-${Date.now()}`;
+    if (type === 'terminal') {
+      canvasStore.addNode({
+        id, type, position: { x, y },
+        label: 'Terminal', command: 'echo', args: ['Hello, RuneBook!'], autoStart: false,
+        inputs: [], outputs: [{ id: 'stdout', name: 'stdout', type: 'output' }],
+      } satisfies TerminalNode);
+    } else if (type === 'input') {
+      canvasStore.addNode({
+        id, type, position: { x, y },
+        label: 'Text Input', inputType: 'text', value: '',
+        inputs: [], outputs: [{ id: 'value', name: 'value', type: 'output' }],
+      } satisfies InputNode);
+    } else if (type === 'display') {
+      canvasStore.addNode({
+        id, type, position: { x, y },
+        label: 'Display', displayType: 'text', content: '',
+        inputs: [{ id: 'input', name: 'input', type: 'input' }], outputs: [],
+      } satisfies DisplayNode);
+    } else if (type === 'transform') {
+      canvasStore.addNode({
+        id, type, position: { x, y },
+        label: 'Transform', transformType: 'map', code: 'item',
+        inputs: [{ id: 'input', name: 'input', type: 'input' }],
+        outputs: [{ id: 'output', name: 'output', type: 'output' }],
+      } satisfies TransformNode);
+    }
+  }
+
+  function duplicateNode(nodeId: string) {
+    const node = canvasData.nodes.find((n) => n.id === nodeId);
+    if (!node) return;
+    const newId = `${node.type}-${Date.now()}`;
+
+    // Deep clone the node to avoid sharing nested references (e.g. env, inputs, outputs)
+    const clonedNode = structuredClone(node) as CanvasNode;
+    clonedNode.id = newId;
+    clonedNode.position = {
+      x: node.position.x + 30,
+      y: node.position.y + 30,
+    };
+
+    canvasStore.addNode(clonedNode);
+  }
+
+  function disconnectAll(nodeId: string) {
+    const conns = canvasData.connections.filter(c => c.from === nodeId || c.to === nodeId);
+    for (const c of conns) {
+      canvasStore.removeConnection(c.from, c.to, c.fromPort, c.toPort);
     }
   }
 </script>
@@ -165,7 +298,7 @@
 
 <!-- svelte-ignore a11y_click_events_have_key_events -->
 <!-- svelte-ignore a11y_no_static_element_interactions -->
-<div class="canvas-container" onclick={handleCanvasClick}>
+<div class="canvas-container" onclick={handleCanvasClick} oncontextmenu={handleCanvasContextMenu}>
   <svg class="connections-layer">
     <!-- Existing connections -->
     {#each canvasData.connections as connection}
@@ -184,6 +317,16 @@
             stroke="var(--brand)"
             stroke-width="2"
             stroke-linecap="round"
+          />
+          <!-- Wider transparent hit area for right-click -->
+          <!-- svelte-ignore a11y_no_static_element_interactions -->
+          <path
+            d="M {fp.x} {fp.y} C {fp.x + dx} {fp.y}, {tp.x - dx} {tp.y}, {tp.x} {tp.y}"
+            fill="none"
+            stroke="transparent"
+            stroke-width="12"
+            style="pointer-events: stroke; cursor: context-menu"
+            oncontextmenu={(e) => handleConnectionContextMenu(e, connection)}
           />
         {/if}
       {/if}
@@ -212,6 +355,7 @@
         class:selected={selectedNodeId === node.id}
         style="left: {node.position.x}px; top: {node.position.y}px; width: {size.width}px; height: {size.height}px;"
         onmousedown={(e) => handleNodeMouseDown(e, node.id)}
+        oncontextmenu={(e) => handleNodeContextMenu(e, node.id)}
       >
         <!-- Input ports -->
         {#each node.inputs as port, i}
@@ -261,6 +405,15 @@
     {/each}
   </div>
 </div>
+
+{#if ctxMenu}
+  <ContextMenu
+    x={ctxMenu.x}
+    y={ctxMenu.y}
+    items={ctxMenu.items}
+    onclose={() => { ctxMenu = null; }}
+  />
+{/if}
 
 <style>
   .canvas-container {
