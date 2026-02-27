@@ -116,16 +116,16 @@
       <span class="logo">◇ RuneBook</span>
     </div>
     <div class="bar-center">
-      <button class="toolbar-btn" onclick={() => onAddNode('terminal')} title="Add Terminal">
+      <button class="toolbar-btn add-btn" onclick={() => onAddNode('terminal')} title="Add Terminal">
         <span class="btn-icon">⚡</span> Terminal
       </button>
-      <button class="toolbar-btn" onclick={() => onAddNode('input')} title="Add Input">
+      <button class="toolbar-btn add-btn" onclick={() => onAddNode('input')} title="Add Input">
         <span class="btn-icon">📝</span> Input
       </button>
-      <button class="toolbar-btn" onclick={() => onAddNode('transform')} title="Add Transform">
+      <button class="toolbar-btn add-btn" onclick={() => onAddNode('transform')} title="Add Transform">
         <span class="btn-icon">🔄</span> Transform
       </button>
-      <button class="toolbar-btn" onclick={() => onAddNode('display')} title="Add Display">
+      <button class="toolbar-btn add-btn" onclick={() => onAddNode('display')} title="Add Display">
         <span class="btn-icon">📊</span> Display
       </button>
     </div>
