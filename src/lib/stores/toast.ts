@@ -8,17 +8,30 @@ export interface Toast {
 
 function createToastStore() {
   const { subscribe, update } = writable<Toast[]>([]);
+  const timeouts = new Map<string, ReturnType<typeof setTimeout>>();
 
   function add(message: string, type: Toast['type'] = 'info', duration = 3500): string {
     const id = typeof crypto !== 'undefined' && crypto.randomUUID
       ? crypto.randomUUID()
       : `t-${Date.now()}-${Math.random().toString(36).slice(2)}`;
     update(ts => [...ts, { id, message, type }]);
-    setTimeout(() => remove(id), duration);
+
+    const timeout = setTimeout(() => {
+      // Clean up the timeout handle before removing the toast.
+      timeouts.delete(id);
+      remove(id);
+    }, duration);
+
+    timeouts.set(id, timeout);
     return id;
   }
 
   function remove(id: string) {
+    const timeout = timeouts.get(id);
+    if (timeout) {
+      clearTimeout(timeout);
+      timeouts.delete(id);
+    }
     update(ts => ts.filter(t => t.id !== id));
   }
 
