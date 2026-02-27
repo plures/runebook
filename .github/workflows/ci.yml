@@ -16,6 +16,6 @@ jobs:
       - uses: actions/setup-node@v4
         with: { node-version: '20' }
       - run: npm ci
-      - run: npm run check 2>/dev/null || true
-      - run: npm test 2>/dev/null || true
-      - run: npm run build 2>/dev/null || true
+      - run: npm run check
+      - run: npm test -- --run
+      - run: npm run build
