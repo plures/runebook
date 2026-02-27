@@ -31,14 +31,17 @@
   }
 
   async function switchStorage(type: 'localStorage' | 'pluresdb') {
-    try {
-      if (type === 'pluresdb') {
-        usePluresDB();
-      } else {
+    if (type === 'pluresdb') {
+      usePluresDB();
+      try {
+        // Only persist the PluresDB storage type if the first write succeeds.
+        settingsStore.patch({ storageType: type });
+      } catch {
+        // If writing via PluresDB fails, fall back to localStorage.
         useLocalStorage();
+        settingsStore.patch({ storageType: 'localStorage' });
       }
-      settingsStore.patch({ storageType: type });
-    } catch {
+    } else {
       useLocalStorage();
       settingsStore.patch({ storageType: 'localStorage' });
     }
