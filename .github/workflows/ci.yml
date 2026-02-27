@@ -43,13 +43,15 @@ jobs:
             libsoup2.4-dev \
             librsvg2-dev \
             libayatana-appindicator3-dev
+      - name: Install Nix
+        uses: cachix/install-nix-action@v27
       - uses: actions-rust-lang/setup-rust-toolchain@v1
         with:
           toolchain: stable
           components: rustfmt, clippy
       - name: Check formatting
-        run: cargo fmt --all -- --check
+        run: nix develop -c cargo fmt --all -- --check
       - name: Clippy
-        run: cargo clippy --workspace -- -D warnings
+        run: nix develop -c cargo clippy --workspace -- -D warnings
       - name: Test
-        run: cargo test --workspace
+        run: nix develop -c cargo test --workspace
