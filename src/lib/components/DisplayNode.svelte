@@ -15,7 +15,8 @@
     if (data.content == null) return '';
     if (data.displayType === 'json') {
       try {
-        return JSON.stringify(JSON.parse(String(data.content)), null, 2);
+        const obj = typeof data.content === 'string' ? JSON.parse(data.content) : data.content;
+        return JSON.stringify(obj, null, 2);
       } catch {
         return String(data.content);
       }
