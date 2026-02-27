@@ -58,6 +58,9 @@ function applySettings(s: AppSettings): void {
   if (!browser) return;
   const root = document.documentElement;
   root.style.setProperty('--font-mono', FONT_STACKS[s.fontFamily] ?? FONT_STACKS['JetBrains Mono']);
+  root.style.setProperty('--canvas-show-grid', s.showGrid ? '1' : '0');
+  root.style.setProperty('--canvas-grid-size', `${s.gridSize}`);
+  root.style.setProperty('--canvas-snap-to-grid', s.snapToGrid ? '1' : '0');
 }
 
 function createSettingsStore() {
