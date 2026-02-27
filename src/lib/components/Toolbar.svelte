@@ -31,11 +31,9 @@
       id: `terminal-${Date.now()}`,
       type: 'terminal',
       position: { x: 100, y: 100 },
+      size: { width: 600, height: 400 },
       label: 'Terminal',
-      command: 'echo',
-      args: ['Hello, RuneBook!'],
-      autoStart: false,
-      inputs: [],
+      inputs: [{ id: 'stdin', name: 'stdin', type: 'input' }],
       outputs: [{ id: 'stdout', name: 'stdout', type: 'output' }]
     };
     canvasStore.addNode(node);

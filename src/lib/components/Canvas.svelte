@@ -241,8 +241,10 @@
     if (type === 'terminal') {
       canvasStore.addNode({
         id, type, position: { x, y },
-        label: 'Terminal', command: 'echo', args: ['Hello, RuneBook!'], autoStart: false,
-        inputs: [], outputs: [{ id: 'stdout', name: 'stdout', type: 'output' }],
+        size: { width: 600, height: 400 },
+        label: 'Terminal',
+        inputs: [{ id: 'stdin', name: 'stdin', type: 'input' }],
+        outputs: [{ id: 'stdout', name: 'stdout', type: 'output' }],
       } satisfies TerminalNode);
     } else if (type === 'input') {
       canvasStore.addNode({
@@ -385,7 +387,7 @@
         <!-- Node content -->
         <div class="node-content">
           {#if node.type === 'terminal'}
-            <TerminalNodeComponent {node} {tui} />
+            <TerminalNodeComponent {node} />
           {:else if node.type === 'input'}
             <InputNodeComponent {node} {tui} />
           {:else if node.type === 'display'}

@@ -38,11 +38,9 @@ export interface BaseNode {
 
 export interface TerminalNode extends BaseNode {
   type: 'terminal';
-  command: string;
-  args?: string[];
+  shell?: string;
   env?: Record<string, string>;
   cwd?: string;
-  autoStart?: boolean;
 }
 
 export interface InputNode extends BaseNode {
