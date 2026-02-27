@@ -36,7 +36,7 @@
           version = "0.2.0";
           src = ./.;
           
-          npmDepsHash = "sha256-0HEvw24urS7Kbu/Qj8wkx0L/wZye4oZdI6z2EL+K2PE=";
+          npmDepsHash = "sha256-hTYeSGtItrSXvcUscY4LXChGdkcCOQZm1Wh3pGhWwpg=";
           
           nativeBuildInputs = [
             nodejs
@@ -120,7 +120,7 @@
           version = "0.2.0";
           src = ./.;
           
-          npmDepsHash = "sha256-0HEvw24urS7Kbu/Qj8wkx0L/wZye4oZdI6z2EL+K2PE=";
+          npmDepsHash = "sha256-hTYeSGtItrSXvcUscY4LXChGdkcCOQZm1Wh3pGhWwpg=";
           
           nativeBuildInputs = [
             nodejs
