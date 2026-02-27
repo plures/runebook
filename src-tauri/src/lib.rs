@@ -103,7 +103,8 @@ async fn spawn_terminal(
                 }
             }
         }
-        let _ = app_clone.emit(&format!("terminal-exit-{}", tid), 0i32);
+        // Use -1 to indicate that the child exit status is unknown here.
+        let _ = app_clone.emit(&format!("terminal-exit-{}", tid), -1i32);
     });
 
     let mut mgr = state.lock().map_err(|e| e.to_string())?;
