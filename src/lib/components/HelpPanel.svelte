@@ -23,7 +23,19 @@
   ];
 
   const version = pkg.version;
+
+  function handleKey(e: KeyboardEvent) {
+    if (!open) return;
+    if (e.key === 'Escape') { onclose(); return; }
+  }
+
+  function handleTabKeydown(e: KeyboardEvent) {
+    if (e.key === 'ArrowRight') { e.preventDefault(); view = view === 'shortcuts' ? 'about' : 'shortcuts'; }
+    else if (e.key === 'ArrowLeft') { e.preventDefault(); view = view === 'about' ? 'shortcuts' : 'about'; }
+  }
 </script>
+
+<svelte:window onkeydown={handleKey} />
 
 {#if open}
   <!-- svelte-ignore a11y_click_events_have_key_events -->
@@ -38,14 +50,18 @@
           class:help-tab--active={view === 'shortcuts'}
           role="tab"
           aria-selected={view === 'shortcuts'}
+          tabindex={view === 'shortcuts' ? 0 : -1}
           onclick={() => { view = 'shortcuts'; }}
+          onkeydown={handleTabKeydown}
         >⌨️ Shortcuts</button>
         <button
           class="help-tab"
           class:help-tab--active={view === 'about'}
           role="tab"
           aria-selected={view === 'about'}
+          tabindex={view === 'about' ? 0 : -1}
           onclick={() => { view = 'about'; }}
+          onkeydown={handleTabKeydown}
         >ℹ️ About</button>
       </div>
       <Button {tui} onclick={onclose} class="help-close">✕</Button>
@@ -106,7 +122,7 @@
   .help-backdrop {
     position: fixed;
     inset: 0;
-    z-index: 900;
+    z-index: 1200;
     background: rgba(0, 0, 0, 0.5);
   }
 
@@ -115,7 +131,7 @@
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
-    z-index: 901;
+    z-index: 1201;
     width: min(540px, 92vw);
     max-height: 80vh;
     background: var(--surface-2);

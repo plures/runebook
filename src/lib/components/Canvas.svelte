@@ -254,8 +254,9 @@
     const node = canvasData.nodes.find(n => n.id === nodeId);
     if (!node) return;
     const newId = `${node.type}-${Date.now()}`;
+    const cloned = structuredClone(node);
     canvasStore.addNode({
-      ...node,
+      ...cloned,
       id: newId,
       position: { x: node.position.x + 30, y: node.position.y + 30 },
     });

@@ -3,7 +3,7 @@
 
   export interface ContextMenuItem {
     label: string;
-    action: () => void;
+    action?: () => void;
     disabled?: boolean;
     danger?: boolean;
     separator?: boolean;
@@ -36,7 +36,24 @@
   onMount(() => { browser = true; });
 
   function handleKeydown(e: KeyboardEvent) {
-    if (e.key === 'Escape') onclose();
+    if (e.key === 'Escape') { onclose(); return; }
+    const focusable = Array.from(
+      menuEl?.querySelectorAll<HTMLElement>('[role="menuitem"]:not([aria-disabled="true"])') ?? []
+    );
+    const idx = focusable.indexOf(document.activeElement as HTMLElement);
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      focusable[(idx + 1) % focusable.length]?.focus();
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      focusable[(idx - 1 + focusable.length) % focusable.length]?.focus();
+    } else if (e.key === 'Home') {
+      e.preventDefault();
+      focusable[0]?.focus();
+    } else if (e.key === 'End') {
+      e.preventDefault();
+      focusable[focusable.length - 1]?.focus();
+    }
   }
 </script>
 
@@ -63,8 +80,8 @@
         role="menuitem"
         tabindex={item.disabled ? -1 : 0}
         aria-disabled={item.disabled}
-        onclick={() => { if (!item.disabled) { item.action(); onclose(); } }}
-        onkeydown={(e) => { if ((e.key === 'Enter' || e.key === ' ') && !item.disabled) { item.action(); onclose(); } }}
+        onclick={() => { if (!item.disabled) { item.action?.(); onclose(); } }}
+        onkeydown={(e) => { if ((e.key === 'Enter' || e.key === ' ') && !item.disabled) { item.action?.(); onclose(); } }}
       >
         {item.label}
       </li>

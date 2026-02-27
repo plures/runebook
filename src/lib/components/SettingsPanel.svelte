@@ -179,7 +179,7 @@
   .settings-backdrop {
     position: fixed;
     inset: 0;
-    z-index: 800;
+    z-index: 1200;
     background: rgba(0, 0, 0, 0.4);
   }
 
@@ -189,7 +189,7 @@
     right: 0;
     bottom: 0;
     width: 300px;
-    z-index: 801;
+    z-index: 1201;
     background: var(--surface-2);
     border-left: 1px solid var(--border-color-strong);
     display: flex;
