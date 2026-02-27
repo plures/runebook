@@ -96,7 +96,9 @@
   }
 </script>
 
-<svelte:window onclick={handleWindowClick} /><header class="command-bar" data-tauri-drag-region>
+<svelte:window onclick={handleWindowClick} />
+
+<header class="command-bar" data-tauri-drag-region>
   <div class="command-bar__brand" data-tauri-drag-region>
     <span class="command-bar__logo" aria-hidden="true">⚡</span>
     <span class="command-bar__name">RuneBook</span>
