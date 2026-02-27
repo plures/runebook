@@ -101,8 +101,11 @@
     panY = (rect.height - contentH * newZoom) / 2 - paddedMinY * newZoom;
   }
 
-  // --- Wheel zoom ---
+  // --- Wheel zoom (registered as non-passive via $effect so preventDefault works) ---
   function handleWheel(event: WheelEvent) {
+    // Don't intercept wheel events over scrollable node internals
+    const target = event.target as HTMLElement;
+    if (target.closest('textarea') || target.closest('select')) return;
     event.preventDefault();
     if (!canvasEl) return;
     const rect = canvasEl.getBoundingClientRect();
@@ -114,6 +117,14 @@
     panY = mouseY - (mouseY - panY) * (newZoom / zoom);
     zoom = newZoom;
   }
+
+  // Register wheel listener as non-passive so preventDefault() actually works
+  $effect(() => {
+    if (!canvasEl) return;
+    const el = canvasEl;
+    el.addEventListener('wheel', handleWheel, { passive: false });
+    return () => el.removeEventListener('wheel', handleWheel);
+  });
 
   // --- Canvas-level mousedown (pan handling) ---
   function handleCanvasMouseDown(event: MouseEvent) {
@@ -246,7 +257,7 @@
   }
 
   function handleKeydown(event: KeyboardEvent) {
-    if (event.key === ' ' && !(event.target as HTMLElement)?.closest(INTERACTIVE_TEXT_SELECTOR)) {
+    if (event.key === ' ' && !(event.target as HTMLElement)?.closest(INTERACTIVE_SELECTOR)) {
       spaceHeld = true;
       event.preventDefault();
       return;
@@ -303,7 +314,6 @@
   bind:this={canvasEl}
   onclick={handleCanvasClick}
   onmousedown={handleCanvasMouseDown}
-  onwheel={handleWheel}
 >
   <!-- Viewport: receives zoom + pan transform -->
   <div
