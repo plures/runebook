@@ -23,3 +23,19 @@ jobs:
             (npm test 2>/dev/null || true) &&
             (npm run build 2>/dev/null || true)
           '
+
+  rust:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: src-tauri
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Nix
+        uses: cachix/install-nix-action@v27
+      - name: Check formatting
+        run: nix develop .. -c cargo fmt --all -- --check
+      - name: Clippy
+        run: nix develop .. -c cargo clippy -- -D warnings
+      - name: Test
+        run: nix develop .. -c cargo test
