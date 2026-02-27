@@ -10,6 +10,7 @@
     type Edge,
     type Connection
   } from '@xyflow/svelte';
+  import { untrack } from 'svelte';
   import '@xyflow/svelte/dist/style.css';
 
   import TerminalNode from '$lib/components/TerminalNode.svelte';
@@ -53,7 +54,7 @@
         style: 'width: 360px;'
       },
       transform: {
-        data: { label: 'Transform', transformType: 'map', code: 'item' },
+        data: { label: 'Transform', transformType: 'map', code: 'item', input: undefined, output: undefined, error: '' },
         style: 'width: 320px;'
       }
     };
@@ -90,6 +91,41 @@
     nodes = nodes.filter(n => !nodeIds.has(n.id));
     edges = edges.filter(e => !edgeIds.has(e.id) && !nodeIds.has(e.source) && !nodeIds.has(e.target));
   }
+
+  // Reactive data propagation: push outputs from source nodes to connected target nodes.
+  $effect(() => {
+    // Read value/output for each node type so the effect re-runs when they change.
+    // `void expr` is used to establish reactive dependencies without consuming the value.
+    for (const node of nodes) {
+      if (node.type === 'input') void (node.data as any).value;
+      if (node.type === 'transform') void (node.data as any).output;
+    }
+    const currentEdges = edges;
+
+    // Perform propagation outside reactive tracking to avoid loops.
+    untrack(() => {
+      for (const edge of currentEdges) {
+        const src = nodes.find(n => n.id === edge.source);
+        const tgt = nodes.find(n => n.id === edge.target);
+        if (!src || !tgt) continue;
+
+        let output: unknown;
+        if (src.type === 'input') {
+          output = (src.data as any).value;
+        } else if (src.type === 'transform') {
+          output = (src.data as any).output;
+        } else {
+          continue;
+        }
+
+        if (tgt.type === 'transform') {
+          (tgt.data as any).input = output;
+        } else if (tgt.type === 'display') {
+          (tgt.data as any).content = output;
+        }
+      }
+    });
+  });
 </script>
 
 <div class="app">

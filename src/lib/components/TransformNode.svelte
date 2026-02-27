@@ -6,35 +6,97 @@
       label: string;
       transformType: string;
       code: string;
+      input?: any;
+      output?: any;
+      error?: string;
     };
   }
 
   let { data }: Props = $props();
-  let code = $state(data.code || '');
+  let code = $state(data.code || 'item');
 
-  function handleChange() {
+  function handleCodeChange() {
     data.code = code;
   }
+
+  // Re-run the transform pipeline whenever input data, transform type, or user code changes.
+  // new Function() is intentional here: this is a local-first desktop app (Tauri) where users
+  // author their own transform expressions — equivalent to a notebook code cell.
+  $effect(() => {
+    const input = data.input;
+    const type = data.transformType || 'map';
+    const currentCode = code;
+
+    if (input === undefined || input === null) {
+      data.output = undefined;
+      data.error = '';
+      return;
+    }
+
+    try {
+      const arr = Array.isArray(input) ? input : [input];
+      if (type === 'map') {
+        // eslint-disable-next-line no-new-func
+        const fn = new Function('item', 'index', `return (${currentCode})`);
+        data.output = arr.map((item: unknown, index: number) => fn(item, index));
+      } else if (type === 'filter') {
+        // eslint-disable-next-line no-new-func
+        const fn = new Function('item', 'index', `return (${currentCode})`);
+        data.output = arr.filter((item: unknown, index: number) => Boolean(fn(item, index)));
+      } else if (type === 'reduce') {
+        // eslint-disable-next-line no-new-func
+        const fn = new Function('acc', 'item', 'index', `return (${currentCode})`);
+        data.output = arr.reduce(
+          (acc: unknown, item: unknown, index: number) => fn(acc, item, index),
+          null
+        );
+      } else {
+        // 'sudolang' and any future types pass through unchanged until implemented.
+        data.output = input;
+      }
+      data.error = '';
+    } catch (e: unknown) {
+      data.output = undefined;
+      data.error = e instanceof Error ? e.message : 'Transform error';
+    }
+  });
 </script>
 
 <Handle type="target" position={Position.Left} />
 
-<div class="node-shell transform-shell">
+<div class="node-shell transform-shell transform-node">
   <div class="node-header">
     <span class="node-icon">🔄</span>
     <span class="node-label">{data.label || 'Transform'}</span>
-    <span class="type-badge">{data.transformType || 'map'}</span>
+    <select
+      class="type-select"
+      bind:value={data.transformType}
+    >
+      <option value="map">map</option>
+      <option value="filter">filter</option>
+      <option value="reduce">reduce</option>
+      <option value="sudolang">sudolang</option>
+    </select>
   </div>
 
   <div class="node-body">
     <textarea
       class="code-editor"
       bind:value={code}
-      oninput={handleChange}
+      oninput={handleCodeChange}
       placeholder="item => item"
       spellcheck="false"
       rows="4"
     ></textarea>
+    {#if data.error}
+      <div class="error-msg">{data.error}</div>
+    {/if}
+    {#if data.output !== undefined && !data.error}
+      {@const preview = JSON.stringify(data.output)}
+      <div class="output-preview">
+        → {preview.slice(0, 80)}{preview.length > 80 ? '…' : ''}
+      </div>
+    {/if}
   </div>
 </div>
 
@@ -65,14 +127,22 @@
   .node-icon { font-size: 13px; }
   .node-label { flex: 1; }
 
-  .type-badge {
+  .type-select {
     font-size: 10px;
-    padding: 1px 6px;
+    padding: 1px 4px;
     background: rgba(123,47,255,0.2);
     color: #b388ff;
+    border: 1px solid rgba(123,47,255,0.3);
     border-radius: 3px;
-    text-transform: uppercase;
     font-weight: 600;
+    cursor: pointer;
+    outline: none;
+    font-family: inherit;
+    text-transform: uppercase;
+  }
+
+  .type-select:focus {
+    border-color: #7b2fff;
   }
 
   .node-body {
@@ -96,5 +166,29 @@
 
   .code-editor:focus {
     border-color: #7b2fff;
+  }
+
+  .error-msg {
+    margin-top: 4px;
+    padding: 4px 6px;
+    background: rgba(255,60,60,0.15);
+    border: 1px solid rgba(255,60,60,0.3);
+    border-radius: 3px;
+    color: #ff6b6b;
+    font-size: 11px;
+    font-family: 'JetBrains Mono', ui-monospace, monospace;
+  }
+
+  .output-preview {
+    margin-top: 4px;
+    padding: 4px 6px;
+    background: rgba(123,47,255,0.1);
+    border-radius: 3px;
+    color: #b388ff;
+    font-size: 11px;
+    font-family: 'JetBrains Mono', ui-monospace, monospace;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
   }
 </style>
