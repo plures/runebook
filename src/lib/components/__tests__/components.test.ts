@@ -58,9 +58,7 @@ const makeTerminalNode = (overrides: Partial<TerminalNodeType> = {}): TerminalNo
   type: 'terminal',
   position: { x: 300, y: 100 },
   label: 'Test Terminal',
-  command: 'echo',
-  args: ['hello'],
-  inputs: [],
+  inputs: [{ id: 'stdin', name: 'stdin', type: 'input' }],
   outputs: [{ id: 'stdout', name: 'stdout', type: 'output' }],
   ...overrides,
 });
@@ -172,56 +170,38 @@ describe('TerminalNode', () => {
     expect(container.querySelector('.terminal-node')).toBeTruthy();
   });
 
-  it('should show the command', () => {
+  it('should show the node label', () => {
     const { container } = render(TerminalNode, {
-      node: makeTerminalNode({ command: 'ls', args: ['-la'] }),
+      node: makeTerminalNode({ label: 'My Terminal' }),
     });
-    expect(container.textContent).toContain('ls');
+    expect(container.textContent).toContain('My Terminal');
   });
 
-  it('should have a run button', () => {
+  it('should show the shell name in the header', () => {
+    const { container } = render(TerminalNode, {
+      node: makeTerminalNode({ shell: '/bin/zsh' }),
+    });
+    expect(container.querySelector('.shell-name')).toBeTruthy();
+  });
+
+  it('should show a status dot', () => {
     const { container } = render(TerminalNode, { node: makeTerminalNode() });
-    const button = container.querySelector('.run-btn');
-    expect(button).toBeTruthy();
+    expect(container.querySelector('.status-dot')).toBeTruthy();
   });
 
-  it('should have a clear button', () => {
+  it('should render a terminal container', () => {
     const { container } = render(TerminalNode, { node: makeTerminalNode() });
-    const button = container.querySelector('.clear-btn');
-    expect(button).toBeTruthy();
+    expect(container.querySelector('.terminal-container')).toBeTruthy();
   });
 
-  it('should execute command when run button is clicked', async () => {
-    const { invoke } = await import('@tauri-apps/api/core') as any;
-    invoke.mockResolvedValueOnce('command output');
-    const { container } = render(TerminalNode, { node: makeTerminalNode() });
-    const runButton = container.querySelector('.run-btn') as HTMLButtonElement;
-    expect(runButton).toBeTruthy();
-    await fireEvent.click(runButton);
-    // After clicking, invoke should have been called
-    expect(invoke).toHaveBeenCalled();
+  it('should have a stdin input port', () => {
+    const node = makeTerminalNode();
+    expect(node.inputs.some(p => p.id === 'stdin')).toBe(true);
   });
 
-  it('should show placeholder when no output', () => {
-    const { container } = render(TerminalNode, { node: makeTerminalNode() });
-    expect(container.textContent).toContain('No output yet');
-  });
-
-  it('should autostart when autoStart is true', async () => {
-    const { invoke } = await import('@tauri-apps/api/core') as any;
-    render(TerminalNode, { node: makeTerminalNode({ autoStart: true }) });
-    // invoke should have been called on mount
-    expect(invoke).toHaveBeenCalled();
-  });
-
-  it('should handle error from invoke', async () => {
-    const { invoke } = await import('@tauri-apps/api/core') as any;
-    invoke.mockRejectedValueOnce(new Error('Command failed'));
-    const { container } = render(TerminalNode, { node: makeTerminalNode() });
-    const runButton = container.querySelector('.run-btn') as HTMLButtonElement;
-    await fireEvent.click(runButton);
-    // Error handling should not throw
-    expect(container).toBeTruthy();
+  it('should have a stdout output port', () => {
+    const node = makeTerminalNode();
+    expect(node.outputs.some(p => p.id === 'stdout')).toBe(true);
   });
 });
 

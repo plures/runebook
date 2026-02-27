@@ -12,10 +12,9 @@
 
   interface Props {
     node: TerminalNode;
-    tui?: boolean;
   }
 
-  let { node, tui = false }: Props = $props();
+  let { node }: Props = $props();
 
   let terminalEl = $state<HTMLDivElement | null>(null);
   let terminal: Terminal | null = null;

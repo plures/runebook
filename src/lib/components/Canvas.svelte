@@ -241,7 +241,7 @@
         <!-- Node content -->
         <div class="node-content">
           {#if node.type === 'terminal'}
-            <TerminalNodeComponent {node} {tui} />
+            <TerminalNodeComponent {node} />
           {:else if node.type === 'input'}
             <InputNodeComponent {node} {tui} />
           {:else if node.type === 'display'}
