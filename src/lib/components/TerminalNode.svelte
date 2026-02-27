@@ -89,7 +89,7 @@
   <Box class="node-header terminal-header" surface={3} {tui}>
     <span class="node-icon">⚡</span>
     <Text class="node-title">{node.label || 'Terminal'}</Text>
-    <span class="node-badge">terminal</span>
+    <span>terminal</span>
   </Box>
   
   <Box class="node-body" pad={3}>
