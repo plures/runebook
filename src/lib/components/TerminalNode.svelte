@@ -44,7 +44,9 @@
     isRunning = true;
     error = null;
 
-    // Parse command + args from the input string
+    // Parse command + args from the input string.
+    // Note: simple whitespace split — quoted arguments (e.g. echo "hello world")
+    // are not supported; the backend receives each token as a separate argument.
     const [cmd, ...args] = raw.split(/\s+/);
 
     // Capture command start for agent

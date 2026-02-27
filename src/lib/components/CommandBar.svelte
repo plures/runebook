@@ -2,7 +2,12 @@
   import { canvasStore } from '../stores/canvas';
   import { saveCanvasToYAML, loadCanvasFromFile } from '../utils/yaml-loader';
   import { saveCanvas, loadCanvas, listCanvases } from '../utils/storage';
-  import type { TerminalNode, InputNode, DisplayNode, TransformNode } from '../types/canvas';
+  import {
+    createTerminalNode,
+    createInputNode,
+    createDisplayNode,
+    createTransformNode
+  } from '../utils/node-factory';
   import Button from '../design-dojo/Button.svelte';
 
   interface Props {
@@ -13,69 +18,17 @@
 
   let showSavedList = $state(false);
   let savedCanvases = $state<{ id: string; name: string; timestamp: number }[]>([]);
+  let dropdownEl: HTMLElement | undefined;
 
-  function addTerminalNode() {
-    const node: TerminalNode = {
-      id: `terminal-${Date.now()}`,
-      type: 'terminal',
-      position: { x: 120 + Math.random() * 80, y: 80 + Math.random() * 80 },
-      label: 'Terminal',
-      command: 'echo',
-      args: ['Hello, RuneBook!'],
-      autoStart: false,
-      inputs: [],
-      outputs: [{ id: 'stdout', name: 'stdout', type: 'output' }]
-    };
-    canvasStore.addNode(node);
-  }
-
-  function addInputNode() {
-    const node: InputNode = {
-      id: `input-${Date.now()}`,
-      type: 'input',
-      position: { x: 120 + Math.random() * 80, y: 280 + Math.random() * 80 },
-      label: 'Text Input',
-      inputType: 'text',
-      value: '',
-      inputs: [],
-      outputs: [{ id: 'value', name: 'value', type: 'output' }]
-    };
-    canvasStore.addNode(node);
-  }
-
-  function addDisplayNode() {
-    const node: DisplayNode = {
-      id: `display-${Date.now()}`,
-      type: 'display',
-      position: { x: 480 + Math.random() * 80, y: 180 + Math.random() * 80 },
-      label: 'Display',
-      displayType: 'text',
-      content: '',
-      inputs: [{ id: 'input', name: 'input', type: 'input' }],
-      outputs: []
-    };
-    canvasStore.addNode(node);
-  }
-
-  function addTransformNode() {
-    const node: TransformNode = {
-      id: `transform-${Date.now()}`,
-      type: 'transform',
-      position: { x: 300 + Math.random() * 80, y: 180 + Math.random() * 80 },
-      label: 'Transform',
-      transformType: 'map',
-      code: 'item',
-      inputs: [{ id: 'input', name: 'input', type: 'input' }],
-      outputs: [{ id: 'output', name: 'output', type: 'output' }]
-    };
-    canvasStore.addNode(node);
-  }
+  function addTerminalNode() { canvasStore.addNode(createTerminalNode()); }
+  function addInputNode()    { canvasStore.addNode(createInputNode()); }
+  function addDisplayNode()  { canvasStore.addNode(createDisplayNode()); }
+  function addTransformNode(){ canvasStore.addNode(createTransformNode()); }
 
   async function saveToStorage() {
     try {
       const canvas = $canvasStore;
       await saveCanvas(canvas);
-      // Refresh list if currently shown
       if (showSavedList) {
         savedCanvases = await listCanvases();
       }
@@ -104,9 +57,14 @@
   }
 
   async function loadExample() {
+    const canvas = $canvasStore;
+    const hasNodes = canvas.nodes.length > 0;
+    if (hasNodes && !confirm('Loading the example will replace the current canvas. Continue?')) {
+      return;
+    }
     try {
-      const canvas = await loadCanvasFromFile('/examples/hello-world.yaml');
-      canvasStore.loadCanvas(canvas);
+      const loaded = await loadCanvasFromFile('/examples/hello-world.yaml');
+      canvasStore.loadCanvas(loaded);
     } catch (e) {
       console.error('Failed to load example:', e);
     }
@@ -130,9 +88,15 @@
     }
   }
 
+  /** Close the saved-canvases dropdown when clicking outside it. */
+  function handleWindowClick(event: MouseEvent) {
+    if (showSavedList && dropdownEl && !dropdownEl.contains(event.target as Node)) {
+      showSavedList = false;
+    }
+  }
 </script>
 
-<header class="command-bar" data-tauri-drag-region>
+<svelte:window onclick={handleWindowClick} /><header class="command-bar" data-tauri-drag-region>
   <div class="command-bar__brand" data-tauri-drag-region>
     <span class="command-bar__logo" aria-hidden="true">⚡</span>
     <span class="command-bar__name">RuneBook</span>
@@ -160,7 +124,7 @@
     <Button {tui} onclick={saveToStorage} class="cmd-btn">
       💾 Save to Storage
     </Button>
-    <div class="cmd-dropdown">
+    <div class="cmd-dropdown" bind:this={dropdownEl}>
       <Button {tui} onclick={toggleSavedCanvases} class="cmd-btn">
         📚 Saved Canvases {showSavedList ? '▼' : '▶'}
       </Button>
@@ -170,14 +134,13 @@
             <div class="empty-message">No saved canvases</div>
           {:else}
             {#each savedCanvases as saved}
-              <Button
-                {tui}
+              <button
                 class="saved-item"
                 onclick={() => loadFromStorage(saved.id)}
               >
                 <span>{saved.name}</span>
                 <span class="saved-time">{new Date(saved.timestamp).toLocaleDateString()}</span>
-              </Button>
+              </button>
             {/each}
           {/if}
         </div>

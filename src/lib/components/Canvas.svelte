@@ -5,7 +5,8 @@
   import DisplayNodeComponent from './DisplayNode.svelte';
   import TransformNodeComponent from './TransformNode.svelte';
   import ConnectionLine from './ConnectionLine.svelte';
-  import type { CanvasNode, Connection, TerminalNode, InputNode } from '../types/canvas';
+  import type { CanvasNode, Connection } from '../types/canvas';
+  import { createTerminalNode, createInputNode } from '../utils/node-factory';
   import Box from '../design-dojo/Box.svelte';
 
   interface Props {
@@ -148,44 +149,27 @@
   }
 
   function handleKeydown(event: KeyboardEvent) {
+    const inEditableElement = !!(event.target as HTMLElement)?.closest(
+      'input, textarea, [contenteditable]'
+    );
+
     if (event.key === 'Delete' || event.key === 'Backspace') {
-      if (selectedNodeId && !(event.target as HTMLElement)?.closest('input, textarea, [contenteditable]')) {
+      if (selectedNodeId && !inEditableElement) {
         canvasStore.removeNode(selectedNodeId);
         selectedNodeId = null;
       }
     }
 
-    // Ctrl+T / Cmd+T — add Terminal node
-    if ((event.ctrlKey || event.metaKey) && event.key === 't') {
+    // Ctrl/Cmd+T — add Terminal node (skip when focus is inside an editable element)
+    if ((event.ctrlKey || event.metaKey) && event.key === 't' && !inEditableElement) {
       event.preventDefault();
-      const node: TerminalNode = {
-        id: `terminal-${Date.now()}`,
-        type: 'terminal',
-        position: { x: 160 + Math.random() * 120, y: 100 + Math.random() * 120 },
-        label: 'Terminal',
-        command: 'echo',
-        args: ['Hello, RuneBook!'],
-        autoStart: false,
-        inputs: [],
-        outputs: [{ id: 'stdout', name: 'stdout', type: 'output' }]
-      };
-      canvasStore.addNode(node);
+      canvasStore.addNode(createTerminalNode());
     }
 
-    // Ctrl+I / Cmd+I — add Input node
-    if ((event.ctrlKey || event.metaKey) && event.key === 'i') {
+    // Ctrl/Cmd+I — add Input node (skip when focus is inside an editable element)
+    if ((event.ctrlKey || event.metaKey) && event.key === 'i' && !inEditableElement) {
       event.preventDefault();
-      const node: InputNode = {
-        id: `input-${Date.now()}`,
-        type: 'input',
-        position: { x: 160 + Math.random() * 120, y: 280 + Math.random() * 120 },
-        label: 'Text Input',
-        inputType: 'text',
-        value: '',
-        inputs: [],
-        outputs: [{ id: 'value', name: 'value', type: 'output' }]
-      };
-      canvasStore.addNode(node);
+      canvasStore.addNode(createInputNode());
     }
   }
 </script>
