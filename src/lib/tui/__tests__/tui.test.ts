@@ -4,6 +4,7 @@ import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
 import { writeFileSync, unlinkSync } from 'fs';
 import { join } from 'path';
 import { tmpdir } from 'os';
+import { randomUUID } from 'crypto';
 import type { Canvas } from '../../types/canvas';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -62,7 +63,7 @@ ${canvas.connections.map(c => `  - from: ${c.from}
 
 /** Create a temp YAML file and return its path */
 function writeTempCanvas(canvas: Canvas = SAMPLE_CANVAS): string {
-  const path = join(tmpdir(), `runebook-test-${Date.now()}.yaml`);
+  const path = join(tmpdir(), `runebook-test-${randomUUID()}.yaml`);
   writeFileSync(path, canvasYAML(canvas), 'utf-8');
   return path;
 }
@@ -112,7 +113,7 @@ describe('TUIApp', () => {
   });
 
   it('throws on a YAML file missing required canvas fields', () => {
-    const path = join(tmpdir(), `invalid-${process.pid}-${Date.now()}.yaml`);
+    const path = join(tmpdir(), `invalid-${randomUUID()}.yaml`);
     // Valid YAML but missing the required canvas fields (id, name, nodes)
     writeFileSync(path, 'foo: bar\nbaz: 123\n', 'utf-8');
     try {
@@ -127,7 +128,7 @@ describe('TUIApp', () => {
 
   it('saves the canvas to a YAML file', () => {
     const loadPath = writeTempCanvas();
-    const savePath = join(tmpdir(), `runebook-save-${Date.now()}.yaml`);
+    const savePath = join(tmpdir(), `runebook-save-${randomUUID()}.yaml`);
     try {
       const app = new TUIApp();
       app.loadFromFile(loadPath);
@@ -289,6 +290,61 @@ describe('TUIApp', () => {
       const spy = vi.spyOn(app, 'saveToFile');
       app.handleKey('\x13', Buffer.from([0x13]));
       expect(spy).toHaveBeenCalledOnce();
+    } finally {
+      unlinkSync(path);
+    }
+  });
+
+  it('q key calls quit()', () => {
+    const path = writeTempCanvas();
+    try {
+      const app = new TUIApp();
+      app.loadFromFile(path);
+      const spy = vi.spyOn(app, 'quit').mockImplementation(() => { /* stub */ });
+      app.handleKey('q', Buffer.from([0x71]));
+      expect(spy).toHaveBeenCalledOnce();
+    } finally {
+      unlinkSync(path);
+    }
+  });
+
+  it('Ctrl+C calls quit()', () => {
+    const path = writeTempCanvas();
+    try {
+      const app = new TUIApp();
+      app.loadFromFile(path);
+      const spy = vi.spyOn(app, 'quit').mockImplementation(() => { /* stub */ });
+      app.handleKey('\x03', Buffer.from([0x03]));
+      expect(spy).toHaveBeenCalledOnce();
+    } finally {
+      unlinkSync(path);
+    }
+  });
+
+  it('r key calls runSelected()', () => {
+    const path = writeTempCanvas();
+    try {
+      const app = new TUIApp();
+      app.loadFromFile(path);
+      const spy = vi.spyOn(app, 'runSelected').mockResolvedValue();
+      app.handleKey('r', Buffer.from([0x72]));
+      expect(spy).toHaveBeenCalledOnce();
+    } finally {
+      unlinkSync(path);
+    }
+  });
+
+  it('c key clears terminal output', () => {
+    const path = writeTempCanvas();
+    try {
+      const chunks: string[] = [];
+      const fakeOut = { write: (s: string) => { chunks.push(s); }, columns: 100, rows: 24 } as any;
+      const app = new TUIApp({ output: fakeOut });
+      app.loadFromFile(path);
+      // Seed terminal output
+      (app as any).state.terminalOutput = ['line1', 'line2'];
+      app.handleKey('c', Buffer.from([0x63]));
+      expect((app as any).state.terminalOutput).toHaveLength(0);
     } finally {
       unlinkSync(path);
     }

@@ -1,5 +1,6 @@
 // RuneBook TUI — terminal-based UI for headless/SSH usage
 
+import { EventEmitter } from 'events';
 import { readFileSync, writeFileSync } from 'fs';
 import { spawn } from 'child_process';
 import yaml from 'js-yaml';
@@ -64,11 +65,13 @@ export interface TUIOptions {
 
 // ─── TUIApp ───────────────────────────────────────────────────────────────────
 
-export class TUIApp {
+export class TUIApp extends EventEmitter {
   private state: TUIState;
   private out: NodeJS.WritableStream;
+  private _exiting = false;
 
   constructor(options: TUIOptions = {}) {
+    super();
     this.out = options.output ?? process.stdout;
     this.state = {
       canvas: null,
@@ -94,7 +97,7 @@ export class TUIApp {
       name: data.name,
       description: data.description ?? '',
       nodes: data.nodes ?? [],
-      connections: data.connections ?? [],
+      connections: Array.isArray(data.connections) ? data.connections : [],
       version: data.version ?? '1.0.0',
     };
     this.state.filePath = filePath;
@@ -175,14 +178,31 @@ export class TUIApp {
     const cmd: string = t.command ?? '';
     const args: string[] = t.args ?? [];
     const cwd: string = t.cwd ?? process.cwd();
-    const env: Record<string, string> = { ...process.env, ...(t.env ?? {}) };
+    const env: NodeJS.ProcessEnv = { ...process.env, ...(t.env ?? {}) };
+
+    if (!cmd || cmd.trim().length === 0) {
+      this.state.message = 'Terminal node has no command configured.';
+      this.state.terminalOutput = ['[Error: No command configured for this terminal node.]'];
+      this.render();
+      return;
+    }
 
     this.state.mode = 'run';
     this.state.terminalOutput = [`$ ${[cmd, ...args].join(' ')}`];
     this.render();
 
     return new Promise(resolve => {
-      const proc = spawn(cmd, args, { cwd, env, shell: true });
+      let proc;
+      try {
+        proc = spawn(cmd, args, { cwd, env, shell: true });
+      } catch (err) {
+        const message = err instanceof Error ? err.message : String(err);
+        this.state.terminalOutput.push(`[Error: ${message}]`);
+        this.state.mode = 'normal';
+        this.render();
+        resolve();
+        return;
+      }
 
       proc.stdout.on('data', (chunk: Buffer) => {
         this.state.terminalOutput.push(...chunk.toString().split('\n').filter(Boolean));
@@ -507,16 +527,20 @@ export class TUIApp {
 
   // ── Lifecycle ────────────────────────────────────────────────────────────────
 
+  /** Restore terminal state, remove stdin listeners, and emit 'quit'. Idempotent. */
   quit(): void {
+    if (this._exiting) return;
+    this._exiting = true;
+    process.stdin.removeAllListeners();
     if ((process.stdin as any).isTTY && typeof (process.stdin as any).setRawMode === 'function') {
       (process.stdin as any).setRawMode(false);
     }
+    process.stdin.pause();
     this.out.write(A.showCursor + A.clear + A.home);
-    console.log('RuneBook TUI exited.');
-    process.exit(0);
+    this.emit('quit');
   }
 
-  /** Start the interactive TUI. Resolves only if non-TTY (useful in tests). */
+  /** Start the interactive TUI. Returns a Promise that resolves when the TUI quits. */
   async start(filePath?: string): Promise<void> {
     if (filePath) {
       this.loadFromFile(filePath);
@@ -549,7 +573,10 @@ export class TUIApp {
     }
 
     this.render();
-    // In TTY mode the process keeps running via event listeners; no need to await anything.
+
+    return new Promise(resolve => {
+      this.once('quit', resolve);
+    });
   }
 }
 
@@ -558,4 +585,6 @@ export class TUIApp {
 export async function launchTUI(filePath?: string): Promise<void> {
   const app = new TUIApp();
   await app.start(filePath);
+  console.log('RuneBook TUI exited.');
+  process.exit(0);
 }
