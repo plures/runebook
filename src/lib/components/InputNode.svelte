@@ -16,7 +16,12 @@
   const { updateNodeData } = useSvelteFlow();
 
   function handleChange() {
-    updateNodeData(id, { value });
+    let outputValue: string | number | boolean = value;
+    if (data.inputType === 'number' || data.inputType === 'slider') {
+      const coerced = Number(value);
+      outputValue = Number.isNaN(coerced) ? 0 : coerced;
+    }
+    updateNodeData(id, { value: outputValue });
   }
 </script>
 
