@@ -11,25 +11,31 @@ test.describe('canvas load', () => {
     await expect(page.locator('body')).toContainText(/\S+/);
   });
 
-  test('canvas container is visible', async ({ page }) => {
-    await expect(page.locator('.canvas-container')).toBeVisible();
+  test('SvelteFlow canvas is rendered', async ({ page }) => {
+    await expect(page.locator('.svelte-flow')).toBeVisible();
   });
 
   test('canvas starts with no nodes', async ({ page }) => {
-    await expect(page.locator('.node-wrapper')).toHaveCount(0);
+    await expect(page.locator('.svelte-flow__node')).toHaveCount(0);
   });
 
-  test('toolbar shows all four Add Nodes buttons', async ({ page }) => {
-    await expect(page.locator('.toolbar-btn', { hasText: /Terminal/ })).toBeVisible();
-    await expect(page.locator('.toolbar-btn', { hasText: /Input/ })).toBeVisible();
-    await expect(page.locator('.toolbar-btn', { hasText: /Display/ })).toBeVisible();
-    await expect(page.locator('.toolbar-btn', { hasText: /Transform/ })).toBeVisible();
+  test('command bar shows all four Add Node buttons', async ({ page }) => {
+    await expect(page.locator('.add-btn', { hasText: /Terminal/ })).toBeVisible();
+    await expect(page.locator('.add-btn', { hasText: /Input/ })).toBeVisible();
+    await expect(page.locator('.add-btn', { hasText: /Display/ })).toBeVisible();
+    await expect(page.locator('.add-btn', { hasText: /Transform/ })).toBeVisible();
   });
 
-  test('toolbar shows canvas action buttons', async ({ page }) => {
-    await expect(page.locator('.toolbar-btn', { hasText: /Load Example/ })).toBeVisible();
-    await expect(page.locator('.toolbar-btn', { hasText: /Save to Storage/ })).toBeVisible();
-    await expect(page.locator('.toolbar-btn', { hasText: /Saved Canvases/ })).toBeVisible();
-    await expect(page.locator('.toolbar-btn', { hasText: /Export YAML/ })).toBeVisible();
+  test('command bar shows hint text', async ({ page }) => {
+    await expect(page.locator('.command-bar .hint')).toBeVisible();
+    await expect(page.locator('.command-bar .hint')).toContainText(/connect|zoom/i);
+  });
+
+  test('MiniMap is rendered', async ({ page }) => {
+    await expect(page.locator('.svelte-flow__minimap')).toBeVisible();
+  });
+
+  test('Controls panel is rendered', async ({ page }) => {
+    await expect(page.locator('.svelte-flow__controls')).toBeVisible();
   });
 });
