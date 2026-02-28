@@ -1,3 +1,7 @@
+## [0.7.0] — 2026-02-28
+
+- feat: Runebook Phase 1 Obsidian Canvas baseline (design-dojo-only) (#115) (fa54b47)
+
 ## [0.6.2] — 2026-02-28
 
 - fix(nix): update npmDepsHash and frontend version in flake.nix (#113) (bc3c904)
