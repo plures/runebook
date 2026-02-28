@@ -90,7 +90,7 @@ async fn spawn_terminal(
     // Close the slave side in the parent process
     drop(pair.slave);
 
-    let mut master = pair.master;
+    let master = pair.master;
     let writer = master.take_writer().map_err(|e| e.to_string())?;
     let mut reader = master.try_clone_reader().map_err(|e| e.to_string())?;
 

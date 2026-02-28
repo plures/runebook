@@ -4,7 +4,6 @@ use crate::core::coordination::{ApiRegistry, CoordinationChannel, CoordinationHa
 use crate::core::ownership::OwnershipManager;
 use crate::core::types::*;
 use std::collections::HashMap;
-use tokio::sync::RwLock;
 
 /// Coordinates parallel agent execution
 pub struct ExecutionCoordinator {

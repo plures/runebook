@@ -1,7 +1,6 @@
 //! Shared types for the parallel execution system.
 
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
 
 /// Agent identifier
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
