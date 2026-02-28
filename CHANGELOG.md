@@ -1,3 +1,14 @@
+## [0.6.0] — 2026-02-28
+
+- fix(ci): add id-token permission to release workflow (#109) (613b6d9)
+- ci: add Rust checks (fmt, clippy, test) to CI workflow (#97) (064d6ae)
+- feat: TUI mode — terminal-based UI for headless/SSH usage (#73) (e1f40f4)
+- ci: add basic CI workflow (#67) (9c2d706)
+- feat(terminal): replace toy terminal with xterm.js + portable-pty PTY backend (#69) (6130f1f)
+- feat: app chrome — settings menu, Help/About, font selection, window controls, connection context menu (#48) (ac0d9b0)
+- fix: release builds not attaching to GitHub releases + add Android build (#42) (66cf836)
+- test: full vitest unit test coverage for src/lib/ modules (#37) (1bceef9)
+
 ## [0.5.0] — 2026-02-24
 
 - feat: bundle OpenDyslexic Mono Nerd Font as default mono font (e489a15)
