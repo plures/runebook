@@ -1,3 +1,7 @@
+## [0.7.1] — 2026-02-28
+
+- fix(ci): publish-release should run on tag push (#116) (0085662)
+
 ## [0.7.0] — 2026-02-28
 
 - feat: Runebook Phase 1 Obsidian Canvas baseline (design-dojo-only) (#115) (fa54b47)
