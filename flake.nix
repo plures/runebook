@@ -33,10 +33,10 @@
         # Build the frontend (SvelteKit)
         frontend = pkgs.buildNpmPackage {
           pname = "runebook-frontend";
-          version = "0.2.0";
+          version = "0.6.0";
           src = ./.;
           
-          npmDepsHash = "sha256-hTYeSGtItrSXvcUscY4LXChGdkcCOQZm1Wh3pGhWwpg=";
+          npmDepsHash = "sha256-h6CvxJiRfzORGxlUTDKS13YXC2REhIEdbKHxMPfGjZI=";
           
           nativeBuildInputs = [
             nodejs
@@ -120,7 +120,7 @@
           version = "0.2.0";
           src = ./.;
           
-          npmDepsHash = "sha256-hTYeSGtItrSXvcUscY4LXChGdkcCOQZm1Wh3pGhWwpg=";
+          npmDepsHash = "sha256-h6CvxJiRfzORGxlUTDKS13YXC2REhIEdbKHxMPfGjZI=";
           
           nativeBuildInputs = [
             nodejs
