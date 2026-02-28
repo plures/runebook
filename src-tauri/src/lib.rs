@@ -90,7 +90,7 @@ async fn spawn_terminal(
     // Close the slave side in the parent process
     drop(pair.slave);
 
-    let mut master = pair.master;
+    let master = pair.master;
     let writer = master.take_writer().map_err(|e| e.to_string())?;
     let mut reader = master.try_clone_reader().map_err(|e| e.to_string())?;
 
@@ -240,7 +240,7 @@ async fn memory_inspect(
                         session.started_at.format("%Y-%m-%d %H:%M:%S")
                     ));
                 }
-                output.push_str("\n");
+                output.push('\n');
             }
 
             if !errors.is_empty() {
@@ -251,7 +251,7 @@ async fn memory_inspect(
                         error.severity, error.error_type, error.message
                     ));
                 }
-                output.push_str("\n");
+                output.push('\n');
             }
 
             if !suggestions.is_empty() {

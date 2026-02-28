@@ -15,6 +15,7 @@ use std::time::Duration;
 pub struct PluresDBClient {
     client: Client,
     base_url: String,
+    #[allow(dead_code)]
     data_dir: String,
 }
 

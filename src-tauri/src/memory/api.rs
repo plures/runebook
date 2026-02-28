@@ -6,8 +6,6 @@ use crate::memory::encryption::EncryptionProvider;
 use crate::memory::schema::*;
 use anyhow::{Context, Result};
 use chrono::{DateTime, Duration as ChronoDuration, Utc};
-use serde_json::Value;
-use std::collections::HashMap;
 
 /// Main memory store API
 pub struct MemoryStore {
@@ -145,7 +143,7 @@ impl MemoryStore {
 
         // Get session
         let session_key = format!("memory:session:{}", session_id);
-        let session: Session = if let Some(value) = self.client.get(&session_key).await? {
+        let _session: Session = if let Some(value) = self.client.get(&session_key).await? {
             let value = if let Some(enc) = &self.encryption {
                 enc.decrypt(&value).await?
             } else {
@@ -236,7 +234,7 @@ impl MemoryStore {
                 };
 
                 if let Ok(insight) = serde_json::from_value::<Insight>(value) {
-                    if insight.session_id.as_ref().map(|s| s.as_str()) == Some(session_id)
+                    if insight.session_id.as_deref() == Some(session_id)
                         && insight.generated_at >= start_time
                         && insight.generated_at <= end_time
                     {

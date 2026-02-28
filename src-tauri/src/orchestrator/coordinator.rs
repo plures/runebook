@@ -4,7 +4,6 @@ use crate::core::coordination::{ApiRegistry, CoordinationChannel, CoordinationHa
 use crate::core::ownership::OwnershipManager;
 use crate::core::types::*;
 use std::collections::HashMap;
-use tokio::sync::RwLock;
 
 /// Coordinates parallel agent execution
 pub struct ExecutionCoordinator {
@@ -13,6 +12,7 @@ pub struct ExecutionCoordinator {
     api_registry: ApiRegistry,
     agent_status: HashMap<AgentId, AgentStatus>,
     coordination: CoordinationChannel,
+    #[allow(dead_code)]
     coordination_handle: CoordinationHandle,
 }
 
@@ -201,7 +201,7 @@ impl ExecutionCoordinator {
             }
             AgentId::Agent3 => {
                 // Agent 3 needs Agent 2 APIs
-                self.api_registry.get_agent_apis(AgentId::Agent2).len() > 0
+                !self.api_registry.get_agent_apis(AgentId::Agent2).is_empty()
             }
             AgentId::Agent4 => {
                 // Agent 4 needs Agent 3 to write suggestions
