@@ -5,68 +5,48 @@ const BASE_URL = 'http://127.0.0.1:4173/';
 test.describe('canvas persistence', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto(BASE_URL);
-    // Accept all browser dialogs (alert / confirm)
     page.on('dialog', dialog => dialog.accept());
   });
 
-  test('saved canvases list starts empty on fresh load', async ({ page }) => {
-    await page.locator('.toolbar-btn', { hasText: /Saved Canvases/ }).click();
-    await expect(page.locator('.saved-list')).toBeVisible();
-    await expect(page.locator('.empty-message')).toBeVisible();
-    await expect(page.locator('.empty-message')).toContainText('No saved canvases');
+  test('save button is accessible and enabled', async ({ page }) => {
+    const saveBtn = page.locator('.toolbar-nav button[title="Save board"]');
+    await expect(saveBtn).toBeVisible();
+    await expect(saveBtn).not.toBeDisabled();
   });
 
-  test('saved canvas appears in the list after saving', async ({ page }) => {
-    // Add a node so the canvas is non-empty (not required but realistic)
-    await page.locator('.toolbar-btn', { hasText: /Terminal/ }).click();
-
-    // Save canvas to localStorage (triggers an alert — auto-dismissed)
-    await page.locator('.toolbar-btn', { hasText: /Save to Storage/ }).click();
-
-    // Open the saved canvases list
-    await page.locator('.toolbar-btn', { hasText: /Saved Canvases/ }).click();
-    await expect(page.locator('.saved-list')).toBeVisible();
-
-    // At least one saved entry should appear
-    await expect(page.locator('.saved-item')).toHaveCount(1);
-    await expect(page.locator('.saved-item').first()).toContainText('Untitled Canvas');
+  test('load button is accessible and enabled', async ({ page }) => {
+    const loadBtn = page.locator('.toolbar-nav button[title="Load board"]');
+    await expect(loadBtn).toBeVisible();
+    await expect(loadBtn).not.toBeDisabled();
   });
 
-  test('loading a saved canvas restores nodes on the canvas', async ({ page }) => {
-    // Build and save a canvas with two nodes
-    await page.locator('.toolbar-btn', { hasText: /Terminal/ }).click();
-    await page.locator('.toolbar-btn', { hasText: /Input/ }).click();
-    await expect(page.locator('.node-wrapper')).toHaveCount(2);
+  test('saving and loading restores text cards', async ({ page }) => {
+    // Add a card
+    await page.locator('.toolbar-nav button[title="Add Text Card"]').click();
+    await expect(page.locator('.node-wrapper')).toHaveCount(1);
 
-    await page.locator('.toolbar-btn', { hasText: /Save to Storage/ }).click();
+    // Save it
+    await page.locator('.toolbar-nav button[title="Save board"]').click();
+    // Wait for save confirmation (button briefly shows ✅)
+    await page.waitForTimeout(200);
 
-    // Clear canvas to empty state
-    await page.locator('.toolbar-btn.dd-btn--danger').click();
+    // Clear the canvas
+    await page.locator('.toolbar-nav button[title="Clear all cards"]').click();
     await expect(page.locator('.node-wrapper')).toHaveCount(0);
 
-    // Load the previously saved canvas
-    await page.locator('.toolbar-btn', { hasText: /Saved Canvases/ }).click();
-    await page.locator('.saved-item').first().click();
-
-    // Both nodes should be restored
-    await expect(page.locator('.node-wrapper')).toHaveCount(2);
+    // Load — should restore the saved card
+    await page.locator('.toolbar-nav button[title="Load board"]').click();
+    await expect(page.locator('.node-wrapper')).toHaveCount(1);
   });
 
-  test('Export YAML button is accessible', async ({ page }) => {
-    await expect(page.locator('.toolbar-btn', { hasText: /Export YAML/ })).toBeVisible();
-    await expect(page.locator('.toolbar-btn', { hasText: /Export YAML/ })).not.toBeDisabled();
-  });
+  test('auto-save persists across page reloads', async ({ page }) => {
+    // Add a card and give auto-save time to fire (1 s debounce + buffer)
+    await page.locator('.toolbar-nav button[title="Add Text Card"]').click();
+    await page.waitForTimeout(1500);
 
-  test('Storage Settings panel toggles visibility', async ({ page }) => {
-    // Panel is hidden initially
-    await expect(page.locator('.storage-settings')).toHaveCount(0);
-
-    // Click to open
-    await page.locator('.toolbar-btn', { hasText: /Storage Settings/ }).click();
-    await expect(page.locator('.storage-settings')).toBeVisible();
-
-    // Click again to close
-    await page.locator('.toolbar-btn', { hasText: /Storage Settings/ }).click();
-    await expect(page.locator('.storage-settings')).toHaveCount(0);
+    // Reload the page
+    await page.reload();
+    // After reload the auto-saved canvas should be restored
+    await expect(page.locator('.node-wrapper')).toHaveCount(1);
   });
 });

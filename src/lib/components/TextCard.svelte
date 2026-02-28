@@ -5,10 +5,9 @@
 
   interface Props {
     node: TextNode;
-    selected?: boolean;
   }
 
-  let { node, selected = false }: Props = $props();
+  let { node }: Props = $props();
 
   let editing = $state(false);
   let textareaEl = $state<HTMLTextAreaElement | null>(null);

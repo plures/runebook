@@ -3,35 +3,34 @@ import { test, expect } from '@playwright/test';
 const BASE_URL = 'http://127.0.0.1:4173/';
 
 /**
- * Terminal node tests run against the web-preview build (no Tauri backend).
- * We verify the UI is correctly rendered and interactive; actual PTY execution
- * is a Tauri-only flow and is not exercised here.
+ * Phase 1: Runebook is a canvas of text cards; there are no terminal nodes.
+ * These tests verify the canvas renders correctly in Phase 1 baseline.
  */
-test.describe('terminal node', () => {
+test.describe('canvas phase1', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto(BASE_URL);
-    await page.locator('.toolbar-btn', { hasText: /Terminal/ }).click();
   });
 
-  test('terminal node is rendered with a header', async ({ page }) => {
-    await expect(page.locator('.terminal-node')).toBeVisible();
-    await expect(page.locator('.terminal-node .node-title')).toContainText('Terminal');
+  test('canvas container is visible', async ({ page }) => {
+    await expect(page.locator('.canvas-container')).toBeVisible();
   });
 
-  test('terminal node renders an xterm.js terminal container', async ({ page }) => {
-    await expect(page.locator('.terminal-node .terminal-container')).toBeVisible();
-    await expect(page.locator('.terminal-node .xterm')).toBeVisible();
+  test('zoom indicator is visible', async ({ page }) => {
+    await expect(page.locator('.zoom-indicator')).toBeVisible();
   });
 
-  test('terminal node shows a status indicator', async ({ page }) => {
-    await expect(page.locator('.terminal-node .status-dot')).toBeVisible();
+  test('toolbar navigation is visible', async ({ page }) => {
+    await expect(page.locator('.toolbar-nav')).toBeVisible();
   });
 
-  test('terminal node has an output port', async ({ page }) => {
+  test('text card renders with input and output ports', async ({ page }) => {
+    await page.locator('.toolbar-nav button[title="Add Text Card"]').click();
+    await expect(page.locator('.node-wrapper .input-port')).toBeVisible();
     await expect(page.locator('.node-wrapper .output-port')).toBeVisible();
   });
 
-  test('terminal node has an input port', async ({ page }) => {
-    await expect(page.locator('.node-wrapper .input-port')).toBeVisible();
+  test('text card has a resize handle', async ({ page }) => {
+    await page.locator('.toolbar-nav button[title="Add Text Card"]').click();
+    await expect(page.locator('.node-wrapper .resize-handle')).toBeVisible();
   });
 });

@@ -56,9 +56,8 @@ describe('TextCard', () => {
     expect(container.querySelector('textarea')).toBeTruthy();
   });
 
-  it('is marked selected when selected prop is true', () => {
-    const { container } = render(TextCard, { node: makeTextNode(), selected: true });
-    // selected state is passed down - the Box renders
+  it('renders the card body', () => {
+    const { container } = render(TextCard, { node: makeTextNode() });
     expect(container.querySelector('.dd-box')).toBeTruthy();
   });
 });

@@ -22,7 +22,7 @@ describe('canvas-praxis store', () => {
     type: 'text',
     position: { x: 0, y: 0 },
     label: `Node ${id}`,
-  content: '',
+    content: '',
     inputs: [],
     outputs: [],
   });

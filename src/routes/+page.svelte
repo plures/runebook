@@ -3,34 +3,31 @@
   import Toolbar from '$lib/components/Toolbar.svelte';
   import TitleBar from '$lib/components/TitleBar.svelte';
   import { canvasStore } from '$lib/stores/canvas';
-  import { saveCanvas } from '$lib/utils/storage';
+  import { saveCanvas, loadCanvas } from '$lib/utils/storage';
   import { browser } from '$app/environment';
 
   const tui = false;
 
-  const AUTO_SAVE_KEY = 'runebook_autosave';
+  /** Shared canvas ID used by both auto-save and toolbar Save/Load. */
+  const CANVAS_ID = 'default';
   let saveDebounce: ReturnType<typeof setTimeout> | null = null;
   let hasInitializedAutoSave = false;
 
-  // Auto-load on mount
+  // Auto-load on mount via the same storage utility as Toolbar Save/Load
   if (browser) {
-    const saved = localStorage.getItem(AUTO_SAVE_KEY);
-    if (saved) {
-      try {
-        const canvas = JSON.parse(saved);
-        canvasStore.loadCanvas(canvas);
-      } catch { /* ignore */ }
-    }
-    hasInitializedAutoSave = true;
+    loadCanvas(CANVAS_ID).then(canvas => {
+      if (canvas) canvasStore.loadCanvas(canvas);
+      hasInitializedAutoSave = true;
+    });
   }
 
-  // Auto-save with 1 s debounce
+  // Auto-save with 1 s debounce — uses saveCanvas so Toolbar Load can find it
   $effect(() => {
     const canvas = $canvasStore;
     if (!hasInitializedAutoSave || !browser) return;
     if (saveDebounce) clearTimeout(saveDebounce);
     saveDebounce = setTimeout(() => {
-      localStorage.setItem(AUTO_SAVE_KEY, JSON.stringify(canvas));
+      saveCanvas({ ...canvas, id: CANVAS_ID }).catch(() => {/* ignore */});
     }, 1000);
   });
 </script>

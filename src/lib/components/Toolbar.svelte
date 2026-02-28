@@ -10,6 +10,9 @@
 
   let { tui = false }: Props = $props();
 
+  /** Must match the CANVAS_ID used for auto-save in +page.svelte */
+  const CANVAS_ID = 'default';
+
   let saveStatus = $state<'idle' | 'saved' | 'error'>('idle');
 
   function addTextCard() {
@@ -29,7 +32,7 @@
   async function handleSave() {
     try {
       const canvas = $canvasStore;
-      await saveCanvas(canvas);
+      await saveCanvas({ ...canvas, id: CANVAS_ID });
       saveStatus = 'saved';
       setTimeout(() => { saveStatus = 'idle'; }, 1500);
     } catch {
@@ -39,8 +42,7 @@
   }
 
   async function handleLoad() {
-    const canvas = $canvasStore;
-    const loaded = await loadCanvas(canvas.id);
+    const loaded = await loadCanvas(CANVAS_ID);
     if (loaded) {
       canvasStore.loadCanvas(loaded);
     }
@@ -53,7 +55,7 @@
 
 <StatusBar position="left" width="56px" {tui} class="toolbar">
   <nav class="toolbar-nav" aria-label="Canvas toolbar">
-    <Button variant="secondary" onclick={addTextCard} class="tool-btn" title="Add Text Card (double-click canvas)">
+    <Button variant="secondary" onclick={addTextCard} class="tool-btn" title="Add Text Card">
       📝
     </Button>
     <Button variant="secondary" onclick={handleSave} class="tool-btn" title="Save board">
@@ -75,6 +77,8 @@
     align-items: center;
     padding: var(--space-2, 8px) 0;
     gap: 0;
+    /* Offset below the 40 px TitleBar */
+    top: 40px !important;
   }
 
   .toolbar-nav {

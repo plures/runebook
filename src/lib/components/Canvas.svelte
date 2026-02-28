@@ -59,8 +59,8 @@
     draggedNodeId = nodeId;
     selectedNodeId = nodeId;
     dragOffset = {
-      x: event.clientX / zoom - node.position.x,
-      y: event.clientY / zoom - node.position.y
+      x: (event.clientX - panX) / zoom - node.position.x,
+      y: (event.clientY - panY) / zoom - node.position.y
     };
     event.preventDefault();
     event.stopPropagation();
@@ -125,8 +125,8 @@
       panX = panStart.panX + (event.clientX - panStart.x);
       panY = panStart.panY + (event.clientY - panStart.y);
     } else if (isDragging && draggedNodeId) {
-      const newX = Math.max(0, event.clientX / zoom - dragOffset.x);
-      const newY = Math.max(0, event.clientY / zoom - dragOffset.y);
+      const newX = Math.max(0, (event.clientX - panX) / zoom - dragOffset.x);
+      const newY = Math.max(0, (event.clientY - panY) / zoom - dragOffset.y);
       canvasStore.updateNodePosition(draggedNodeId, newX, newY);
     } else if (isResizing && resizingNodeId) {
       const dx = (event.clientX - resizeStart.x) / zoom;
@@ -399,7 +399,7 @@
         <!-- Node content -->
         <div class="node-content">
           {#if node.type === 'text'}
-            <TextCard {node} selected={selectedNodeId === node.id} />
+            <TextCard {node} />
           {/if}
         </div>
 
