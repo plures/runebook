@@ -236,7 +236,7 @@ impl MemoryStore {
                 };
 
                 if let Ok(insight) = serde_json::from_value::<Insight>(value) {
-                    if insight.session_id.as_ref().map(|s| s.as_str()) == Some(session_id)
+                    if insight.session_id.as_deref() == Some(session_id)
                         && insight.generated_at >= start_time
                         && insight.generated_at <= end_time
                     {

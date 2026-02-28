@@ -240,7 +240,7 @@ async fn memory_inspect(
                         session.started_at.format("%Y-%m-%d %H:%M:%S")
                     ));
                 }
-                output.push_str("\n");
+                output.push('\n');
             }
 
             if !errors.is_empty() {
@@ -251,7 +251,7 @@ async fn memory_inspect(
                         error.severity, error.error_type, error.message
                     ));
                 }
-                output.push_str("\n");
+                output.push('\n');
             }
 
             if !suggestions.is_empty() {

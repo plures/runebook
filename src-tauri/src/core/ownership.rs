@@ -23,7 +23,7 @@ impl OwnershipManager {
     /// Check if an agent can modify a file
     pub fn can_modify(&self, agent: AgentId, path: &str) -> bool {
         if let Some(ownership) = self.ownership_map.get(path) {
-            ownership.owner == agent || (ownership.shared && ownership.owner == agent)
+            ownership.owner == agent
         } else {
             // If not registered, allow (for now - orchestrator should register all)
             true
@@ -31,13 +31,8 @@ impl OwnershipManager {
     }
 
     /// Check if an agent can read a file
-    pub fn can_read(&self, _agent: AgentId, path: &str) -> bool {
-        // All agents can read shared files
-        if let Some(ownership) = self.ownership_map.get(path) {
-            ownership.shared || true // For now, allow all reads
-        } else {
-            true
-        }
+    pub fn can_read(&self, _agent: AgentId, _path: &str) -> bool {
+        true // For now, allow all reads
     }
 
     /// Get owner of a file
