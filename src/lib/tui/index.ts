@@ -3,7 +3,7 @@
 import { EventEmitter } from 'events';
 import { readFileSync, writeFileSync } from 'fs';
 import { spawn } from 'child_process';
-import type { Canvas, CanvasNode, TerminalNode } from '../types/canvas';
+import type { Canvas, CanvasNode } from '../types/canvas';
 import { saveCanvasToYAML, parseCanvasFromYAML } from '../utils/yaml-loader';
 
 // ─── Box-drawing characters ───────────────────────────────────────────────────
@@ -163,7 +163,7 @@ export class TUIApp extends EventEmitter {
 
   // ── Terminal execution ──────────────────────────────────────────────────────
 
-  /** Run the selected terminal node's command. Returns a Promise that resolves when done. */
+  /** Run the selected node's command. Phase 1: only text cards are supported. */
   async runSelected(): Promise<void> {
     if (this._activeProc) {
       this.state.message = 'A process is already running — press c to clear output';
@@ -172,85 +172,14 @@ export class TUIApp extends EventEmitter {
     }
 
     const node = this.selectedNode;
-    if (!node || node.type !== 'terminal') {
-      this.state.message = 'No terminal node selected';
+    if (!node) {
+      this.state.message = 'No node selected';
       this.render();
       return;
     }
-
-    const termNode = node as TerminalNode;
-    const cmd = termNode.command ?? '';
-    if (!cmd.trim()) {
-      this.state.message = 'Terminal node has no command';
-      this.render();
-      return;
-    }
-
-    this.state.mode = 'run';
-    this.state.terminalOutput = [];
+    // Phase 1: only text cards are supported; no runnable node type.
+    this.state.message = 'Run is not supported for this node type in Phase 1';
     this.render();
-
-    await new Promise<void>((resolve) => {
-      let stdoutBuf = '';
-      let stderrBuf = '';
-
-      let proc: ReturnType<typeof spawn>;
-      try {
-        // Split command string into executable + args; combine with explicit args.
-        // Spawn without a shell to prevent command-injection attacks.
-        // Note: simple whitespace splitting is used; quoted arguments (e.g. `echo "hello world"`)
-        // are not supported. Use termNode.args for arguments containing spaces.
-        const parts = cmd.trim().split(/\s+/);
-        const executable = parts[0];
-        const cmdArgs = [...parts.slice(1), ...(termNode.args ?? [])];
-        proc = spawn(executable, cmdArgs, {
-          cwd: termNode.cwd ?? process.cwd(),
-          env: { ...process.env, ...(termNode.env ?? {}) } as NodeJS.ProcessEnv,
-        });
-      } catch (err) {
-        this.state.mode = 'normal';
-        this.state.message = `Spawn error: ${err instanceof Error ? err.message : String(err)}`;
-        this.render();
-        resolve();
-        return;
-      }
-
-      this._activeProc = proc;
-
-      const flushLines = (data: Buffer | string, bufRef: { v: string }): void => {
-        bufRef.v += Buffer.isBuffer(data) ? data.toString('utf-8') : data;
-        const lines = bufRef.v.split('\n');
-        bufRef.v = lines.pop() ?? '';
-        for (const line of lines) {
-          this.state.terminalOutput.push(line);
-        }
-        if (lines.length > 0) this.render();
-      };
-
-      const stdoutRef = { v: stdoutBuf };
-      const stderrRef = { v: stderrBuf };
-
-      proc.stdout?.on('data', (data: Buffer | string) => flushLines(data, stdoutRef));
-      proc.stderr?.on('data', (data: Buffer | string) => flushLines(data, stderrRef));
-
-      proc.on('close', (code: number | null) => {
-        if (stdoutRef.v) this.state.terminalOutput.push(stdoutRef.v);
-        if (stderrRef.v) this.state.terminalOutput.push(stderrRef.v);
-        this._activeProc = null;
-        this.state.mode = 'normal';
-        this.state.message = `Process exited: ${code ?? 'killed'}`;
-        this.render();
-        resolve();
-      });
-
-      proc.on('error', (err: Error) => {
-        this._activeProc = null;
-        this.state.mode = 'normal';
-        this.state.message = `Error: ${err.message}`;
-        this.render();
-        resolve();
-      });
-    });
   }
 
   // ── Keyboard input ──────────────────────────────────────────────────────────
@@ -475,7 +404,7 @@ export class TUIApp extends EventEmitter {
   }
 
   private nodeProps(node: CanvasNode): [string, string][] {
-    const n = node as Record<string, unknown>;
+    const n = node as unknown as Record<string, unknown>;
     const props: [string, string][] = [
       ['ID', node.id.substring(0, 14)],
       ['Type', node.type],
@@ -483,16 +412,9 @@ export class TUIApp extends EventEmitter {
       ['X', String(node.position.x)],
       ['Y', String(node.position.y)],
     ];
-    if (node.type === 'terminal') {
-      props.push(['Cmd', String(n['command'] ?? '').substring(0, 14)]);
-      props.push(['CWD', String(n['cwd'] ?? '.').substring(0, 14)]);
-    } else if (node.type === 'input') {
-      props.push(['InputType', String(n['inputType'] ?? '')]);
-      props.push(['Value', String(n['value'] ?? '')]);
-    } else if (node.type === 'display') {
-      props.push(['DisplayType', String(n['displayType'] ?? '')]);
-    } else if (node.type === 'transform') {
-      props.push(['Transform', String(n['transformType'] ?? '')]);
+    // Phase 1: show text card content excerpt
+    if (typeof n['content'] === 'string') {
+      props.push(['Content', String(n['content']).substring(0, 14)]);
     }
     return props;
   }

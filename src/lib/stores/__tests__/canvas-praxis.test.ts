@@ -17,18 +17,19 @@ describe('canvas-praxis store', () => {
     canvasPraxisStore.clear();
   });
 
-  const makeTerminalNode = (id: string): CanvasNode => ({
+  const makeTextNode = (id: string): CanvasNode => ({
     id,
-    type: 'terminal',
+    type: 'text',
     position: { x: 0, y: 0 },
     label: `Node ${id}`,
+    content: '',
     inputs: [],
     outputs: [],
   });
 
   describe('addNode', () => {
     it('should add a node to the canvas', () => {
-      const node = makeTerminalNode('n1');
+      const node = makeTextNode('n1');
       canvasPraxisStore.addNode(node);
       const canvas = canvasPraxisStore.canvas;
       expect(canvas.nodes).toHaveLength(1);
@@ -36,22 +37,22 @@ describe('canvas-praxis store', () => {
     });
 
     it('should add multiple nodes', () => {
-      canvasPraxisStore.addNode(makeTerminalNode('n1'));
-      canvasPraxisStore.addNode(makeTerminalNode('n2'));
+      canvasPraxisStore.addNode(makeTextNode('n1'));
+      canvasPraxisStore.addNode(makeTextNode('n2'));
       expect(canvasPraxisStore.canvas.nodes).toHaveLength(2);
     });
   });
 
   describe('removeNode', () => {
     it('should remove a node from the canvas', () => {
-      canvasPraxisStore.addNode(makeTerminalNode('n1'));
+      canvasPraxisStore.addNode(makeTextNode('n1'));
       canvasPraxisStore.removeNode('n1');
       expect(canvasPraxisStore.canvas.nodes).toHaveLength(0);
     });
 
     it('should remove connections involving the removed node', () => {
-      canvasPraxisStore.addNode(makeTerminalNode('n1'));
-      canvasPraxisStore.addNode(makeTerminalNode('n2'));
+      canvasPraxisStore.addNode(makeTextNode('n1'));
+      canvasPraxisStore.addNode(makeTextNode('n2'));
       const conn: Connection = { from: 'n1', to: 'n2', fromPort: 'out', toPort: 'in' };
       canvasPraxisStore.addConnection(conn);
       canvasPraxisStore.removeNode('n1');
@@ -59,7 +60,7 @@ describe('canvas-praxis store', () => {
     });
 
     it('should clean up node data when node is removed', () => {
-      canvasPraxisStore.addNode(makeTerminalNode('n1'));
+      canvasPraxisStore.addNode(makeTextNode('n1'));
       canvasPraxisStore.updateNodeData('n1', 'out', 'some data');
       canvasPraxisStore.removeNode('n1');
       expect(canvasPraxisStore.nodeData['n1:out']).toBeUndefined();
@@ -68,7 +69,7 @@ describe('canvas-praxis store', () => {
 
   describe('updateNode', () => {
     it('should update node properties', () => {
-      canvasPraxisStore.addNode(makeTerminalNode('n1'));
+      canvasPraxisStore.addNode(makeTextNode('n1'));
       canvasPraxisStore.updateNode('n1', { label: 'Updated Label' });
       const node = canvasPraxisStore.canvas.nodes.find(n => n.id === 'n1');
       expect(node?.label).toBe('Updated Label');
@@ -82,7 +83,7 @@ describe('canvas-praxis store', () => {
 
   describe('updateNodePosition', () => {
     it('should update node position', () => {
-      canvasPraxisStore.addNode(makeTerminalNode('n1'));
+      canvasPraxisStore.addNode(makeTextNode('n1'));
       canvasPraxisStore.updateNodePosition('n1', 100, 200);
       const node = canvasPraxisStore.canvas.nodes.find(n => n.id === 'n1');
       expect(node?.position).toEqual({ x: 100, y: 200 });
@@ -115,7 +116,7 @@ describe('canvas-praxis store', () => {
 
   describe('loadCanvas', () => {
     it('should replace the canvas with the provided canvas', () => {
-      canvasPraxisStore.addNode(makeTerminalNode('n1'));
+      canvasPraxisStore.addNode(makeTextNode('n1'));
       const newCanvas = {
         id: 'new-canvas',
         name: 'New Canvas',
@@ -132,7 +133,7 @@ describe('canvas-praxis store', () => {
 
   describe('clear', () => {
     it('should reset the canvas to initial state', () => {
-      canvasPraxisStore.addNode(makeTerminalNode('n1'));
+      canvasPraxisStore.addNode(makeTextNode('n1'));
       canvasPraxisStore.updateNodeData('n1', 'out', 'data');
       canvasPraxisStore.clear();
       expect(canvasPraxisStore.canvas.nodes).toHaveLength(0);
@@ -150,8 +151,8 @@ describe('canvas-praxis store', () => {
 
   describe('getNodeInputData', () => {
     it('should return data from connected source port', () => {
-      canvasPraxisStore.addNode(makeTerminalNode('n1'));
-      canvasPraxisStore.addNode(makeTerminalNode('n2'));
+      canvasPraxisStore.addNode(makeTextNode('n1'));
+      canvasPraxisStore.addNode(makeTextNode('n2'));
       canvasPraxisStore.addConnection({ from: 'n1', to: 'n2', fromPort: 'out', toPort: 'in' });
       canvasPraxisStore.updateNodeData('n1', 'out', 'hello');
       const result = canvasPraxisStore.getNodeInputData('n2', 'in');

@@ -1,15 +1,9 @@
 <script lang="ts">
   import { canvasStore } from '../stores/canvas';
-  import TerminalNodeComponent from './TerminalNode.svelte';
-  import InputNodeComponent from './InputNode.svelte';
-  import DisplayNodeComponent from './DisplayNode.svelte';
-  import TransformNodeComponent from './TransformNode.svelte';
-  import ConnectionLine from './ConnectionLine.svelte';
+  import TextCard from './TextCard.svelte';
   import ContextMenu from './ContextMenu.svelte';
-  import type { CanvasNode, Connection } from '../types/canvas';
+  import type { CanvasNode, Connection, TextNode } from '../types/canvas';
   import type { ContextMenuItem } from './ContextMenu.svelte';
-  import type { TerminalNode, InputNode, DisplayNode, TransformNode } from '../types/canvas';
-  import Box from '../design-dojo/Box.svelte';
 
   interface Props {
     tui?: boolean;
@@ -17,39 +11,47 @@
 
   let { tui = false }: Props = $props();
 
-  // Drag state
+  // --- Pan/Zoom state ---
+  let panX = $state(0);
+  let panY = $state(0);
+  let zoom = $state(1);
+  let isPanning = $state(false);
+  let panStart = $state({ x: 0, y: 0, panX: 0, panY: 0 });
+  let spaceDown = $state(false);
+
+  // --- Drag state ---
   let isDragging = $state(false);
   let draggedNodeId = $state<string | null>(null);
   let dragOffset = $state({ x: 0, y: 0 });
 
-  // Resize state
+  // --- Resize state ---
   let isResizing = $state(false);
   let resizingNodeId = $state<string | null>(null);
   let resizeStart = $state({ x: 0, y: 0, w: 0, h: 0 });
 
-  // Connection drawing state
+  // --- Connection drawing state ---
   let isConnecting = $state(false);
   let connectFrom = $state<{ nodeId: string; portId: string; x: number; y: number } | null>(null);
   let connectMousePos = $state({ x: 0, y: 0 });
 
-  // Selection
+  // --- Selection ---
   let selectedNodeId = $state<string | null>(null);
 
-  // Context menu state
-  let ctxMenu = $state<{
-    x: number;
-    y: number;
-    items: ContextMenuItem[];
-  } | null>(null);
+  // --- Context menu ---
+  let ctxMenu = $state<{ x: number; y: number; items: ContextMenuItem[] } | null>(null);
 
   const canvasData = $derived($canvasStore);
 
+  // Convert screen coords to canvas coords
+  function screenToCanvas(sx: number, sy: number) {
+    return { x: (sx - panX) / zoom, y: (sy - panY) / zoom };
+  }
+
   // --- Node drag ---
   function handleNodeMouseDown(event: MouseEvent, nodeId: string) {
-    if (isResizing || isConnecting) return;
+    if (isResizing || isConnecting || spaceDown) return;
     const node = canvasData.nodes.find(n => n.id === nodeId);
     if (!node) return;
-    // Don't drag if clicking on interactive elements
     const target = event.target as HTMLElement;
     if (target.closest('input, textarea, button, select, [contenteditable]')) return;
 
@@ -57,8 +59,8 @@
     draggedNodeId = nodeId;
     selectedNodeId = nodeId;
     dragOffset = {
-      x: event.clientX - node.position.x,
-      y: event.clientY - node.position.y
+      x: (event.clientX - panX) / zoom - node.position.x,
+      y: (event.clientY - panY) / zoom - node.position.y
     };
     event.preventDefault();
     event.stopPropagation();
@@ -70,7 +72,7 @@
     if (!node) return;
     isResizing = true;
     resizingNodeId = nodeId;
-    const size = node.size || { width: 320, height: 200 };
+    const size = node.size || { width: 280, height: 200 };
     resizeStart = { x: event.clientX, y: event.clientY, w: size.width, h: size.height };
     event.preventDefault();
     event.stopPropagation();
@@ -78,11 +80,10 @@
 
   // --- Connection drawing ---
   function handlePortMouseDown(event: MouseEvent, nodeId: string, portId: string, portType: 'input' | 'output') {
-    if (portType !== 'output') return; // Can only start connections from output ports
+    if (portType !== 'output') return;
     const node = canvasData.nodes.find(n => n.id === nodeId);
     if (!node) return;
-
-    const size = node.size || { width: 320, height: 200 };
+    const size = node.size || { width: 280, height: 200 };
     isConnecting = true;
     connectFrom = {
       nodeId,
@@ -90,45 +91,50 @@
       x: node.position.x + size.width,
       y: node.position.y + size.height / 2
     };
-    connectMousePos = { x: event.clientX, y: event.clientY };
+    const p = screenToCanvas(event.clientX, event.clientY);
+    connectMousePos = { x: p.x, y: p.y };
     event.preventDefault();
     event.stopPropagation();
   }
 
   function handlePortMouseUp(event: MouseEvent, nodeId: string, portId: string, portType: 'input' | 'output') {
     if (!isConnecting || !connectFrom || portType !== 'input') return;
-    if (connectFrom.nodeId === nodeId) return; // No self-connections
-
-    // Check for duplicate
+    if (connectFrom.nodeId === nodeId) return;
     const exists = canvasData.connections.some(
       c => c.from === connectFrom!.nodeId && c.to === nodeId && c.fromPort === connectFrom!.portId && c.toPort === portId
     );
     if (!exists) {
-      canvasStore.addConnection({
-        from: connectFrom.nodeId,
-        to: nodeId,
-        fromPort: connectFrom.portId,
-        toPort: portId
-      });
+      canvasStore.addConnection({ from: connectFrom.nodeId, to: nodeId, fromPort: connectFrom.portId, toPort: portId });
     }
     isConnecting = false;
     connectFrom = null;
   }
 
+  // --- Pan via middle-click or space+drag ---
+  function handleCanvasMouseDown(event: MouseEvent) {
+    if (event.button === 1 || (event.button === 0 && spaceDown)) {
+      isPanning = true;
+      panStart = { x: event.clientX, y: event.clientY, panX, panY };
+      event.preventDefault();
+    }
+  }
+
   // --- Global mouse handlers ---
   function handleMouseMove(event: MouseEvent) {
-    if (isDragging && draggedNodeId) {
-      const newX = event.clientX - dragOffset.x;
-      const newY = event.clientY - dragOffset.y;
-      canvasStore.updateNodePosition(draggedNodeId, Math.max(0, newX), Math.max(0, newY));
+    if (isPanning) {
+      panX = panStart.panX + (event.clientX - panStart.x);
+      panY = panStart.panY + (event.clientY - panStart.y);
+    } else if (isDragging && draggedNodeId) {
+      const newX = Math.max(0, (event.clientX - panX) / zoom - dragOffset.x);
+      const newY = Math.max(0, (event.clientY - panY) / zoom - dragOffset.y);
+      canvasStore.updateNodePosition(draggedNodeId, newX, newY);
     } else if (isResizing && resizingNodeId) {
-      const dx = event.clientX - resizeStart.x;
-      const dy = event.clientY - resizeStart.y;
-      const newW = Math.max(200, resizeStart.w + dx);
-      const newH = Math.max(120, resizeStart.h + dy);
-      canvasStore.updateNode(resizingNodeId, { size: { width: newW, height: newH } });
+      const dx = (event.clientX - resizeStart.x) / zoom;
+      const dy = (event.clientY - resizeStart.y) / zoom;
+      canvasStore.updateNode(resizingNodeId, { size: { width: Math.max(180, resizeStart.w + dx), height: Math.max(100, resizeStart.h + dy) } });
     } else if (isConnecting) {
-      connectMousePos = { x: event.clientX, y: event.clientY };
+      const p = screenToCanvas(event.clientX, event.clientY);
+      connectMousePos = { x: p.x, y: p.y };
     }
   }
 
@@ -137,37 +143,85 @@
     draggedNodeId = null;
     isResizing = false;
     resizingNodeId = null;
+    isPanning = false;
     isConnecting = false;
     connectFrom = null;
   }
 
   function handleCanvasClick() {
     selectedNodeId = null;
+    ctxMenu = null;
   }
 
-  function getPortPos(node: CanvasNode, port: { id: string; type: string }, side: 'input' | 'output') {
-    const size = node.size || { width: 320, height: 200 };
-    const ports = side === 'input' ? node.inputs : node.outputs;
-    const idx = ports.findIndex(p => p.id === port.id);
-    const count = ports.length;
-    const spacing = size.height / (count + 1);
-    return {
-      x: side === 'input' ? node.position.x : node.position.x + size.width,
-      y: node.position.y + spacing * (idx + 1)
-    };
+  // --- Zoom via Ctrl+scroll ---
+  function handleWheel(event: WheelEvent) {
+    if (!event.ctrlKey && !event.metaKey) return;
+    event.preventDefault();
+    const delta = event.deltaY > 0 ? 0.9 : 1.1;
+    const newZoom = Math.min(4, Math.max(0.1, zoom * delta));
+    // Zoom toward cursor
+    const rect = (event.currentTarget as HTMLElement).getBoundingClientRect();
+    const ox = event.clientX - rect.left;
+    const oy = event.clientY - rect.top;
+    panX = ox - (ox - panX) * (newZoom / zoom);
+    panY = oy - (oy - panY) * (newZoom / zoom);
+    zoom = newZoom;
   }
 
   function handleKeydown(event: KeyboardEvent) {
-    if (event.key === 'Delete' || event.key === 'Backspace') {
-      if (selectedNodeId && !(event.target as HTMLElement)?.closest('input, textarea, [contenteditable]')) {
+    const target = event.target as HTMLElement;
+    const inEditable = target.closest('input, textarea, [contenteditable]');
+
+    if ((event.key === 'Delete' || event.key === 'Backspace') && !inEditable) {
+      if (selectedNodeId) {
         event.preventDefault();
         canvasStore.removeNode(selectedNodeId);
         selectedNodeId = null;
       }
     }
+    if (event.key === ' ' && !inEditable) {
+      event.preventDefault();
+      spaceDown = true;
+    }
     if (event.key === 'Escape') {
       ctxMenu = null;
+      isConnecting = false;
+      connectFrom = null;
     }
+    // Zoom shortcuts
+    if ((event.ctrlKey || event.metaKey) && (event.key === '=' || event.key === '+')) {
+      event.preventDefault();
+      zoom = Math.min(4, zoom * 1.1);
+    }
+    if ((event.ctrlKey || event.metaKey) && event.key === '-') {
+      event.preventDefault();
+      zoom = Math.max(0.1, zoom * 0.9);
+    }
+    if ((event.ctrlKey || event.metaKey) && event.key === '0') {
+      event.preventDefault();
+      zoom = 1;
+      panX = 0;
+      panY = 0;
+    }
+  }
+
+  function handleKeyup(event: KeyboardEvent) {
+    if (event.key === ' ') spaceDown = false;
+  }
+
+  // --- Context menus ---
+  function handleCanvasContextMenu(event: MouseEvent) {
+    event.preventDefault();
+    const target = event.currentTarget as HTMLElement;
+    const rect = target.getBoundingClientRect();
+    const p = screenToCanvas(event.clientX - rect.left, event.clientY - rect.top);
+    ctxMenu = {
+      x: event.clientX,
+      y: event.clientY,
+      items: [
+        { label: '📝 Add Text Card', action: () => addTextCard(p.x, p.y) },
+      ],
+    };
   }
 
   function handleConnectionContextMenu(event: MouseEvent, conn: Connection) {
@@ -177,35 +231,7 @@
       x: event.clientX,
       y: event.clientY,
       items: [
-        {
-          label: '🗑️ Delete connection',
-          danger: true,
-          action: () => canvasStore.removeConnection(conn.from, conn.to, conn.fromPort, conn.toPort),
-        },
-      ],
-    };
-  }
-
-  // --- Context menus ---
-
-  function handleCanvasContextMenu(event: MouseEvent) {
-    event.preventDefault();
-    const x = event.clientX;
-    const y = event.clientY;
-    // Canvas offset (account for left toolbar margin)
-    const target = event.currentTarget as HTMLElement;
-    const rect = target.getBoundingClientRect();
-    const cx = event.clientX - rect.left;
-    const cy = event.clientY - rect.top;
-
-    ctxMenu = {
-      x,
-      y,
-      items: [
-        { label: '⚡ Add Terminal Node',   action: () => addNodeAt('terminal',  cx, cy) },
-        { label: '📝 Add Input Node',     action: () => addNodeAt('input',     cx, cy) },
-        { label: '📊 Add Display Node',   action: () => addNodeAt('display',   cx, cy) },
-        { label: '🔄 Add Transform Node', action: () => addNodeAt('transform', cx, cy) },
+        { label: '🗑️ Delete connection', danger: true, action: () => canvasStore.removeConnection(conn.from, conn.to, conn.fromPort, conn.toPort) },
       ],
     };
   }
@@ -218,77 +244,42 @@
       x: event.clientX,
       y: event.clientY,
       items: [
-        {
-          label: '🗑️ Delete',
-          danger: true,
-          action: () => { canvasStore.removeNode(nodeId); selectedNodeId = null; },
-        },
-        {
-          label: '📋 Duplicate',
-          action: () => duplicateNode(nodeId),
-        },
-        { separator: true, label: '', action: () => {} },
-        {
-          label: '✂️ Disconnect all',
-          action: () => disconnectAll(nodeId),
-        },
+        { label: '🗑️ Delete', danger: true, action: () => { canvasStore.removeNode(nodeId); selectedNodeId = null; } },
+        { label: '📋 Duplicate', action: () => duplicateNode(nodeId) },
       ],
     };
   }
 
-  function addNodeAt(type: 'terminal' | 'input' | 'display' | 'transform', x: number, y: number) {
-    const id = `${type}-${Date.now()}`;
-    if (type === 'terminal') {
-      canvasStore.addNode({
-        id, type, position: { x, y },
-        size: { width: 600, height: 400 },
-        label: 'Terminal',
-        inputs: [{ id: 'stdin', name: 'stdin', type: 'input' }],
-        outputs: [{ id: 'stdout', name: 'stdout', type: 'output' }],
-      } satisfies TerminalNode);
-    } else if (type === 'input') {
-      canvasStore.addNode({
-        id, type, position: { x, y },
-        label: 'Text Input', inputType: 'text', value: '',
-        inputs: [], outputs: [{ id: 'value', name: 'value', type: 'output' }],
-      } satisfies InputNode);
-    } else if (type === 'display') {
-      canvasStore.addNode({
-        id, type, position: { x, y },
-        label: 'Display', displayType: 'text', content: '',
-        inputs: [{ id: 'input', name: 'input', type: 'input' }], outputs: [],
-      } satisfies DisplayNode);
-    } else if (type === 'transform') {
-      canvasStore.addNode({
-        id, type, position: { x, y },
-        label: 'Transform', transformType: 'map', code: 'item',
-        inputs: [{ id: 'input', name: 'input', type: 'input' }],
-        outputs: [{ id: 'output', name: 'output', type: 'output' }],
-      } satisfies TransformNode);
-    }
+  function addTextCard(x: number, y: number) {
+    const id = `text-${Date.now()}`;
+    canvasStore.addNode({
+      id,
+      type: 'text',
+      position: { x, y },
+      size: { width: 280, height: 200 },
+      label: 'Note',
+      content: '',
+      inputs: [{ id: 'in', name: 'in', type: 'input' }],
+      outputs: [{ id: 'out', name: 'out', type: 'output' }],
+    } satisfies TextNode);
   }
 
   function duplicateNode(nodeId: string) {
-    const node = canvasData.nodes.find((n) => n.id === nodeId);
+    const node = canvasData.nodes.find(n => n.id === nodeId);
     if (!node) return;
-    const newId = `${node.type}-${Date.now()}`;
-
-    // Deep clone the node to avoid sharing nested references (e.g. env, inputs, outputs)
-    const clonedNode = structuredClone(node) as CanvasNode;
-    clonedNode.id = newId;
-    clonedNode.position = {
-      x: node.position.x + 30,
-      y: node.position.y + 30,
-    };
-
-    canvasStore.addNode(clonedNode);
+    const clone = structuredClone(node) as CanvasNode;
+    clone.id = `${node.type}-${Date.now()}`;
+    clone.position = { x: node.position.x + 30, y: node.position.y + 30 };
+    canvasStore.addNode(clone);
   }
 
-  function disconnectAll(nodeId: string) {
-    const conns = canvasData.connections.filter(c => c.from === nodeId || c.to === nodeId);
-    for (const c of conns) {
-      canvasStore.removeConnection(c.from, c.to, c.fromPort, c.toPort);
-    }
+  function getPortPos(node: CanvasNode, portIdx: number, portCount: number, side: 'input' | 'output') {
+    const size = node.size || { width: 280, height: 200 };
+    const spacing = size.height / (portCount + 1);
+    return {
+      x: side === 'input' ? node.position.x : node.position.x + size.width,
+      y: node.position.y + spacing * (portIdx + 1),
+    };
   }
 </script>
 
@@ -296,31 +287,44 @@
   onmousemove={handleMouseMove}
   onmouseup={handleMouseUp}
   onkeydown={handleKeydown}
+  onkeyup={handleKeyup}
 />
 
 <!-- svelte-ignore a11y_click_events_have_key_events -->
 <!-- svelte-ignore a11y_no_static_element_interactions -->
-<div class="canvas-container" onclick={handleCanvasClick} oncontextmenu={handleCanvasContextMenu}>
-  <svg class="connections-layer">
-    <!-- Existing connections -->
-    {#each canvasData.connections as connection}
-      {@const fromNode = canvasData.nodes.find(n => n.id === connection.from)}
-      {@const toNode = canvasData.nodes.find(n => n.id === connection.to)}
-      {#if fromNode && toNode}
-        {@const fromPort = fromNode.outputs.find(p => p.id === connection.fromPort)}
-        {@const toPort = toNode.inputs.find(p => p.id === connection.toPort)}
-        {#if fromPort && toPort}
-          {@const fp = getPortPos(fromNode, fromPort, 'output')}
-          {@const tp = getPortPos(toNode, toPort, 'input')}
+<!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
+<div
+  class="canvas-container"
+  class:panning={spaceDown || isPanning}
+  onclick={handleCanvasClick}
+  oncontextmenu={handleCanvasContextMenu}
+  onmousedown={handleCanvasMouseDown}
+  onwheel={handleWheel}
+  role="application"
+  aria-label="Canvas board"
+>
+  <!-- Infinite pan/zoom viewport -->
+  <div
+    class="viewport"
+    style="transform: translate({panX}px, {panY}px) scale({zoom}); transform-origin: 0 0;"
+  >
+    <!-- SVG connection layer -->
+    <svg class="connections-layer" aria-hidden="true">
+      {#each canvasData.connections as connection (connection.from + connection.fromPort + connection.to + connection.toPort)}
+        {@const fromNode = canvasData.nodes.find(n => n.id === connection.from)}
+        {@const toNode = canvasData.nodes.find(n => n.id === connection.to)}
+        {#if fromNode && toNode}
+          {@const fp = getPortPos(fromNode, 0, fromNode.outputs.length, 'output')}
+          {@const tp = getPortPos(toNode, 0, toNode.inputs.length, 'input')}
           {@const dx = Math.abs(tp.x - fp.x) * 0.5}
           <path
             d="M {fp.x} {fp.y} C {fp.x + dx} {fp.y}, {tp.x - dx} {tp.y}, {tp.x} {tp.y}"
             fill="none"
-            stroke="var(--brand)"
+            stroke="var(--brand, #00d4ff)"
             stroke-width="2"
             stroke-linecap="round"
           />
-          <!-- Wider transparent hit area for right-click -->
+          <!-- Wide transparent hit area for context menu -->
           <!-- svelte-ignore a11y_no_static_element_interactions -->
           <path
             d="M {fp.x} {fp.y} C {fp.x + dx} {fp.y}, {tp.x - dx} {tp.y}, {tp.x} {tp.y}"
@@ -331,37 +335,39 @@
             oncontextmenu={(e) => handleConnectionContextMenu(e, connection)}
           />
         {/if}
+      {/each}
+
+      <!-- In-progress connection line -->
+      {#if isConnecting && connectFrom}
+        {@const dx = Math.abs(connectMousePos.x - connectFrom.x) * 0.5}
+        <path
+          d="M {connectFrom.x} {connectFrom.y} C {connectFrom.x + dx} {connectFrom.y}, {connectMousePos.x - dx} {connectMousePos.y}, {connectMousePos.x} {connectMousePos.y}"
+          fill="none"
+          stroke="var(--brand, #00d4ff)"
+          stroke-width="2"
+          stroke-dasharray="6 3"
+          opacity="0.6"
+        />
       {/if}
-    {/each}
+    </svg>
 
-    <!-- In-progress connection line -->
-    {#if isConnecting && connectFrom}
-      {@const dx = Math.abs(connectMousePos.x - connectFrom.x) * 0.5}
-      <path
-        d="M {connectFrom.x} {connectFrom.y} C {connectFrom.x + dx} {connectFrom.y}, {connectMousePos.x - dx} {connectMousePos.y}, {connectMousePos.x} {connectMousePos.y}"
-        fill="none"
-        stroke="var(--brand)"
-        stroke-width="2"
-        stroke-dasharray="6 3"
-        opacity="0.6"
-      />
-    {/if}
-  </svg>
-
-  <div class="nodes-layer">
+    <!-- Nodes layer -->
     {#each canvasData.nodes as node (node.id)}
-      {@const size = node.size || { width: 320, height: 200 }}
+      {@const size = node.size || { width: 280, height: 200 }}
       <!-- svelte-ignore a11y_no_static_element_interactions -->
+      <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
       <div
         class="node-wrapper"
         class:selected={selectedNodeId === node.id}
         style="left: {node.position.x}px; top: {node.position.y}px; width: {size.width}px; height: {size.height}px;"
         onmousedown={(e) => handleNodeMouseDown(e, node.id)}
         oncontextmenu={(e) => handleNodeContextMenu(e, node.id)}
+        role="article"
+        aria-label={node.label}
       >
         <!-- Input ports -->
         {#each node.inputs as port, i}
-          {@const pos = getPortPos(node, port, 'input')}
+          {@const pos = getPortPos(node, i, node.inputs.length, 'input')}
           <!-- svelte-ignore a11y_no_static_element_interactions -->
           <div
             class="port input-port"
@@ -369,31 +375,31 @@
             style="top: {pos.y - node.position.y - 6}px;"
             onmouseup={(e) => handlePortMouseUp(e, node.id, port.id, 'input')}
             title={port.name}
+            role="button"
+            aria-label="Input port {port.name}"
+            tabindex="-1"
           ></div>
         {/each}
 
         <!-- Output ports -->
         {#each node.outputs as port, i}
-          {@const pos = getPortPos(node, port, 'output')}
+          {@const pos = getPortPos(node, i, node.outputs.length, 'output')}
           <!-- svelte-ignore a11y_no_static_element_interactions -->
           <div
             class="port output-port"
             style="top: {pos.y - node.position.y - 6}px;"
             onmousedown={(e) => handlePortMouseDown(e, node.id, port.id, 'output')}
             title={port.name}
+            role="button"
+            aria-label="Output port {port.name}"
+            tabindex="-1"
           ></div>
         {/each}
 
         <!-- Node content -->
         <div class="node-content">
-          {#if node.type === 'terminal'}
-            <TerminalNodeComponent {node} />
-          {:else if node.type === 'input'}
-            <InputNodeComponent {node} {tui} />
-          {:else if node.type === 'display'}
-            <DisplayNodeComponent {node} {tui} />
-          {:else if node.type === 'transform'}
-            <TransformNodeComponent {node} {tui} />
+          {#if node.type === 'text'}
+            <TextCard {node} />
           {/if}
         </div>
 
@@ -402,9 +408,17 @@
         <div
           class="resize-handle"
           onmousedown={(e) => handleResizeMouseDown(e, node.id)}
+          role="button"
+          aria-label="Resize"
+          tabindex="-1"
         ></div>
       </div>
     {/each}
+  </div>
+
+  <!-- Zoom indicator -->
+  <div class="zoom-indicator" aria-live="polite" aria-label="Zoom level">
+    {Math.round(zoom * 100)}%
   </div>
 </div>
 
@@ -421,13 +435,24 @@
   .canvas-container {
     position: relative;
     width: 100%;
-    height: 100vh;
+    height: 100%;
     background-color: var(--surface-1, #1a1a2e);
-    background-image:
-      radial-gradient(circle, var(--border-color, rgba(255,255,255,0.1)) 1px, transparent 1px);
+    background-image: radial-gradient(circle, var(--border-color, rgba(255,255,255,0.1)) 1px, transparent 1px);
     background-size: 24px 24px;
     overflow: hidden;
     cursor: default;
+  }
+
+  .canvas-container.panning {
+    cursor: grab;
+  }
+
+  .viewport {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
   }
 
   .connections-layer {
@@ -437,27 +462,20 @@
     width: 100%;
     height: 100%;
     pointer-events: none;
+    overflow: visible;
     z-index: 1;
-  }
-
-  .nodes-layer {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    z-index: 2;
   }
 
   .node-wrapper {
     position: absolute;
     cursor: move;
-    border-radius: 8px;
+    border-radius: var(--radius-2, 8px);
     border: 1px solid var(--border-color, rgba(255,255,255,0.1));
     background: var(--surface-2, #16213e);
     box-shadow: var(--shadow-2, 0 4px 8px rgba(0,0,0,0.5));
     transition: box-shadow 0.15s ease, border-color 0.15s ease;
     overflow: hidden;
+    z-index: 2;
   }
 
   .node-wrapper:hover {
@@ -473,7 +491,6 @@
   .node-content {
     width: 100%;
     height: 100%;
-    overflow: auto;
   }
 
   /* Ports */
@@ -528,5 +545,18 @@
 
   .resize-handle:hover {
     opacity: 0.8;
+  }
+
+  .zoom-indicator {
+    position: absolute;
+    bottom: var(--space-3, 12px);
+    right: var(--space-3, 12px);
+    background: var(--surface-2, rgba(0,0,0,0.5));
+    color: var(--text-2, #aaa);
+    font-size: 11px;
+    padding: 2px 6px;
+    border-radius: 4px;
+    pointer-events: none;
+    z-index: 100;
   }
 </style>

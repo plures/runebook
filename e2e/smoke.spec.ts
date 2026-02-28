@@ -1,17 +1,14 @@
 import { test, expect } from '@playwright/test';
 
-test('smoke: app loads and a button click works', async ({ page }) => {
+test('smoke: app loads', async ({ page }) => {
   await page.goto('http://127.0.0.1:4173/');
 
-  // Not a blank page.
+  // Page must be non-blank
   await expect(page.locator('body')).toContainText(/\S+/);
 
-  // If there are any buttons, click the first and ensure DOM text changes.
-  const btn = page.getByRole('button').first();
-  if (await btn.count()) {
-    const before = await page.locator('body').innerText();
-    await btn.click();
-    const after = await page.locator('body').innerText();
-    expect(after).not.toEqual(before);
-  }
+  // Canvas must be visible
+  await expect(page.locator('.canvas-container')).toBeVisible();
+
+  // Toolbar must have at least one button
+  await expect(page.locator('.toolbar-nav button').first()).toBeVisible();
 });
