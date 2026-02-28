@@ -71,7 +71,7 @@
   }
 </script>
 
-<Handle type="target" position={Position.Left} />
+<Handle type="target" position={Position.Left} id="stdin" />
 
 <div class="node-shell terminal-shell">
   <div class="title-bar">
@@ -105,7 +105,7 @@
   </div>
 </div>
 
-<Handle type="source" position={Position.Right} />
+<Handle type="source" position={Position.Right} id="stdout" />
 
 <style>
   .node-shell {
