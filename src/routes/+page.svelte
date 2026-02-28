@@ -2,52 +2,47 @@
   import Canvas from '$lib/components/Canvas.svelte';
   import Toolbar from '$lib/components/Toolbar.svelte';
   import TitleBar from '$lib/components/TitleBar.svelte';
-  import SettingsPanel from '$lib/components/SettingsPanel.svelte';
-  import HelpPanel from '$lib/components/HelpPanel.svelte';
-  import { settingsStore } from '$lib/stores/settings';
-  import { onMount } from 'svelte';
+  import { canvasStore } from '$lib/stores/canvas';
+  import { saveCanvas } from '$lib/utils/storage';
+  import { browser } from '$app/environment';
 
   const tui = false;
 
-  let settingsOpen = $state(false);
-  let helpOpen = $state(false);
-  let helpView = $state<'shortcuts' | 'about'>('shortcuts');
+  const AUTO_SAVE_KEY = 'runebook_autosave';
+  let saveDebounce: ReturnType<typeof setTimeout> | null = null;
+  let hasInitializedAutoSave = false;
 
-  function openHelp(view: 'shortcuts' | 'about') {
-    helpView = view;
-    helpOpen = true;
+  // Auto-load on mount
+  if (browser) {
+    const saved = localStorage.getItem(AUTO_SAVE_KEY);
+    if (saved) {
+      try {
+        const canvas = JSON.parse(saved);
+        canvasStore.loadCanvas(canvas);
+      } catch { /* ignore */ }
+    }
+    hasInitializedAutoSave = true;
   }
 
-  onMount(() => {
-    settingsStore.init();
+  // Auto-save with 1 s debounce
+  $effect(() => {
+    const canvas = $canvasStore;
+    if (!hasInitializedAutoSave || !browser) return;
+    if (saveDebounce) clearTimeout(saveDebounce);
+    saveDebounce = setTimeout(() => {
+      localStorage.setItem(AUTO_SAVE_KEY, JSON.stringify(canvas));
+    }, 1000);
   });
 </script>
 
 <TitleBar {tui} />
 
 <div class="app">
-  <Toolbar
-    {tui}
-    onOpenSettings={() => { settingsOpen = true; }}
-    onOpenHelp={openHelp}
-  />
+  <Toolbar {tui} />
   <div class="canvas-wrapper">
     <Canvas {tui} />
   </div>
 </div>
-
-<SettingsPanel
-  open={settingsOpen}
-  onclose={() => { settingsOpen = false; }}
-  {tui}
-/>
-
-<HelpPanel
-  open={helpOpen}
-  bind:view={helpView}
-  onclose={() => { helpOpen = false; }}
-  {tui}
-/>
 
 <style>
   :global(body) {
@@ -58,13 +53,14 @@
 
   .app {
     display: flex;
-    height: 100vh;
+    height: calc(100vh - 40px);
     width: 100vw;
     margin-top: 40px;
   }
 
   .canvas-wrapper {
     flex: 1;
-    margin-left: 200px;
+    margin-left: 56px;
+    overflow: hidden;
   }
 </style>

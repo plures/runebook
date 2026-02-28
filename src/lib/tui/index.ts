@@ -3,7 +3,7 @@
 import { EventEmitter } from 'events';
 import { readFileSync, writeFileSync } from 'fs';
 import { spawn } from 'child_process';
-import type { Canvas, CanvasNode, TerminalNode } from '../types/canvas';
+import type { Canvas, CanvasNode } from '../types/canvas';
 import { saveCanvasToYAML, parseCanvasFromYAML } from '../utils/yaml-loader';
 
 // ─── Box-drawing characters ───────────────────────────────────────────────────
@@ -172,13 +172,13 @@ export class TUIApp extends EventEmitter {
     }
 
     const node = this.selectedNode;
-    if (!node || node.type !== 'terminal') {
+    if (!node || (node.type as string) !== 'terminal') {
       this.state.message = 'No terminal node selected';
       this.render();
       return;
     }
 
-    const termNode = node as TerminalNode;
+    const termNode = node as any;
     const cmd = termNode.command ?? '';
     if (!cmd.trim()) {
       this.state.message = 'Terminal node has no command';
@@ -475,7 +475,7 @@ export class TUIApp extends EventEmitter {
   }
 
   private nodeProps(node: CanvasNode): [string, string][] {
-    const n = node as Record<string, unknown>;
+    const n = node as unknown as Record<string, unknown>;
     const props: [string, string][] = [
       ['ID', node.id.substring(0, 14)],
       ['Type', node.type],
@@ -483,15 +483,15 @@ export class TUIApp extends EventEmitter {
       ['X', String(node.position.x)],
       ['Y', String(node.position.y)],
     ];
-    if (node.type === 'terminal') {
+    if ((node.type as string) === 'terminal') {
       props.push(['Cmd', String(n['command'] ?? '').substring(0, 14)]);
       props.push(['CWD', String(n['cwd'] ?? '.').substring(0, 14)]);
-    } else if (node.type === 'input') {
+    } else if ((node.type as string) === 'input') {
       props.push(['InputType', String(n['inputType'] ?? '')]);
       props.push(['Value', String(n['value'] ?? '')]);
-    } else if (node.type === 'display') {
+    } else if ((node.type as string) === 'display') {
       props.push(['DisplayType', String(n['displayType'] ?? '')]);
-    } else if (node.type === 'transform') {
+    } else if ((node.type as string) === 'transform') {
       props.push(['Transform', String(n['transformType'] ?? '')]);
     }
     return props;

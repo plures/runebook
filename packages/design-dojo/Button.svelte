@@ -5,6 +5,7 @@
     tui?: boolean;
     variant?: 'primary' | 'secondary' | 'danger';
     disabled?: boolean;
+    title?: string;
     onclick?: (e: MouseEvent) => void;
     class?: string;
     children?: Snippet;
@@ -14,6 +15,7 @@
     tui = false,
     variant = 'secondary',
     disabled = false,
+    title,
     onclick,
     class: cls = '',
     children
@@ -23,6 +25,7 @@
 <button
   class="dd-btn dd-btn--{variant} {cls}"
   {disabled}
+  {title}
   {onclick}
   data-tui={tui}
 >

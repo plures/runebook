@@ -5,11 +5,12 @@ import { canvasStore, nodeDataStore, updateNodeData, getNodeInputData } from '..
 import { canvasEngine } from '../canvas-praxis';
 import type { CanvasNode, Connection } from '../../types/canvas';
 
-const makeTerminalNode = (id: string): CanvasNode => ({
+const makeTextNode = (id: string): CanvasNode => ({
   id,
-  type: 'terminal',
+  type: 'text',
   position: { x: 0, y: 0 },
   label: `Node ${id}`,
+  content: '',
   inputs: [],
   outputs: [],
 });
@@ -23,7 +24,7 @@ describe('canvasStore', () => {
   it('should subscribe and receive canvas updates', () => {
     const updates: any[] = [];
     const unsub = canvasStore.subscribe(canvas => updates.push(canvas));
-    canvasStore.addNode(makeTerminalNode('n1'));
+    canvasStore.addNode(makeTextNode('n1'));
     unsub();
     expect(updates.length).toBeGreaterThan(0);
     expect(updates[updates.length - 1].nodes[0].id).toBe('n1');
@@ -46,7 +47,7 @@ describe('canvasStore', () => {
   });
 
   it('should add node via canvasStore.addNode', () => {
-    canvasStore.addNode(makeTerminalNode('n1'));
+    canvasStore.addNode(makeTextNode('n1'));
     const values: any[] = [];
     const unsub = canvasStore.subscribe(c => values.push(c));
     unsub();
@@ -54,7 +55,7 @@ describe('canvasStore', () => {
   });
 
   it('should remove node via canvasStore.removeNode', () => {
-    canvasStore.addNode(makeTerminalNode('n1'));
+    canvasStore.addNode(makeTextNode('n1'));
     canvasStore.removeNode('n1');
     const values: any[] = [];
     const unsub = canvasStore.subscribe(c => values.push(c));
@@ -63,7 +64,7 @@ describe('canvasStore', () => {
   });
 
   it('should update node via canvasStore.updateNode', () => {
-    canvasStore.addNode(makeTerminalNode('n1'));
+    canvasStore.addNode(makeTextNode('n1'));
     canvasStore.updateNode('n1', { label: 'Updated' });
     const values: any[] = [];
     const unsub = canvasStore.subscribe(c => values.push(c));
@@ -72,7 +73,7 @@ describe('canvasStore', () => {
   });
 
   it('should update node position', () => {
-    canvasStore.addNode(makeTerminalNode('n1'));
+    canvasStore.addNode(makeTextNode('n1'));
     canvasStore.updateNodePosition('n1', 50, 75);
     const values: any[] = [];
     const unsub = canvasStore.subscribe(c => values.push(c));
@@ -91,7 +92,7 @@ describe('canvasStore', () => {
   });
 
   it('should clear the canvas', () => {
-    canvasStore.addNode(makeTerminalNode('n1'));
+    canvasStore.addNode(makeTextNode('n1'));
     canvasStore.clear();
     const values: any[] = [];
     const unsub = canvasStore.subscribe(c => values.push(c));
@@ -142,8 +143,8 @@ describe('getNodeInputData helper', () => {
   });
 
   it('should return data from the connected source', () => {
-    canvasStore.addNode(makeTerminalNode('n1'));
-    canvasStore.addNode(makeTerminalNode('n2'));
+    canvasStore.addNode(makeTextNode('n1'));
+    canvasStore.addNode(makeTextNode('n2'));
     canvasStore.addConnection({ from: 'n1', to: 'n2', fromPort: 'out', toPort: 'in' });
     updateNodeData('n1', 'out', 'value');
     const result = getNodeInputData(
