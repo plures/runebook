@@ -1,3 +1,7 @@
+## [0.6.2] — 2026-02-28
+
+- fix(nix): update npmDepsHash and frontend version in flake.nix (#113) (bc3c904)
+
 ## [0.6.1] — 2026-02-28
 
 - fix(ci): use workflow_run trigger so Tauri builds fire after GITHUB_TOKEN tag push (#111) (19f0243)
