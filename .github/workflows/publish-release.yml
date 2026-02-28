@@ -76,7 +76,7 @@ jobs:
             args: ''
 
     runs-on: ${{ matrix.platform }}
-    
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -269,9 +269,8 @@ jobs:
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "Nix packages have been built successfully. To publish to NixOS:" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "1. Submit a PR to [nixpkgs](https://github.com/NixOS/nixpkgs) with the package definition" >> $GITHUB_STEP_SUMMARY
-          echo "2. Or use the flake directly: \`nix run github:plures/runebook\`" >> $GITHUB_STEP_SUMMARY
-          echo "3. Or add to your flake inputs: \`runebook.url = \"github:plures/runebook\";\`" >> $GITHUB_STEP_SUMMARY
+          echo "1. Submit a PR to nixpkgs with the package definition" >> $GITHUB_STEP_SUMMARY
+          echo "2. Or use the flake directly: nix run github:plures/runebook" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "**Current version**: ${{ steps.version.outputs.version }}" >> $GITHUB_STEP_SUMMARY
         continue-on-error: true
