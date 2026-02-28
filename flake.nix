@@ -117,7 +117,7 @@
         # Build the CLI as a standalone Node.js package
         runebook-agent-pkg = pkgs.buildNpmPackage {
           pname = "runebook-agent";
-          version = "0.2.0";
+          version = (builtins.fromJSON (builtins.readFile ./package.json)).version;
           src = ./.;
           
           npmDepsHash = "sha256-h6CvxJiRfzORGxlUTDKS13YXC2REhIEdbKHxMPfGjZI=";
