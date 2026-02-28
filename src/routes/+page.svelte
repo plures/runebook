@@ -117,15 +117,6 @@
 </div>
 
 <style>
-  :global(body) {
-    margin: 0;
-    padding: 0;
-    overflow: hidden;
-    background: #1a1a2e;
-    color: #e0e0e0;
-    font-family: system-ui, -apple-system, sans-serif;
-  }
-
   .app {
     display: flex;
     flex-direction: column;
