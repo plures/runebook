@@ -30,13 +30,17 @@
         # Node.js
         nodejs = pkgs.nodejs_20;
 
+        # Read package.json once to avoid version drift
+        packageJson = builtins.fromJSON (builtins.readFile ./package.json);
+        npmDepsHash = "sha256-h6CvxJiRfzORGxlUTDKS13YXC2REhIEdbKHxMPfGjZI=";
+
         # Build the frontend (SvelteKit)
         frontend = pkgs.buildNpmPackage {
           pname = "runebook-frontend";
-          version = "0.6.0";
+          version = packageJson.version;
           src = ./.;
           
-          npmDepsHash = "sha256-h6CvxJiRfzORGxlUTDKS13YXC2REhIEdbKHxMPfGjZI=";
+          inherit npmDepsHash;
           
           nativeBuildInputs = [
             nodejs
@@ -117,10 +121,10 @@
         # Build the CLI as a standalone Node.js package
         runebook-agent-pkg = pkgs.buildNpmPackage {
           pname = "runebook-agent";
-          version = (builtins.fromJSON (builtins.readFile ./package.json)).version;
+          version = packageJson.version;
           src = ./.;
           
-          npmDepsHash = "sha256-h6CvxJiRfzORGxlUTDKS13YXC2REhIEdbKHxMPfGjZI=";
+          inherit npmDepsHash;
           
           nativeBuildInputs = [
             nodejs
