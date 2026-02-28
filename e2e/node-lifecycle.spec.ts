@@ -5,50 +5,48 @@ const BASE_URL = 'http://127.0.0.1:4173/';
 test.describe('node lifecycle', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto(BASE_URL);
-    // Dismiss any dialogs (alerts / confirms) automatically
     page.on('dialog', dialog => dialog.accept());
   });
 
-  test('adds a terminal node to the canvas', async ({ page }) => {
-    await page.locator('.toolbar-btn', { hasText: /Terminal/ }).click();
-    await expect(page.locator('.terminal-node')).toBeVisible();
+  test('adds a text card to the canvas via toolbar button', async ({ page }) => {
+    await page.locator('.toolbar-nav button[title="Add Text Card"]').click();
     await expect(page.locator('.node-wrapper')).toHaveCount(1);
+    await expect(page.locator('.card-title')).toBeVisible();
   });
 
-  test('adds an input node to the canvas', async ({ page }) => {
-    await page.locator('.toolbar-btn', { hasText: /Input/ }).click();
-    await expect(page.locator('.input-node')).toBeVisible();
-    await expect(page.locator('.node-wrapper')).toHaveCount(1);
+  test('adds multiple text cards to the canvas', async ({ page }) => {
+    const addBtn = page.locator('.toolbar-nav button[title="Add Text Card"]');
+    await addBtn.click();
+    await addBtn.click();
+    await addBtn.click();
+    await expect(page.locator('.node-wrapper')).toHaveCount(3);
   });
 
-  test('adds a display node to the canvas', async ({ page }) => {
-    await page.locator('.toolbar-btn', { hasText: /Display/ }).click();
-    await expect(page.locator('.display-node')).toBeVisible();
-    await expect(page.locator('.node-wrapper')).toHaveCount(1);
-  });
-
-  test('adds a transform node to the canvas', async ({ page }) => {
-    await page.locator('.toolbar-btn', { hasText: /Transform/ }).click();
-    await expect(page.locator('.transform-node')).toBeVisible();
-    await expect(page.locator('.node-wrapper')).toHaveCount(1);
-  });
-
-  test('adds multiple nodes to the canvas', async ({ page }) => {
-    await page.locator('.toolbar-btn', { hasText: /Terminal/ }).click();
-    await page.locator('.toolbar-btn', { hasText: /Input/ }).click();
-    await page.locator('.toolbar-btn', { hasText: /Display/ }).click();
-    await page.locator('.toolbar-btn', { hasText: /Transform/ }).click();
-    await expect(page.locator('.node-wrapper')).toHaveCount(4);
-  });
-
-  test('clears all nodes from the canvas', async ({ page }) => {
-    await page.locator('.toolbar-btn', { hasText: /Terminal/ }).click();
-    await page.locator('.toolbar-btn', { hasText: /Input/ }).click();
+  test('clears all cards from the canvas', async ({ page }) => {
+    const addBtn = page.locator('.toolbar-nav button[title="Add Text Card"]');
+    await addBtn.click();
+    await addBtn.click();
     await expect(page.locator('.node-wrapper')).toHaveCount(2);
 
-    // Toolbar "Clear" button: Button renders as dd-btn--danger + toolbar-btn
-    await page.locator('.toolbar-btn.dd-btn--danger').click();
-
+    await page.locator('.toolbar-nav button[title="Clear all cards"]').click();
     await expect(page.locator('.node-wrapper')).toHaveCount(0);
+  });
+
+  test('text card has a title input', async ({ page }) => {
+    await page.locator('.toolbar-nav button[title="Add Text Card"]').click();
+    await expect(page.locator('.card-title')).toBeVisible();
+  });
+
+  test('text card title can be edited', async ({ page }) => {
+    await page.locator('.toolbar-nav button[title="Add Text Card"]').click();
+    const titleInput = page.locator('.card-title');
+    await titleInput.fill('My New Note');
+    await expect(titleInput).toHaveValue('My New Note');
+  });
+
+  test('text card body switches to edit mode on double-click', async ({ page }) => {
+    await page.locator('.toolbar-nav button[title="Add Text Card"]').click();
+    await page.locator('.card-body').dblclick();
+    await expect(page.locator('.card-textarea')).toBeVisible();
   });
 });

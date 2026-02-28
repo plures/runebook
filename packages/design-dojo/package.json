@@ -10,7 +10,8 @@
   },
   "files": [
     "index.js",
-    "tokens.css"
+    "tokens.css",
+    "*.svelte"
   ],
   "license": "MIT",
   "publishConfig": {

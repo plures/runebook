@@ -1,8 +1,9 @@
 name: Build and Publish Release
 
 on:
-  push:
-    tags: ['v*']
+  workflow_run:
+    workflows: ["Release"]
+    types: [completed]
   workflow_dispatch:
     inputs:
       tag:
@@ -14,12 +15,53 @@ permissions:
   contents: write
   packages: write
 
-env:
-  RELEASE_TAG: ${{ inputs.tag || github.ref_name }}
-
 jobs:
+  setup:
+    runs-on: ubuntu-latest
+    if: >-
+      (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success') ||
+      github.event_name == 'workflow_dispatch'
+    outputs:
+      release_tag: ${{ steps.tag.outputs.tag }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Determine release tag
+        id: tag
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            TAG="${{ inputs.tag }}"
+          else
+            SHA="${{ github.event.workflow_run.head_sha }}"
+            if [ -z "$SHA" ]; then
+              echo "Error: github.event.workflow_run.head_sha is empty; cannot determine tag." >&2
+              exit 1
+            fi
+            git fetch --tags --force
+            TAG="$(git tag --points-at "$SHA" | head -n 1)"
+            if [ -z "$TAG" ]; then
+              echo "Error: No tag found that points at commit $SHA." >&2
+              exit 1
+            fi
+          fi
+          if [ -z "$TAG" ]; then
+            echo "Error: Could not determine release tag (TAG is empty)." >&2
+            exit 1
+          fi
+          case "$TAG" in
+            v[0-9]*.[0-9]*.[0-9]*)
+              ;;
+            *)
+              echo "Error: Invalid release tag '$TAG'. Expected format like v1.2.3." >&2
+              exit 1
+              ;;
+          esac
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+
   build-tauri:
-    if: startsWith(github.ref, 'refs/tags/v') || github.event_name == 'workflow_dispatch'
+    needs: setup
     strategy:
       fail-fast: false
       matrix:
@@ -38,6 +80,8 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.setup.outputs.release_tag }}
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -64,14 +108,16 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tagName: ${{ env.RELEASE_TAG }}
+          tagName: ${{ needs.setup.outputs.release_tag }}
           args: ${{ matrix.args }}
 
   build-android:
-    if: startsWith(github.ref, 'refs/tags/v') || github.event_name == 'workflow_dispatch'
+    needs: setup
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.setup.outputs.release_tag }}
       - uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
@@ -94,22 +140,25 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NDK_HOME: ${{ env.ANDROID_NDK_HOME }}
       - name: Upload unsigned APK to release
-        if: startsWith(github.ref, 'refs/tags/v') || (github.event_name == 'workflow_dispatch' && inputs.tag != '')
+        if: needs.setup.outputs.release_tag != ''
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          TAG_NAME: ${{ env.RELEASE_TAG }}
+          TAG_NAME: ${{ needs.setup.outputs.release_tag }}
         run: |
           gh release upload "$TAG_NAME" \
             src-tauri/gen/android/app/build/outputs/apk/universal/release/app-universal-release-unsigned.apk \
             --clobber
 
   publish-npm:
+    needs: setup
+    if: github.event_name == 'workflow_run'
     runs-on: ubuntu-latest
-    if: startsWith(github.ref, 'refs/tags/v')
-
+    
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.setup.outputs.release_tag }}
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -127,12 +176,15 @@ jobs:
         continue-on-error: true
 
   publish-github-packages:
+    needs: setup
+    if: github.event_name == 'workflow_run'
     runs-on: ubuntu-latest
-    if: startsWith(github.ref, 'refs/tags/v')
-
+    
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.setup.outputs.release_tag }}
 
       - name: Setup Node.js for GitHub Packages
         uses: actions/setup-node@v4
@@ -151,18 +203,21 @@ jobs:
         continue-on-error: true
 
   winget-publish:
+    needs: setup
+    if: github.event_name == 'workflow_run'
     runs-on: windows-latest
-    if: startsWith(github.ref, 'refs/tags/v')
-
+    
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.setup.outputs.release_tag }}
 
       - name: Get release version
         id: version
         shell: bash
         run: |
-          VERSION="${{ env.RELEASE_TAG }}"
+          VERSION="${{ needs.setup.outputs.release_tag }}"
           VERSION="${VERSION#v}"
           echo "version=$VERSION" >> $GITHUB_OUTPUT
 
@@ -176,18 +231,21 @@ jobs:
         continue-on-error: true
 
   nixos-publish:
+    needs: setup
+    if: github.event_name == 'workflow_run'
     runs-on: ubuntu-latest
-    if: startsWith(github.ref, 'refs/tags/v')
-
+    
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.setup.outputs.release_tag }}
 
       - name: Get release version
         id: version
         shell: bash
         run: |
-          VERSION="${{ env.RELEASE_TAG }}"
+          VERSION="${{ needs.setup.outputs.release_tag }}"
           VERSION="${VERSION#v}"
           echo "version=$VERSION" >> $GITHUB_OUTPUT
 

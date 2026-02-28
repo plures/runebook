@@ -2,62 +2,53 @@ import { test, expect } from '@playwright/test';
 
 const BASE_URL = 'http://127.0.0.1:4173/';
 
-test.describe('reactive data flow', () => {
+/**
+ * Phase 1: reactive data flow tests cover text card content editing.
+ */
+test.describe('text card data flow', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto(BASE_URL);
+    // Add a text card so tests have something to interact with
+    await page.locator('.toolbar-nav button[title="Add Text Card"]').click();
   });
 
-  test('input node renders a text field', async ({ page }) => {
-    await page.locator('.toolbar-btn', { hasText: /Input/ }).click();
-    await expect(page.locator('.input-node .dd-input')).toBeVisible();
+  test('text card title input is editable', async ({ page }) => {
+    const titleInput = page.locator('.card-title');
+    await titleInput.fill('My Note');
+    await expect(titleInput).toHaveValue('My Note');
   });
 
-  test('input node reflects typed value immediately', async ({ page }) => {
-    await page.locator('.toolbar-btn', { hasText: /Input/ }).click();
-    const inputField = page.locator('.input-node .dd-input');
-    await inputField.fill('hello runebook');
-    await expect(inputField).toHaveValue('hello runebook');
+  test('text card body shows edit textarea on double-click', async ({ page }) => {
+    await page.locator('.card-body').dblclick();
+    const textarea = page.locator('.card-textarea');
+    await expect(textarea).toBeVisible();
   });
 
-  test('display node renders a content area', async ({ page }) => {
-    await page.locator('.toolbar-btn', { hasText: /Display/ }).click();
-    await expect(page.locator('.display-node')).toBeVisible();
-    // .text-display has padding so it's visible even when content is empty
-    await expect(page.locator('.display-node .text-display')).toBeVisible();
+  test('text card textarea accepts content input', async ({ page }) => {
+    await page.locator('.card-body').dblclick();
+    const textarea = page.locator('.card-textarea');
+    await textarea.fill('Hello, Runebook!');
+    await expect(textarea).toHaveValue('Hello, Runebook!');
   });
 
-  test('display node shows content passed via node.content', async ({ page }) => {
-    // Load the hello-world example which wires nodes together
-    page.on('dialog', dialog => dialog.accept());
-    await page.locator('.toolbar-btn', { hasText: /Load Example/ }).click();
-
-    // The example canvas has 4 nodes: 1 terminal, 1 input, 2 displays
-    await expect(page.locator('.node-wrapper')).toHaveCount(4);
-
-    // User Input node is pre-populated with example text
-    const inputField = page.locator('.input-node .dd-input');
-    await expect(inputField).toBeVisible();
-    await expect(inputField).toHaveValue('Type something here...');
+  test('text card textarea blurs back to view mode', async ({ page }) => {
+    await page.locator('.card-body').dblclick();
+    await expect(page.locator('.card-textarea')).toBeVisible();
+    await page.locator('.card-body').press('Escape');
+    // After blur, textarea goes away (view mode)
+    await page.locator('.canvas-container').click();
+    await expect(page.locator('.card-textarea')).toHaveCount(0);
   });
 
-  test('transform node exposes a type selector and code editor', async ({ page }) => {
-    await page.locator('.toolbar-btn', { hasText: /Transform/ }).click();
-    const transformNode = page.locator('.transform-node');
-    await expect(transformNode.locator('select')).toBeVisible();
-    await expect(transformNode.locator('textarea')).toBeVisible();
-  });
+  test('multiple text cards can each hold independent content', async ({ page }) => {
+    // Add a second card
+    await page.locator('.toolbar-nav button[title="Add Text Card"]').click();
+    const titles = page.locator('.card-title');
+    await expect(titles).toHaveCount(2);
 
-  test('transform node type can be changed', async ({ page }) => {
-    await page.locator('.toolbar-btn', { hasText: /Transform/ }).click();
-    const select = page.locator('.transform-node select');
-    await select.selectOption('filter');
-    await expect(select).toHaveValue('filter');
-  });
-
-  test('transform node code editor accepts input', async ({ page }) => {
-    await page.locator('.toolbar-btn', { hasText: /Transform/ }).click();
-    const codeArea = page.locator('.transform-node textarea');
-    await codeArea.fill('item > 5');
-    await expect(codeArea).toHaveValue('item > 5');
+    await titles.first().fill('Card A');
+    await titles.nth(1).fill('Card B');
+    await expect(titles.first()).toHaveValue('Card A');
+    await expect(titles.nth(1)).toHaveValue('Card B');
   });
 });

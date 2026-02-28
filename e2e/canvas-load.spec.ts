@@ -19,17 +19,15 @@ test.describe('canvas load', () => {
     await expect(page.locator('.node-wrapper')).toHaveCount(0);
   });
 
-  test('toolbar shows all four Add Nodes buttons', async ({ page }) => {
-    await expect(page.locator('.toolbar-btn', { hasText: /Terminal/ })).toBeVisible();
-    await expect(page.locator('.toolbar-btn', { hasText: /Input/ })).toBeVisible();
-    await expect(page.locator('.toolbar-btn', { hasText: /Display/ })).toBeVisible();
-    await expect(page.locator('.toolbar-btn', { hasText: /Transform/ })).toBeVisible();
+  test('toolbar shows the Add Text Card button', async ({ page }) => {
+    // Phase 1 toolbar has the 📝 Add Text Card button
+    const addBtn = page.locator('.toolbar-nav button').first();
+    await expect(addBtn).toBeVisible();
+    await expect(addBtn).toHaveAttribute('title', 'Add Text Card');
   });
 
-  test('toolbar shows canvas action buttons', async ({ page }) => {
-    await expect(page.locator('.toolbar-btn', { hasText: /Load Example/ })).toBeVisible();
-    await expect(page.locator('.toolbar-btn', { hasText: /Save to Storage/ })).toBeVisible();
-    await expect(page.locator('.toolbar-btn', { hasText: /Saved Canvases/ })).toBeVisible();
-    await expect(page.locator('.toolbar-btn', { hasText: /Export YAML/ })).toBeVisible();
+  test('toolbar shows save and load buttons', async ({ page }) => {
+    await expect(page.locator('.toolbar-nav button[title="Save board"]')).toBeVisible();
+    await expect(page.locator('.toolbar-nav button[title="Load board"]')).toBeVisible();
   });
 });

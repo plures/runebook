@@ -16,12 +16,12 @@ export function parseCanvasFromYAML(yamlContent: string): Canvas {
   }
 
   // Shallow element validation: catch obviously malformed nodes/connections early.
-  const validTypes = new Set(['terminal', 'input', 'display', 'transform']);
+  const validTypes = new Set(['text', 'terminal', 'input', 'display', 'transform']);
   for (let i = 0; i < nodes.length; i++) {
     const n = nodes[i] as Record<string, unknown>;
     if (!n || typeof n !== 'object') throw new Error(`Invalid canvas YAML: nodes[${i}] must be an object`);
     if (typeof n['id'] !== 'string' || !n['id']) throw new Error(`Invalid canvas YAML: nodes[${i}].id must be a non-empty string`);
-    if (!validTypes.has(n['type'] as string)) throw new Error(`Invalid canvas YAML: nodes[${i}].type must be terminal|input|display|transform`);
+    if (!validTypes.has(n['type'] as string)) throw new Error(`Invalid canvas YAML: nodes[${i}].type must be text|terminal|input|display|transform`);
     const pos = n['position'] as Record<string, unknown> | undefined;
     if (!pos || typeof pos['x'] !== 'number' || typeof pos['y'] !== 'number') {
       throw new Error(`Invalid canvas YAML: nodes[${i}].position must have numeric x and y`);

@@ -1,5 +1,5 @@
-// Canvas node types for RuneBook
-export type NodeType = 'terminal' | 'input' | 'display' | 'transform';
+// Canvas node types for RuneBook – Phase 1 baseline (Obsidian Canvas-like)
+export type NodeType = 'text';
 
 export interface Position {
   x: number;
@@ -10,7 +10,6 @@ export interface Size {
   width: number;
   height: number;
 }
-
 
 export interface Connection {
   from: string; // Source node ID
@@ -36,35 +35,13 @@ export interface BaseNode {
   outputs: Port[];
 }
 
-export interface TerminalNode extends BaseNode {
-  type: 'terminal';
-  shell?: string;
-  env?: Record<string, string>;
-  cwd?: string;
+/** Phase 1: plain text/markdown card */
+export interface TextNode extends BaseNode {
+  type: 'text';
+  content: string;
 }
 
-export interface InputNode extends BaseNode {
-  type: 'input';
-  inputType: 'text' | 'number' | 'checkbox' | 'slider';
-  value: any;
-  min?: number;
-  max?: number;
-  step?: number;
-}
-
-export interface DisplayNode extends BaseNode {
-  type: 'display';
-  displayType: 'text' | 'json' | 'table' | 'chart';
-  content: any;
-}
-
-export interface TransformNode extends BaseNode {
-  type: 'transform';
-  transformType: 'map' | 'filter' | 'reduce' | 'sudolang';
-  code: string;
-}
-
-export type CanvasNode = TerminalNode | InputNode | DisplayNode | TransformNode;
+export type CanvasNode = TextNode;
 
 export interface Canvas {
   id: string;
