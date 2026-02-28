@@ -1,3 +1,7 @@
+## [0.6.1] — 2026-02-28
+
+- fix(ci): use workflow_run trigger so Tauri builds fire after GITHUB_TOKEN tag push (#111) (19f0243)
+
 ## [0.6.0] — 2026-02-28
 
 - fix(ci): add id-token permission to release workflow (#109) (613b6d9)
