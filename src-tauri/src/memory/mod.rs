@@ -17,8 +17,8 @@ pub use schema::*;
 use anyhow::Result;
 
 /// Initialize the memory store with PluresDB connection
-pub async fn init_memory_store(host: &str, port: u16, data_dir: &str) -> Result<MemoryStore> {
-    let client = PluresDBClient::new(host, port, data_dir)?;
+pub async fn init_memory_store(host: &str, port: u16, _data_dir: &str) -> Result<MemoryStore> {
+    let client = PluresDBClient::new(host, port)?;
     let store = MemoryStore::new(client).await?;
 
     // Run migrations
