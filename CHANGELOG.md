@@ -1,3 +1,7 @@
+## [0.7.3] — 2026-03-01
+
+- fix(ci): extend publish job conditions to include workflow_dispatch (#124) (3ffa8ce)
+
 ## [0.7.2] — 2026-03-01
 
 - fix(ci): add workflow_dispatch support to all publish jobs (#122) (bf07fea)
