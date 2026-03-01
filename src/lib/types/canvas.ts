@@ -51,3 +51,12 @@ export interface Canvas {
   connections: Connection[];
   version: string;
 }
+
+/** Context menu item used by the Canvas context menu */
+export interface ContextMenuItem {
+  label: string;
+  action?: () => void;
+  disabled?: boolean;
+  danger?: boolean;
+  separator?: boolean;
+}

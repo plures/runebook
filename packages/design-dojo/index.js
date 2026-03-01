@@ -13,3 +13,4 @@ export { default as Toggle } from './Toggle.svelte';
 export { default as SplitPane } from './SplitPane.svelte';
 export { default as StatusBar } from './StatusBar.svelte';
 export { default as List } from './List.svelte';
+export { default as ContextMenu } from './ContextMenu.svelte';

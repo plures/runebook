@@ -2,8 +2,7 @@
   import { canvasStore } from '../stores/canvas';
   import TextCard from './TextCard.svelte';
   import ContextMenu from './ContextMenu.svelte';
-  import type { CanvasNode, Connection, TextNode } from '../types/canvas';
-  import type { ContextMenuItem } from './ContextMenu.svelte';
+  import type { CanvasNode, Connection, TextNode, ContextMenuItem } from '../types/canvas';
 
   interface Props {
     tui?: boolean;
@@ -35,7 +34,10 @@
   let connectMousePos = $state({ x: 0, y: 0 });
 
   // --- Selection ---
-  let selectedNodeId = $state<string | null>(null);
+  let selectedNodeIds = $state<Set<string>>(new Set());
+
+  // Convenience derived for single-selected-node compatibility
+  const selectedNodeId = $derived(selectedNodeIds.size === 1 ? [...selectedNodeIds][0] : null);
 
   // --- Context menu ---
   let ctxMenu = $state<{ x: number; y: number; items: ContextMenuItem[] } | null>(null);
@@ -55,9 +57,24 @@
     const target = event.target as HTMLElement;
     if (target.closest('input, textarea, button, select, [contenteditable]')) return;
 
+    if (event.shiftKey) {
+      // Shift+click: toggle this node in the selection
+      const next = new Set(selectedNodeIds);
+      if (next.has(nodeId)) {
+        next.delete(nodeId);
+      } else {
+        next.add(nodeId);
+      }
+      selectedNodeIds = next;
+    } else {
+      // Normal click: select only this node and start drag
+      if (!selectedNodeIds.has(nodeId)) {
+        selectedNodeIds = new Set([nodeId]);
+      }
+    }
+
     isDragging = true;
     draggedNodeId = nodeId;
-    selectedNodeId = nodeId;
     dragOffset = {
       x: (event.clientX - panX) / zoom - node.position.x,
       y: (event.clientY - panY) / zoom - node.position.y
@@ -125,9 +142,20 @@
       panX = panStart.panX + (event.clientX - panStart.x);
       panY = panStart.panY + (event.clientY - panStart.y);
     } else if (isDragging && draggedNodeId) {
-      const newX = Math.max(0, (event.clientX - panX) / zoom - dragOffset.x);
-      const newY = Math.max(0, (event.clientY - panY) / zoom - dragOffset.y);
-      canvasStore.updateNodePosition(draggedNodeId, newX, newY);
+      const primaryNode = canvasData.nodes.find(n => n.id === draggedNodeId);
+      if (primaryNode) {
+        const newX = Math.max(0, (event.clientX - panX) / zoom - dragOffset.x);
+        const newY = Math.max(0, (event.clientY - panY) / zoom - dragOffset.y);
+        const dx = newX - primaryNode.position.x;
+        const dy = newY - primaryNode.position.y;
+        // Move all selected nodes by the same delta
+        for (const id of selectedNodeIds) {
+          const node = canvasData.nodes.find(n => n.id === id);
+          if (node) {
+            canvasStore.updateNodePosition(id, Math.max(0, node.position.x + dx), Math.max(0, node.position.y + dy));
+          }
+        }
+      }
     } else if (isResizing && resizingNodeId) {
       const dx = (event.clientX - resizeStart.x) / zoom;
       const dy = (event.clientY - resizeStart.y) / zoom;
@@ -149,7 +177,7 @@
   }
 
   function handleCanvasClick() {
-    selectedNodeId = null;
+    selectedNodeIds = new Set();
     ctxMenu = null;
   }
 
@@ -173,10 +201,12 @@
     const inEditable = target.closest('input, textarea, [contenteditable]');
 
     if ((event.key === 'Delete' || event.key === 'Backspace') && !inEditable) {
-      if (selectedNodeId) {
+      if (selectedNodeIds.size > 0) {
         event.preventDefault();
-        canvasStore.removeNode(selectedNodeId);
-        selectedNodeId = null;
+        for (const id of selectedNodeIds) {
+          canvasStore.removeNode(id);
+        }
+        selectedNodeIds = new Set();
       }
     }
     if (event.key === ' ' && !inEditable) {
@@ -239,12 +269,12 @@
   function handleNodeContextMenu(event: MouseEvent, nodeId: string) {
     event.preventDefault();
     event.stopPropagation();
-    selectedNodeId = nodeId;
+    selectedNodeIds = new Set([nodeId]);
     ctxMenu = {
       x: event.clientX,
       y: event.clientY,
       items: [
-        { label: '🗑️ Delete', danger: true, action: () => { canvasStore.removeNode(nodeId); selectedNodeId = null; } },
+        { label: '🗑️ Delete', danger: true, action: () => { canvasStore.removeNode(nodeId); selectedNodeIds = new Set(); } },
         { label: '📋 Duplicate', action: () => duplicateNode(nodeId) },
       ],
     };
@@ -358,7 +388,7 @@
       <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
       <div
         class="node-wrapper"
-        class:selected={selectedNodeId === node.id}
+        class:selected={selectedNodeIds.has(node.id)}
         style="left: {node.position.x}px; top: {node.position.y}px; width: {size.width}px; height: {size.height}px;"
         onmousedown={(e) => handleNodeMouseDown(e, node.id)}
         oncontextmenu={(e) => handleNodeContextMenu(e, node.id)}
