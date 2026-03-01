@@ -151,7 +151,7 @@ jobs:
 
   publish-npm:
     needs: setup
-    if: github.event_name == 'workflow_run'
+    if: github.event_name == 'workflow_run' || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     
     steps:
@@ -177,7 +177,7 @@ jobs:
 
   publish-github-packages:
     needs: setup
-    if: github.event_name == 'workflow_run'
+    if: github.event_name == 'workflow_run' || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     
     steps:
@@ -204,7 +204,7 @@ jobs:
 
   winget-publish:
     needs: setup
-    if: github.event_name == 'workflow_run'
+    if: github.event_name == 'workflow_run' || github.event_name == 'workflow_dispatch'
     runs-on: windows-latest
     
     steps:
@@ -232,7 +232,7 @@ jobs:
 
   nixos-publish:
     needs: setup
-    if: github.event_name == 'workflow_run'
+    if: github.event_name == 'workflow_run' || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     
     steps:
