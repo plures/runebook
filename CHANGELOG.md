@@ -1,3 +1,7 @@
+## [0.7.2] — 2026-03-01
+
+- fix(ci): add workflow_dispatch support to all publish jobs (#122) (bf07fea)
+
 ## [0.7.1] — 2026-02-28
 
 - fix(ci): publish-release should run on tag push (#116) (0085662)
