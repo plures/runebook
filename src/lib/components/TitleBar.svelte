@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { Button } from '@plures/design-dojo';
   import { canvasStore } from '../stores/canvas';
 
   interface Props {
@@ -54,15 +55,15 @@
 
   <div class="titlebar-right">
     {#if isTauri}
-      <button class="wc-btn wc-minimize" onclick={minimize} title="Minimize" aria-label="Minimize window">
+      <Button variant="secondary" onclick={minimize} class="wc-btn wc-minimize" title="Minimize">
         <span aria-hidden="true">─</span>
-      </button>
-      <button class="wc-btn wc-maximize" onclick={maximize} title="Maximize" aria-label="Maximize window">
+      </Button>
+      <Button variant="secondary" onclick={maximize} class="wc-btn wc-maximize" title="Maximize">
         <span aria-hidden="true">□</span>
-      </button>
-      <button class="wc-btn wc-close" onclick={closeWindow} title="Close" aria-label="Close window">
+      </Button>
+      <Button variant="danger" onclick={closeWindow} class="wc-btn wc-close" title="Close">
         <span aria-hidden="true">✕</span>
-      </button>
+      </Button>
     {/if}
   </div>
 </header>
@@ -127,30 +128,16 @@
     font-family: var(--font-mono);
   }
 
-  /* Window control buttons */
-  .wc-btn {
+  /* Window control buttons — override design-dojo Button defaults */
+  :global(.wc-btn) {
     -webkit-app-region: no-drag;
-    width: 32px;
-    height: 32px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: transparent;
-    border: none;
-    border-radius: var(--radius-2);
-    color: var(--text-2);
-    font-size: 0.8rem;
-    cursor: pointer;
-    transition: background var(--transition-fast), color var(--transition-fast);
-  }
-
-  .wc-btn:hover {
-    background: var(--surface-3);
-    color: var(--text-1);
-  }
-
-  .wc-close:hover {
-    background: var(--error);
-    color: white;
+    width: 32px !important;
+    height: 32px !important;
+    padding: 0 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    font-size: 0.8rem !important;
+    border-radius: var(--radius-2) !important;
   }
 </style>

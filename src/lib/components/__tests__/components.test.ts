@@ -86,6 +86,41 @@ describe('Canvas', () => {
     await new Promise(r => setTimeout(r, 10));
     expect(container.querySelector('.node-wrapper')).toBeTruthy();
   });
+
+  it('node-wrapper has selected class when node is clicked', async () => {
+    canvasPraxisStore.clear();
+    canvasStore.addNode(makeTextNode({ id: 'text-sel' }));
+    await new Promise(r => setTimeout(r, 0));
+    const { container } = render(Canvas);
+    await new Promise(r => setTimeout(r, 10));
+    const wrapper = container.querySelector('.node-wrapper') as HTMLElement;
+    expect(wrapper).toBeTruthy();
+    // Simulate mousedown on node wrapper (no shift = single select)
+    wrapper.dispatchEvent(new MouseEvent('mousedown', { bubbles: true, shiftKey: false, button: 0 }));
+    await new Promise(r => setTimeout(r, 10));
+    expect(wrapper.classList.contains('selected')).toBe(true);
+  });
+
+  it('shift+click selects multiple nodes', async () => {
+    canvasPraxisStore.clear();
+    canvasStore.addNode(makeTextNode({ id: 'text-a' }));
+    canvasStore.addNode(makeTextNode({ id: 'text-b', position: { x: 400, y: 100 } }));
+    await new Promise(r => setTimeout(r, 0));
+    const { container } = render(Canvas);
+    await new Promise(r => setTimeout(r, 10));
+    const wrappers = container.querySelectorAll('.node-wrapper');
+    expect(wrappers.length).toBe(2);
+    // Click first node normally
+    (wrappers[0] as HTMLElement).dispatchEvent(new MouseEvent('mousedown', { bubbles: true, shiftKey: false, button: 0 }));
+    await new Promise(r => setTimeout(r, 10));
+    expect((wrappers[0] as HTMLElement).classList.contains('selected')).toBe(true);
+    expect((wrappers[1] as HTMLElement).classList.contains('selected')).toBe(false);
+    // Shift+click second node
+    (wrappers[1] as HTMLElement).dispatchEvent(new MouseEvent('mousedown', { bubbles: true, shiftKey: true, button: 0 }));
+    await new Promise(r => setTimeout(r, 10));
+    expect((wrappers[0] as HTMLElement).classList.contains('selected')).toBe(true);
+    expect((wrappers[1] as HTMLElement).classList.contains('selected')).toBe(true);
+  });
 });
 
 describe('Toolbar', () => {
