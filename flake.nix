@@ -30,17 +30,13 @@
         # Node.js
         nodejs = pkgs.nodejs_20;
 
-        # Read package.json once to avoid version drift
-        packageJson = builtins.fromJSON (builtins.readFile ./package.json);
-        npmDepsHash = "sha256-h6CvxJiRfzORGxlUTDKS13YXC2REhIEdbKHxMPfGjZI=";
-
         # Build the frontend (SvelteKit)
         frontend = pkgs.buildNpmPackage {
           pname = "runebook-frontend";
-          version = packageJson.version;
+          version = "0.2.0";
           src = ./.;
           
-          inherit npmDepsHash;
+          npmDepsHash = "sha256-S2tAn2QEmj5ry9COmE/dxJEAjlxiugazvN9WxE/IyNE=";
           
           nativeBuildInputs = [
             nodejs
@@ -121,10 +117,10 @@
         # Build the CLI as a standalone Node.js package
         runebook-agent-pkg = pkgs.buildNpmPackage {
           pname = "runebook-agent";
-          version = packageJson.version;
+          version = "0.2.0";
           src = ./.;
           
-          inherit npmDepsHash;
+          npmDepsHash = "sha256-S2tAn2QEmj5ry9COmE/dxJEAjlxiugazvN9WxE/IyNE=";
           
           nativeBuildInputs = [
             nodejs
@@ -145,8 +141,6 @@
             # Copy package files and source
             cp -r package.json package-lock.json $out/lib/node_modules/runebook-agent/
             cp -r src $out/lib/node_modules/runebook-agent/
-            # Copy workspace packages so that symlinks in node_modules resolve correctly
-            cp -r packages $out/lib/node_modules/runebook-agent/
             cp -r node_modules $out/lib/node_modules/runebook-agent/
             
             # Create wrapper script that uses tsx to run TypeScript directly

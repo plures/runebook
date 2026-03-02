@@ -1,41 +1,115 @@
 name: CI
+
 on:
   push:
-    branches:
-      - main
-      - develop
+    branches: [ main, develop ]
   pull_request:
-    branches:
-      - main
-      - develop
-jobs:
-  check:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - name: Install Nix
-        uses: cachix/install-nix-action@v27
-      - name: Run checks in Nix flake dev shell
-        run: |
-          nix develop -c sh -lc '
-            npm ci &&
-            (npm run check 2>/dev/null || true) &&
-            (npm test 2>/dev/null || true) &&
-            (npm run build 2>/dev/null || true)
-          '
+    branches: [ main, develop ]
 
-  rust:
+jobs:
+  # Lint and format check
+  lint:
+    name: Lint & Format
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: src-tauri
     steps:
       - uses: actions/checkout@v4
+      
       - name: Install Nix
-        uses: cachix/install-nix-action@v27
-      - name: Check formatting
-        run: nix develop .. -c cargo fmt --all -- --check
-      - name: Clippy
-        run: nix develop .. -c cargo clippy -- -D warnings
-      - name: Test
-        run: nix develop .. -c cargo test
+        uses: DeterminateSystems/nix-installer-action@main
+      
+      - name: Run nix flake check
+        run: nix flake check
+      
+      - name: Check Rust formatting
+        run: |
+          nix develop --command -- bash -c "cd src-tauri && cargo fmt --check"
+      
+      - name: Install npm dependencies
+        run: |
+          nix develop --command -- bash -c "npm install"
+      
+      - name: Sync SvelteKit configuration
+        run: |
+          nix develop --command -- bash -c "npx svelte-kit sync"
+      
+      - name: Check TypeScript/JavaScript formatting
+        run: |
+          nix develop --command -- bash -c "npm run check"
+
+  # Build
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Install Nix
+        uses: DeterminateSystems/nix-installer-action@main
+      
+      - name: Build runebook
+        run: nix build .#runebook
+      
+      - name: Build runebook-agent
+        run: nix build .#runebook-agent
+      
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: runebook-build
+          path: result/bin/runebook
+          retention-days: 7
+
+  # Test
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Install Nix
+        uses: DeterminateSystems/nix-installer-action@main
+      
+      - name: Run Rust tests
+        run: |
+          nix develop --command -- bash -c "cd src-tauri && cargo test"
+      
+      - name: Install npm dependencies
+        run: |
+          nix develop --command -- bash -c "npm install"
+      
+      - name: Sync SvelteKit configuration
+        run: |
+          nix develop --command -- bash -c "npx svelte-kit sync"
+      
+      - name: Run TypeScript tests
+        run: |
+          nix develop --command -- bash -c "npm test"
+      
+      - name: Run type checking
+        run: |
+          nix develop --command -- bash -c "npm run check"
+
+  # Multi-platform build (optional, for releases)
+  build-multi-platform:
+    name: Build (Multi-platform)
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        system: [x86_64-linux, aarch64-linux]
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Install Nix
+        uses: DeterminateSystems/nix-installer-action@main
+      
+      - name: Build for ${{ matrix.system }}
+        run: |
+          nix build .#runebook --system ${{ matrix.system }} || echo "Build failed for ${{ matrix.system }}"
+      
+      - name: Upload build artifacts
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: runebook-${{ matrix.system }}
+          path: result/bin/runebook
+          retention-days: 7

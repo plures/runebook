@@ -15,10 +15,11 @@ use std::time::Duration;
 pub struct PluresDBClient {
     client: Client,
     base_url: String,
+    data_dir: String,
 }
 
 impl PluresDBClient {
-    pub fn new(host: &str, port: u16) -> Result<Self> {
+    pub fn new(host: &str, port: u16, data_dir: &str) -> Result<Self> {
         let base_url = format!("http://{}:{}", host, port);
 
         let client = Client::builder()
@@ -26,7 +27,11 @@ impl PluresDBClient {
             .build()
             .context("Failed to create HTTP client")?;
 
-        Ok(Self { client, base_url })
+        Ok(Self {
+            client,
+            base_url,
+            data_dir: data_dir.to_string(),
+        })
     }
 
     /// Put a value into PluresDB

@@ -16,7 +16,7 @@ mod tests {
     async fn test_store_and_query_events() {
         // This test requires a PluresDB server running
         // Skip if server is not available
-        let client = match PluresDBClient::new("localhost", 34567) {
+        let client = match PluresDBClient::new("localhost", 34567, "./test-pluresdb-data") {
             Ok(c) => c,
             Err(_) => {
                 eprintln!("Skipping test: PluresDB server not available");
@@ -70,7 +70,7 @@ mod tests {
             .query_recent_errors(Some(10), None, None)
             .await
             .unwrap();
-        assert!(!errors.is_empty());
+        assert!(errors.len() > 0);
         assert!(errors.iter().any(|e| e.id == error.id));
 
         // Get context window
@@ -79,8 +79,8 @@ mod tests {
             .await
             .unwrap();
         assert_eq!(context.session_id, session.id);
-        assert!(!context.commands.is_empty());
-        assert!(!context.errors.is_empty());
+        assert!(context.commands.len() > 0);
+        assert!(context.errors.len() > 0);
 
         // List sessions
         let sessions = store.list_sessions().await.unwrap();
@@ -93,7 +93,7 @@ mod tests {
     // Property test: schema roundtrip
     #[tokio::test]
     async fn test_schema_roundtrip() {
-        let client = match PluresDBClient::new("localhost", 34567) {
+        let client = match PluresDBClient::new("localhost", 34567, "./test-pluresdb-data") {
             Ok(c) => c,
             Err(_) => {
                 eprintln!("Skipping test: PluresDB server not available");
@@ -163,7 +163,7 @@ mod tests {
     // Test migration system
     #[tokio::test]
     async fn test_migrations() {
-        let client = match PluresDBClient::new("localhost", 34567) {
+        let client = match PluresDBClient::new("localhost", 34567, "./test-pluresdb-data") {
             Ok(c) => c,
             Err(_) => {
                 eprintln!("Skipping test: PluresDB server not available");

@@ -2,6 +2,7 @@
 
 use crate::agents::*;
 use crate::core::coordination::CoordinationHandle;
+use crate::core::types::AgentId;
 use crate::orchestrator::{create_execution_plan, ExecutionCoordinator};
 use std::sync::Arc;
 use tokio::sync::{Mutex, RwLock};

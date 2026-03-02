@@ -2,6 +2,7 @@
 
 use crate::memory::api::MemoryStore;
 use anyhow::{Context, Result};
+use serde_json::Value;
 
 const SCHEMA_VERSION_KEY: &str = "memory:schema:version";
 const CURRENT_SCHEMA_VERSION: u32 = 1;
@@ -47,7 +48,7 @@ async fn set_version(store: &MemoryStore, version: u32) -> Result<()> {
     Ok(())
 }
 
-async fn migrate_to_version(_store: &MemoryStore, version: u32) -> Result<()> {
+async fn migrate_to_version(store: &MemoryStore, version: u32) -> Result<()> {
     match version {
         1 => {
             // Initial schema version - no migration needed

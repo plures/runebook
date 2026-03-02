@@ -1,67 +1,16 @@
 name: Build and Publish Release
 
 on:
-  workflow_run:
-    workflows: ["Release"]
-    types: [completed]
+  release:
+    types: [published]
   workflow_dispatch:
-    inputs:
-      tag:
-        description: 'Release tag to build (e.g. v1.2.3)'
-        required: true
-        type: string
 
 permissions:
   contents: write
   packages: write
 
 jobs:
-  setup:
-    runs-on: ubuntu-latest
-    if: >-
-      (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success') ||
-      github.event_name == 'workflow_dispatch'
-    outputs:
-      release_tag: ${{ steps.tag.outputs.tag }}
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-      - name: Determine release tag
-        id: tag
-        run: |
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            TAG="${{ inputs.tag }}"
-          else
-            SHA="${{ github.event.workflow_run.head_sha }}"
-            if [ -z "$SHA" ]; then
-              echo "Error: github.event.workflow_run.head_sha is empty; cannot determine tag." >&2
-              exit 1
-            fi
-            git fetch --tags --force
-            TAG="$(git tag --points-at "$SHA" | head -n 1)"
-            if [ -z "$TAG" ]; then
-              echo "Error: No tag found that points at commit $SHA." >&2
-              exit 1
-            fi
-          fi
-          if [ -z "$TAG" ]; then
-            echo "Error: Could not determine release tag (TAG is empty)." >&2
-            exit 1
-          fi
-          case "$TAG" in
-            v[0-9]*.[0-9]*.[0-9]*)
-              ;;
-            *)
-              echo "Error: Invalid release tag '$TAG'. Expected format like v1.2.3." >&2
-              exit 1
-              ;;
-          esac
-          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
-
   build-tauri:
-    needs: setup
     strategy:
       fail-fast: false
       matrix:
@@ -76,12 +25,10 @@ jobs:
             args: ''
 
     runs-on: ${{ matrix.platform }}
-
+    
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-        with:
-          ref: ${{ needs.setup.outputs.release_tag }}
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -108,57 +55,21 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tagName: ${{ needs.setup.outputs.release_tag }}
+          tagName: ${{ github.event.release.tag_name || github.ref_name }}
+          releaseName: 'RuneBook ${{ github.event.release.tag_name || github.ref_name }}'
+          releaseBody: 'See the CHANGELOG.md for details.'
+          releaseDraft: false
+          prerelease: false
           args: ${{ matrix.args }}
 
-  build-android:
-    needs: setup
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          ref: ${{ needs.setup.outputs.release_tag }}
-      - uses: actions/setup-java@v4
-        with:
-          distribution: 'temurin'
-          java-version: '17'
-      - uses: android-actions/setup-android@v3
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          cache: 'npm'
-      - uses: dtolnay/rust-toolchain@stable
-        with:
-          targets: aarch64-linux-android,armv7-linux-androideabi,x86_64-linux-android
-      - run: npm ci
-      - name: Initialize Tauri Android project
-        run: npx tauri android init --ci
-        env:
-          NDK_HOME: ${{ env.ANDROID_NDK_HOME }}
-      - run: npx tauri android build
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          NDK_HOME: ${{ env.ANDROID_NDK_HOME }}
-      - name: Upload unsigned APK to release
-        if: needs.setup.outputs.release_tag != ''
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          TAG_NAME: ${{ needs.setup.outputs.release_tag }}
-        run: |
-          gh release upload "$TAG_NAME" \
-            src-tauri/gen/android/app/build/outputs/apk/universal/release/app-universal-release-unsigned.apk \
-            --clobber
-
   publish-npm:
-    needs: setup
-    if: github.event_name == 'workflow_run' || github.event_name == 'workflow_dispatch'
+    needs: build-tauri
     runs-on: ubuntu-latest
+    if: github.event_name == 'release' && github.event.action == 'published'
     
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-        with:
-          ref: ${{ needs.setup.outputs.release_tag }}
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -176,15 +87,13 @@ jobs:
         continue-on-error: true
 
   publish-github-packages:
-    needs: setup
-    if: github.event_name == 'workflow_run' || github.event_name == 'workflow_dispatch'
+    needs: build-tauri
     runs-on: ubuntu-latest
+    if: github.event_name == 'release' && github.event.action == 'published'
     
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-        with:
-          ref: ${{ needs.setup.outputs.release_tag }}
 
       - name: Setup Node.js for GitHub Packages
         uses: actions/setup-node@v4
@@ -203,21 +112,19 @@ jobs:
         continue-on-error: true
 
   winget-publish:
-    needs: setup
-    if: github.event_name == 'workflow_run' || github.event_name == 'workflow_dispatch'
+    needs: build-tauri
     runs-on: windows-latest
+    if: github.event_name == 'release' && github.event.action == 'published'
     
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-        with:
-          ref: ${{ needs.setup.outputs.release_tag }}
 
       - name: Get release version
         id: version
         shell: bash
         run: |
-          VERSION="${{ needs.setup.outputs.release_tag }}"
+          VERSION="${{ github.event.release.tag_name }}"
           VERSION="${VERSION#v}"
           echo "version=$VERSION" >> $GITHUB_OUTPUT
 
@@ -231,21 +138,19 @@ jobs:
         continue-on-error: true
 
   nixos-publish:
-    needs: setup
-    if: github.event_name == 'workflow_run' || github.event_name == 'workflow_dispatch'
+    needs: build-tauri
     runs-on: ubuntu-latest
+    if: github.event_name == 'release' && github.event.action == 'published'
     
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-        with:
-          ref: ${{ needs.setup.outputs.release_tag }}
 
       - name: Get release version
         id: version
         shell: bash
         run: |
-          VERSION="${{ needs.setup.outputs.release_tag }}"
+          VERSION="${{ github.event.release.tag_name }}"
           VERSION="${VERSION#v}"
           echo "version=$VERSION" >> $GITHUB_OUTPUT
 
@@ -269,8 +174,9 @@ jobs:
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "Nix packages have been built successfully. To publish to NixOS:" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "1. Submit a PR to nixpkgs with the package definition" >> $GITHUB_STEP_SUMMARY
-          echo "2. Or use the flake directly: nix run github:plures/runebook" >> $GITHUB_STEP_SUMMARY
+          echo "1. Submit a PR to [nixpkgs](https://github.com/NixOS/nixpkgs) with the package definition" >> $GITHUB_STEP_SUMMARY
+          echo "2. Or use the flake directly: \`nix run github:plures/runebook\`" >> $GITHUB_STEP_SUMMARY
+          echo "3. Or add to your flake inputs: \`runebook.url = \"github:plures/runebook\";\`" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "**Current version**: ${{ steps.version.outputs.version }}" >> $GITHUB_STEP_SUMMARY
         continue-on-error: true

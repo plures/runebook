@@ -9,14 +9,12 @@ nodes:
     position:
       x: 100
       y: 100
-    size:
-      width: 600
-      height: 400
-    label: Terminal
-    inputs:
-      - id: stdin
-        name: stdin
-        type: input
+    label: Echo Command
+    command: echo
+    args:
+      - Hello from RuneBook!
+    autoStart: true
+    inputs: []
     outputs:
       - id: stdout
         name: stdout
@@ -26,7 +24,7 @@ nodes:
     type: input
     position:
       x: 100
-      y: 540
+      y: 300
     label: User Input
     inputType: text
     value: Type something here...
@@ -39,7 +37,7 @@ nodes:
   - id: display-1
     type: display
     position:
-      x: 740
+      x: 500
       y: 100
     label: Terminal Output
     displayType: text
@@ -53,8 +51,8 @@ nodes:
   - id: display-2
     type: display
     position:
-      x: 740
-      y: 340
+      x: 500
+      y: 300
     label: Input Display
     displayType: text
     content: ''
