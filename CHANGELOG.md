@@ -1,3 +1,10 @@
+## [0.8.0] — 2026-03-02
+
+- feat: Phase 1 Obsidian Canvas baseline — design-dojo components only + multi-select (#132) (a6e67b5)
+- fix(ci): resolve Clippy warnings blocking prior PR #109 (#130) (0f38de0)
+- fix(ci): nixos-publish supports workflow_dispatch and checks out tag ref (#128) (dcdab38)
+- fix(ci): allow publish jobs to run on workflow_dispatch with correct tag checkout (#126) (6ba9228)
+
 ## [0.7.3] — 2026-03-01
 
 - fix(ci): extend publish job conditions to include workflow_dispatch (#124) (3ffa8ce)
