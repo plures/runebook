@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- Obsidian Canvas foundation: sub-canvas node type, in-place navigation with breadcrumb trail, Obsidian-like UI palette
+
 ## [0.3.0] - 2026-01-25
 
 ### Added
