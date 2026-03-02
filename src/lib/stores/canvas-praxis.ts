@@ -43,8 +43,8 @@ function mutateCanvasAtPath(ctx: CanvasContext, path: string[], mutate: (canvas:
     const idx = canvas.nodes.findIndex(n => n.id === path[depth]);
     const node = canvas.nodes[idx] as SubCanvasNode | undefined;
     if (!node || node.type !== 'sub-canvas') return;
-    // Clone the sub-canvas so Praxis reactivity picks up the change
-    const subCanvas = { ...node.canvas, nodes: [...node.canvas.nodes], connections: [...node.canvas.connections] };
+    // Deep-clone the sub-canvas so Praxis reactivity picks up the change
+    const subCanvas: Canvas = structuredClone(node.canvas);
     walk(subCanvas, depth + 1);
     (canvas.nodes[idx] as SubCanvasNode) = { ...node, canvas: subCanvas };
   };

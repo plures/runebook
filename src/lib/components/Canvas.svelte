@@ -329,12 +329,13 @@
 
   // Reset pan/zoom when navigating
   $effect(() => {
-    // eslint-disable-next-line @typescript-eslint/no-unused-expressions
-    navPath.length; // reactive dependency
-    panX = 0;
-    panY = 0;
-    zoom = 1;
-    selectedNodeId = null;
+    const depth = navPath.length; // reactive dependency
+    if (depth >= 0) { // always true — establishes dependency cleanly
+      panX = 0;
+      panY = 0;
+      zoom = 1;
+      selectedNodeId = null;
+    }
   });
 </script>
 
