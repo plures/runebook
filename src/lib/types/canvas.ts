@@ -1,5 +1,5 @@
 // Canvas node types for RuneBook – Phase 1 baseline (Obsidian Canvas-like)
-export type NodeType = 'text';
+export type NodeType = 'text' | 'sub-canvas';
 
 export interface Position {
   x: number;
@@ -41,7 +41,13 @@ export interface TextNode extends BaseNode {
   content: string;
 }
 
-export type CanvasNode = TextNode;
+export type CanvasNode = TextNode | SubCanvasNode;
+
+/** Phase 1+: a canvas-within-a-canvas node */
+export interface SubCanvasNode extends BaseNode {
+  type: 'sub-canvas';
+  canvas: Canvas;
+}
 
 export interface Canvas {
   id: string;

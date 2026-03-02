@@ -14,10 +14,11 @@ vi.mock('@tauri-apps/api/window', () => ({
 vi.mock('@tauri-apps/api/event', () => ({ listen: vi.fn().mockResolvedValue(() => {}) }));
 
 import TextCard from '../TextCard.svelte';
+import SubCanvasCard from '../SubCanvasCard.svelte';
 import Canvas from '../Canvas.svelte';
 import Toolbar from '../Toolbar.svelte';
 
-import type { TextNode } from '../../types/canvas';
+import type { TextNode, SubCanvasNode } from '../../types/canvas';
 
 const makeTextNode = (overrides: Partial<TextNode> = {}): TextNode => ({
   id: 'text-1',
@@ -28,6 +29,24 @@ const makeTextNode = (overrides: Partial<TextNode> = {}): TextNode => ({
   content: 'Hello world',
   inputs: [{ id: 'in', name: 'in', type: 'input' }],
   outputs: [{ id: 'out', name: 'out', type: 'output' }],
+  ...overrides,
+});
+
+const makeSubCanvasNode = (overrides: Partial<SubCanvasNode> = {}): SubCanvasNode => ({
+  id: 'sub-1',
+  type: 'sub-canvas',
+  position: { x: 200, y: 200 },
+  size: { width: 280, height: 200 },
+  label: 'My Sub-canvas',
+  inputs: [],
+  outputs: [],
+  canvas: {
+    id: 'sub-1',
+    name: 'My Sub-canvas',
+    nodes: [],
+    connections: [],
+    version: '1.0.0',
+  },
   ...overrides,
 });
 
@@ -62,6 +81,54 @@ describe('TextCard', () => {
   });
 });
 
+describe('SubCanvasCard', () => {
+  afterEach(cleanup);
+
+  it('renders the sub-canvas name', () => {
+    const { container } = render(SubCanvasCard, {
+      node: makeSubCanvasNode({ label: 'Workflow A' }),
+      onnavigate: vi.fn(),
+    });
+    const titleInput = container.querySelector('.sub-canvas-title') as HTMLInputElement;
+    expect(titleInput).toBeTruthy();
+    expect(titleInput.value).toBe('Workflow A');
+  });
+
+  it('shows node count in footer', () => {
+    const node = makeSubCanvasNode({
+      canvas: {
+        id: 'sub-1',
+        name: 'Sub',
+        nodes: [makeTextNode(), makeTextNode({ id: 'text-2', position: { x: 50, y: 50 } })],
+        connections: [],
+        version: '1.0.0',
+      },
+    });
+    const { container } = render(SubCanvasCard, { node, onnavigate: vi.fn() });
+    const footer = container.querySelector('.sub-canvas-meta') as HTMLElement;
+    expect(footer?.textContent).toContain('2');
+    expect(footer?.textContent).toContain('node');
+  });
+
+  it('calls onnavigate when Open button is clicked', async () => {
+    const onnavigate = vi.fn();
+    const node = makeSubCanvasNode({ id: 'sub-abc' });
+    const { container } = render(SubCanvasCard, { node, onnavigate });
+    const openBtn = container.querySelector('.enter-btn-sm') as HTMLButtonElement;
+    openBtn.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    await new Promise(r => setTimeout(r, 0));
+    expect(onnavigate).toHaveBeenCalledWith('sub-abc');
+  });
+
+  it('renders a mini preview area', () => {
+    const { container } = render(SubCanvasCard, {
+      node: makeSubCanvasNode(),
+      onnavigate: vi.fn(),
+    });
+    expect(container.querySelector('.sub-canvas-preview')).toBeTruthy();
+  });
+});
+
 describe('Canvas', () => {
   beforeEach(() => {
     canvasPraxisStore.clear();
@@ -86,6 +153,33 @@ describe('Canvas', () => {
     await new Promise(r => setTimeout(r, 10));
     expect(container.querySelector('.node-wrapper')).toBeTruthy();
   });
+
+  it('renders sub-canvas nodes', async () => {
+    canvasPraxisStore.clear();
+    canvasStore.addNode(makeSubCanvasNode());
+    await new Promise(r => setTimeout(r, 0));
+    const { container } = render(Canvas);
+    await new Promise(r => setTimeout(r, 10));
+    expect(container.querySelector('.node-sub-canvas')).toBeTruthy();
+  });
+
+  it('does not show breadcrumb at root level', () => {
+    const { container } = render(Canvas);
+    expect(container.querySelector('.breadcrumb')).toBeNull();
+  });
+
+  it('shows breadcrumb when navigated into a sub-canvas', async () => {
+    canvasPraxisStore.clear();
+    const node = makeSubCanvasNode({ id: 'sub-nav-test' });
+    canvasStore.addNode(node);
+    canvasStore.navigateInto('sub-nav-test');
+    await new Promise(r => setTimeout(r, 0));
+    const { container } = render(Canvas);
+    await new Promise(r => setTimeout(r, 10));
+    expect(container.querySelector('.breadcrumb')).toBeTruthy();
+    // Reset navigation
+    canvasStore.navigateToRoot();
+  });
 });
 
 describe('Toolbar', () => {
@@ -100,5 +194,12 @@ describe('Toolbar', () => {
     const { container } = render(Toolbar);
     const buttons = container.querySelectorAll('button');
     expect(buttons.length).toBeGreaterThan(0);
+  });
+
+  it('has an Add Sub-Canvas button', () => {
+    const { container } = render(Toolbar);
+    const buttons = Array.from(container.querySelectorAll('button'));
+    const subCanvasBtn = buttons.find(b => b.title === 'Add Sub-Canvas');
+    expect(subCanvasBtn).toBeTruthy();
   });
 });

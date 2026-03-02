@@ -3,6 +3,7 @@
 
 import {
   canvasEngine,
+  getCanvasAtPath,
   type CanvasContext,
   AddNodeEvent,
   RemoveNodeEvent,
@@ -13,6 +14,9 @@ import {
   LoadCanvasEvent,
   ClearCanvasEvent,
   UpdateNodeDataEvent,
+  NavigateIntoEvent,
+  NavigateOutEvent,
+  NavigateToRootEvent,
 } from './canvas-praxis';
 import { createPraxisStore } from '@plures/praxis/svelte';
 import type { Canvas, CanvasNode, Connection } from '../types/canvas';
@@ -38,6 +42,33 @@ export const canvasStore = {
   removeConnection: (from: string, to: string, fromPort: string, toPort: string) => praxisStore.dispatch([RemoveConnectionEvent.create({ from, to, fromPort, toPort })]),
   loadCanvas: (canvas: Canvas) => praxisStore.dispatch([LoadCanvasEvent.create({ canvas })]),
   clear: () => praxisStore.dispatch([ClearCanvasEvent.create({})]),
+  // Navigation
+  navigateInto: (nodeId: string) => praxisStore.dispatch([NavigateIntoEvent.create({ nodeId })]),
+  navigateOut: () => praxisStore.dispatch([NavigateOutEvent.create({} as Record<string, never>)]),
+  navigateToRoot: () => praxisStore.dispatch([NavigateToRootEvent.create({} as Record<string, never>)]),
+};
+
+/**
+ * A store that reflects the currently-active canvas (follows the navigation
+ * path into sub-canvases).  Use this for read-only display in Canvas.svelte.
+ */
+export const activeCanvasStore = {
+  subscribe: (fn: (value: Canvas) => void) => {
+    return praxisStore.subscribe((state) => {
+      fn(getCanvasAtPath(state.context, state.context.navigationPath));
+    });
+  },
+};
+
+/**
+ * A store that reflects the current navigation path (array of SubCanvasNode IDs).
+ */
+export const navigationPathStore = {
+  subscribe: (fn: (value: string[]) => void) => {
+    return praxisStore.subscribe((state) => {
+      fn(state.context.navigationPath);
+    });
+  },
 };
 
 // Create a derived store for node data

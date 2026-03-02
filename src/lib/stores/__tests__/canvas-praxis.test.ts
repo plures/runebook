@@ -172,4 +172,82 @@ describe('canvas-praxis store', () => {
       expect(ctx.nodeData).toBeDefined();
     });
   });
+
+  describe('navigation', () => {
+    const makeSubCanvasNode = (id: string): import('../../types/canvas').SubCanvasNode => ({
+      id,
+      type: 'sub-canvas',
+      position: { x: 0, y: 0 },
+      label: `Sub ${id}`,
+      inputs: [],
+      outputs: [],
+      canvas: {
+        id,
+        name: `Sub ${id}`,
+        nodes: [],
+        connections: [],
+        version: '1.0.0',
+      },
+    });
+
+    it('starts with an empty navigation path', () => {
+      expect(canvasPraxisStore.navigationPath).toEqual([]);
+    });
+
+    it('navigateInto pushes a nodeId onto the path', () => {
+      canvasPraxisStore.navigateInto('sub-1');
+      expect(canvasPraxisStore.navigationPath).toEqual(['sub-1']);
+    });
+
+    it('navigateOut pops the last nodeId from the path', () => {
+      canvasPraxisStore.navigateInto('sub-1');
+      canvasPraxisStore.navigateInto('sub-2');
+      canvasPraxisStore.navigateOut();
+      expect(canvasPraxisStore.navigationPath).toEqual(['sub-1']);
+    });
+
+    it('navigateOut at root leaves path empty', () => {
+      canvasPraxisStore.navigateOut();
+      expect(canvasPraxisStore.navigationPath).toEqual([]);
+    });
+
+    it('navigateToRoot clears the path', () => {
+      canvasPraxisStore.navigateInto('sub-1');
+      canvasPraxisStore.navigateInto('sub-2');
+      canvasPraxisStore.navigateToRoot();
+      expect(canvasPraxisStore.navigationPath).toEqual([]);
+    });
+
+    it('clear resets navigation path', () => {
+      canvasPraxisStore.navigateInto('sub-1');
+      canvasPraxisStore.clear();
+      expect(canvasPraxisStore.navigationPath).toEqual([]);
+    });
+
+    it('loadCanvas resets navigation path', () => {
+      canvasPraxisStore.navigateInto('sub-1');
+      canvasPraxisStore.loadCanvas({
+        id: 'fresh',
+        name: 'Fresh',
+        nodes: [],
+        connections: [],
+        version: '1.0.0',
+      });
+      expect(canvasPraxisStore.navigationPath).toEqual([]);
+    });
+
+    it('addNode targets the active sub-canvas when navigated in', () => {
+      const subNode = makeSubCanvasNode('sub-a');
+      canvasPraxisStore.addNode(subNode);
+      canvasPraxisStore.navigateInto('sub-a');
+      canvasPraxisStore.addNode(makeTextNode('inner-1'));
+
+      // Root canvas should still have 1 node (the sub-canvas node)
+      expect(canvasPraxisStore.canvas.nodes).toHaveLength(1);
+      // The sub-canvas node's embedded canvas should have the added node
+      const subCanvasNode = canvasPraxisStore.canvas.nodes[0] as import('../../types/canvas').SubCanvasNode;
+      expect(subCanvasNode.canvas.nodes).toHaveLength(1);
+      expect(subCanvasNode.canvas.nodes[0].id).toBe('inner-1');
+    });
+  });
 });

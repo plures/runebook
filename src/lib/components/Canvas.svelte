@@ -1,8 +1,9 @@
 <script lang="ts">
-  import { canvasStore } from '../stores/canvas';
+  import { canvasStore, activeCanvasStore, navigationPathStore } from '../stores/canvas';
   import TextCard from './TextCard.svelte';
+  import SubCanvasCard from './SubCanvasCard.svelte';
   import ContextMenu from './ContextMenu.svelte';
-  import type { CanvasNode, Connection, TextNode } from '../types/canvas';
+  import type { CanvasNode, Connection, TextNode, SubCanvasNode, Canvas } from '../types/canvas';
   import type { ContextMenuItem } from './ContextMenu.svelte';
 
   interface Props {
@@ -40,7 +41,27 @@
   // --- Context menu ---
   let ctxMenu = $state<{ x: number; y: number; items: ContextMenuItem[] } | null>(null);
 
-  const canvasData = $derived($canvasStore);
+  // Active canvas (follows navigation path into sub-canvases)
+  const canvasData = $derived($activeCanvasStore);
+  // Root canvas (for breadcrumb label)
+  const rootCanvas = $derived($canvasStore);
+  // Navigation path
+  const navPath = $derived($navigationPathStore);
+
+  /** Labels for the breadcrumb: build from root canvas + each sub-canvas node in the path */
+  const breadcrumbs = $derived.by(() => {
+    const crumbs: { label: string; depth: number }[] = [
+      { label: rootCanvas.name || 'Canvas', depth: 0 },
+    ];
+    let current: Canvas = rootCanvas;
+    for (let i = 0; i < navPath.length; i++) {
+      const node = current.nodes.find(n => n.id === navPath[i]) as SubCanvasNode | undefined;
+      if (!node || node.type !== 'sub-canvas') break;
+      crumbs.push({ label: node.label || 'Sub-canvas', depth: i + 1 });
+      current = node.canvas;
+    }
+    return crumbs;
+  });
 
   // Convert screen coords to canvas coords
   function screenToCanvas(sx: number, sy: number) {
@@ -187,6 +208,7 @@
       ctxMenu = null;
       isConnecting = false;
       connectFrom = null;
+      if (navPath.length > 0) canvasStore.navigateOut();
     }
     // Zoom shortcuts
     if ((event.ctrlKey || event.metaKey) && (event.key === '=' || event.key === '+')) {
@@ -220,6 +242,7 @@
       y: event.clientY,
       items: [
         { label: '📝 Add Text Card', action: () => addTextCard(p.x, p.y) },
+        { label: '🗂 Add Sub-Canvas', action: () => addSubCanvas(p.x, p.y) },
       ],
     };
   }
@@ -240,14 +263,15 @@
     event.preventDefault();
     event.stopPropagation();
     selectedNodeId = nodeId;
-    ctxMenu = {
-      x: event.clientX,
-      y: event.clientY,
-      items: [
-        { label: '🗑️ Delete', danger: true, action: () => { canvasStore.removeNode(nodeId); selectedNodeId = null; } },
-        { label: '📋 Duplicate', action: () => duplicateNode(nodeId) },
-      ],
-    };
+    const node = canvasData.nodes.find(n => n.id === nodeId);
+    const items: ContextMenuItem[] = [
+      { label: '🗑️ Delete', danger: true, action: () => { canvasStore.removeNode(nodeId); selectedNodeId = null; } },
+      { label: '📋 Duplicate', action: () => duplicateNode(nodeId) },
+    ];
+    if (node?.type === 'sub-canvas') {
+      items.unshift({ label: '↗ Enter Sub-Canvas', action: () => canvasStore.navigateInto(nodeId) });
+    }
+    ctxMenu = { x: event.clientX, y: event.clientY, items };
   }
 
   function addTextCard(x: number, y: number) {
@@ -262,6 +286,27 @@
       inputs: [{ id: 'in', name: 'in', type: 'input' }],
       outputs: [{ id: 'out', name: 'out', type: 'output' }],
     } satisfies TextNode);
+  }
+
+  function addSubCanvas(x: number, y: number) {
+    const id = `sub-canvas-${Date.now()}`;
+    canvasStore.addNode({
+      id,
+      type: 'sub-canvas',
+      position: { x, y },
+      size: { width: 280, height: 200 },
+      label: 'Sub-canvas',
+      inputs: [],
+      outputs: [],
+      canvas: {
+        id,
+        name: 'Sub-canvas',
+        description: '',
+        nodes: [],
+        connections: [],
+        version: '1.0.0',
+      },
+    } satisfies SubCanvasNode);
   }
 
   function duplicateNode(nodeId: string) {
@@ -281,6 +326,16 @@
       y: node.position.y + spacing * (portIdx + 1),
     };
   }
+
+  // Reset pan/zoom when navigating
+  $effect(() => {
+    // eslint-disable-next-line @typescript-eslint/no-unused-expressions
+    navPath.length; // reactive dependency
+    panX = 0;
+    panY = 0;
+    zoom = 1;
+    selectedNodeId = null;
+  });
 </script>
 
 <svelte:window
@@ -303,6 +358,30 @@
   role="application"
   aria-label="Canvas board"
 >
+  <!-- Breadcrumb navigation (shown when inside a sub-canvas) -->
+  {#if navPath.length > 0}
+    <nav class="breadcrumb" aria-label="Canvas navigation">
+      {#each breadcrumbs as crumb, i (i)}
+        {#if i < breadcrumbs.length - 1}
+          <button
+            class="breadcrumb-item breadcrumb-link"
+            onclick={(e) => { e.stopPropagation(); if (i === 0) canvasStore.navigateToRoot(); else canvasStore.navigateOut(); }}
+            aria-label="Navigate to {crumb.label}"
+          >{crumb.label}</button>
+          <span class="breadcrumb-sep" aria-hidden="true">›</span>
+        {:else}
+          <span class="breadcrumb-item breadcrumb-current" aria-current="page">{crumb.label}</span>
+        {/if}
+      {/each}
+      <button
+        class="breadcrumb-back"
+        onclick={(e) => { e.stopPropagation(); canvasStore.navigateOut(); }}
+        title="Go back (Esc)"
+        aria-label="Go back to parent canvas"
+      >← Back</button>
+    </nav>
+  {/if}
+
   <!-- Infinite pan/zoom viewport -->
   <div
     class="viewport"
@@ -320,8 +399,8 @@
           <path
             d="M {fp.x} {fp.y} C {fp.x + dx} {fp.y}, {tp.x - dx} {tp.y}, {tp.x} {tp.y}"
             fill="none"
-            stroke="var(--brand, #00d4ff)"
-            stroke-width="2"
+            stroke="var(--canvas-accent, rgba(255,255,255,0.3))"
+            stroke-width="1.5"
             stroke-linecap="round"
           />
           <!-- Wide transparent hit area for context menu -->
@@ -343,10 +422,10 @@
         <path
           d="M {connectFrom.x} {connectFrom.y} C {connectFrom.x + dx} {connectFrom.y}, {connectMousePos.x - dx} {connectMousePos.y}, {connectMousePos.x} {connectMousePos.y}"
           fill="none"
-          stroke="var(--brand, #00d4ff)"
-          stroke-width="2"
-          stroke-dasharray="6 3"
-          opacity="0.6"
+          stroke="var(--canvas-accent, rgba(255,255,255,0.4))"
+          stroke-width="1.5"
+          stroke-dasharray="5 3"
+          opacity="0.5"
         />
       {/if}
     </svg>
@@ -359,6 +438,7 @@
       <div
         class="node-wrapper"
         class:selected={selectedNodeId === node.id}
+        class:node-sub-canvas={node.type === 'sub-canvas'}
         style="left: {node.position.x}px; top: {node.position.y}px; width: {size.width}px; height: {size.height}px;"
         onmousedown={(e) => handleNodeMouseDown(e, node.id)}
         oncontextmenu={(e) => handleNodeContextMenu(e, node.id)}
@@ -400,6 +480,8 @@
         <div class="node-content">
           {#if node.type === 'text'}
             <TextCard {node} />
+          {:else if node.type === 'sub-canvas'}
+            <SubCanvasCard {node} onnavigate={(id) => canvasStore.navigateInto(id)} />
           {/if}
         </div>
 
@@ -432,12 +514,24 @@
 {/if}
 
 <style>
+  /* Obsidian-like canvas CSS variables */
+  .canvas-container {
+    --canvas-bg: var(--surface-1, #1e1e2e);
+    --canvas-dot: rgba(255,255,255,0.06);
+    --canvas-node-bg: var(--surface-2, #252535);
+    --canvas-border: rgba(255,255,255,0.08);
+    --canvas-border-strong: rgba(255,255,255,0.18);
+    --canvas-accent: rgba(255,255,255,0.3);
+    --canvas-select: rgba(180,160,255,0.8);
+    --canvas-port: rgba(180,160,255,0.7);
+  }
+
   .canvas-container {
     position: relative;
     width: 100%;
     height: 100%;
-    background-color: var(--surface-1, #1a1a2e);
-    background-image: radial-gradient(circle, var(--border-color, rgba(255,255,255,0.1)) 1px, transparent 1px);
+    background-color: var(--canvas-bg);
+    background-image: radial-gradient(circle, var(--canvas-dot) 1px, transparent 1px);
     background-size: 24px 24px;
     overflow: hidden;
     cursor: default;
@@ -445,6 +539,72 @@
 
   .canvas-container.panning {
     cursor: grab;
+  }
+
+  /* Breadcrumb navigation */
+  .breadcrumb {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 50;
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    padding: 6px var(--space-3, 1rem);
+    background: rgba(0,0,0,0.45);
+    backdrop-filter: blur(6px);
+    border-bottom: 1px solid var(--canvas-border);
+    font-size: var(--font-size-0, 0.75rem);
+    font-family: var(--font-mono);
+  }
+
+  .breadcrumb-item {
+    color: var(--text-2, #a0a0b0);
+    max-width: 140px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .breadcrumb-link {
+    background: none;
+    border: none;
+    padding: 0 2px;
+    cursor: pointer;
+    color: var(--text-2, #a0a0b0);
+    font-family: var(--font-mono);
+    font-size: var(--font-size-0, 0.75rem);
+    transition: color var(--transition-fast);
+  }
+
+  .breadcrumb-link:hover {
+    color: var(--text-1, #e0e0e0);
+  }
+
+  .breadcrumb-current {
+    color: var(--text-1, #e0e0e0);
+  }
+
+  .breadcrumb-sep {
+    color: var(--text-3, #606070);
+  }
+
+  .breadcrumb-back {
+    margin-left: auto;
+    background: none;
+    border: 1px solid var(--canvas-border, rgba(255,255,255,0.08));
+    border-radius: var(--radius-2, 4px);
+    color: var(--text-2);
+    font-size: var(--font-size-0, 0.75rem);
+    padding: 2px 8px;
+    cursor: pointer;
+    transition: background var(--transition-fast), color var(--transition-fast);
+  }
+
+  .breadcrumb-back:hover {
+    background: var(--surface-3, #3a3a4a);
+    color: var(--text-1);
   }
 
   .viewport {
@@ -469,23 +629,28 @@
   .node-wrapper {
     position: absolute;
     cursor: move;
-    border-radius: var(--radius-2, 8px);
-    border: 1px solid var(--border-color, rgba(255,255,255,0.1));
-    background: var(--surface-2, #16213e);
-    box-shadow: var(--shadow-2, 0 4px 8px rgba(0,0,0,0.5));
+    border-radius: var(--radius-2, 4px);
+    border: 1px solid var(--canvas-border, rgba(255,255,255,0.08));
+    background: var(--canvas-node-bg, #252535);
+    box-shadow: 0 2px 6px rgba(0,0,0,0.4);
     transition: box-shadow 0.15s ease, border-color 0.15s ease;
     overflow: hidden;
     z-index: 2;
   }
 
   .node-wrapper:hover {
-    border-color: var(--border-color-strong, rgba(255,255,255,0.25));
-    box-shadow: var(--shadow-3, 0 8px 24px rgba(0,0,0,0.6));
+    border-color: var(--canvas-border-strong, rgba(255,255,255,0.18));
+    box-shadow: 0 4px 14px rgba(0,0,0,0.5);
   }
 
   .node-wrapper.selected {
-    border-color: var(--brand, #00d4ff);
-    box-shadow: 0 0 0 2px var(--brand, #00d4ff), var(--shadow-3, 0 8px 24px rgba(0,0,0,0.6));
+    border-color: var(--canvas-select, rgba(180,160,255,0.8));
+    box-shadow: 0 0 0 1px var(--canvas-select, rgba(180,160,255,0.8)), 0 4px 14px rgba(0,0,0,0.5);
+  }
+
+  /* Sub-canvas nodes get a subtle left border accent */
+  .node-sub-canvas {
+    border-left: 2px solid rgba(180,160,255,0.35);
   }
 
   .node-content {
@@ -496,10 +661,10 @@
   /* Ports */
   .port {
     position: absolute;
-    width: 12px;
-    height: 12px;
-    background: var(--surface-3, #0f3460);
-    border: 2px solid var(--brand, #00d4ff);
+    width: 10px;
+    height: 10px;
+    background: var(--canvas-node-bg, #252535);
+    border: 1.5px solid var(--canvas-port, rgba(180,160,255,0.5));
     border-radius: 50%;
     cursor: crosshair;
     z-index: 10;
@@ -508,15 +673,15 @@
 
   .port:hover, .port-highlight {
     transform: scale(1.4);
-    background: var(--brand, #00d4ff);
+    background: var(--canvas-port, rgba(180,160,255,0.5));
   }
 
   .input-port {
-    left: -7px;
+    left: -6px;
   }
 
   .output-port {
-    right: -7px;
+    right: -6px;
   }
 
   /* Resize handle */
@@ -524,39 +689,41 @@
     position: absolute;
     bottom: 0;
     right: 0;
-    width: 16px;
-    height: 16px;
+    width: 14px;
+    height: 14px;
     cursor: nwse-resize;
     z-index: 10;
     background: linear-gradient(
       135deg,
       transparent 40%,
-      var(--text-3, #606070) 40%,
-      var(--text-3, #606070) 50%,
+      var(--text-3, rgba(255,255,255,0.2)) 40%,
+      var(--text-3, rgba(255,255,255,0.2)) 50%,
       transparent 50%,
       transparent 70%,
-      var(--text-3, #606070) 70%,
-      var(--text-3, #606070) 80%,
+      var(--text-3, rgba(255,255,255,0.2)) 70%,
+      var(--text-3, rgba(255,255,255,0.2)) 80%,
       transparent 80%
     );
-    opacity: 0.4;
-    border-radius: 0 0 8px 0;
+    opacity: 0.35;
+    border-radius: 0 0 4px 0;
   }
 
   .resize-handle:hover {
-    opacity: 0.8;
+    opacity: 0.7;
   }
 
   .zoom-indicator {
     position: absolute;
     bottom: var(--space-3, 12px);
     right: var(--space-3, 12px);
-    background: var(--surface-2, rgba(0,0,0,0.5));
-    color: var(--text-2, #aaa);
-    font-size: 11px;
+    background: rgba(0,0,0,0.4);
+    color: var(--text-3, rgba(255,255,255,0.35));
+    font-size: 10px;
+    font-family: var(--font-mono);
     padding: 2px 6px;
-    border-radius: 4px;
+    border-radius: 3px;
     pointer-events: none;
     z-index: 100;
+    letter-spacing: 0.05em;
   }
 </style>

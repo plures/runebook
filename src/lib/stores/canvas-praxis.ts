@@ -4,12 +4,51 @@
 import { createPraxisEngine, defineEvent, defineRule, PraxisRegistry } from '@plures/praxis';
 import { createPraxisStore } from '@plures/praxis/svelte';
 import type { PraxisState, PraxisEvent } from '@plures/praxis';
-import type { Canvas, CanvasNode, Connection } from '../types/canvas';
+import type { Canvas, CanvasNode, Connection, SubCanvasNode } from '../types/canvas';
 
 // Define the canvas context type
 export interface CanvasContext {
   canvas: Canvas;
   nodeData: Record<string, any>; // Node output data: `${nodeId}:${portId}` -> data
+  /** Navigation path: array of SubCanvasNode IDs from root to current level */
+  navigationPath: string[];
+}
+
+// ---------------------------------------------------------------------------
+// Path-aware canvas helpers
+// ---------------------------------------------------------------------------
+
+/** Return the canvas at the given navigation path (or root if path is empty). */
+export function getCanvasAtPath(ctx: CanvasContext, path: string[]): Canvas {
+  let canvas = ctx.canvas;
+  for (const nodeId of path) {
+    const node = canvas.nodes.find(n => n.id === nodeId) as SubCanvasNode | undefined;
+    if (!node || node.type !== 'sub-canvas') break;
+    canvas = node.canvas;
+  }
+  return canvas;
+}
+
+/** Apply a mutation to the canvas at the given navigation path. */
+function mutateCanvasAtPath(ctx: CanvasContext, path: string[], mutate: (canvas: Canvas) => void): void {
+  if (path.length === 0) {
+    mutate(ctx.canvas);
+    return;
+  }
+  const walk = (canvas: Canvas, depth: number): void => {
+    if (depth === path.length) {
+      mutate(canvas);
+      return;
+    }
+    const idx = canvas.nodes.findIndex(n => n.id === path[depth]);
+    const node = canvas.nodes[idx] as SubCanvasNode | undefined;
+    if (!node || node.type !== 'sub-canvas') return;
+    // Clone the sub-canvas so Praxis reactivity picks up the change
+    const subCanvas = { ...node.canvas, nodes: [...node.canvas.nodes], connections: [...node.canvas.connections] };
+    walk(subCanvas, depth + 1);
+    (canvas.nodes[idx] as SubCanvasNode) = { ...node, canvas: subCanvas };
+  };
+  walk(ctx.canvas, 0);
 }
 
 // Define events for canvas operations
@@ -23,6 +62,11 @@ export const LoadCanvasEvent = defineEvent<'LOAD_CANVAS', { canvas: Canvas }>('L
 export const ClearCanvasEvent = defineEvent<'CLEAR_CANVAS', {}>('CLEAR_CANVAS');
 export const UpdateNodeDataEvent = defineEvent<'UPDATE_NODE_DATA', { nodeId: string; portId: string; data: any }>('UPDATE_NODE_DATA');
 
+// Navigation events
+export const NavigateIntoEvent = defineEvent<'NAVIGATE_INTO', { nodeId: string }>('NAVIGATE_INTO');
+export const NavigateOutEvent = defineEvent<'NAVIGATE_OUT', Record<string, never>>('NAVIGATE_OUT');
+export const NavigateToRootEvent = defineEvent<'NAVIGATE_TO_ROOT', Record<string, never>>('NAVIGATE_TO_ROOT');
+
 // Define rules for canvas operations
 const addNodeRule = defineRule<CanvasContext>({
   id: 'canvas.addNode',
@@ -31,7 +75,9 @@ const addNodeRule = defineRule<CanvasContext>({
     const evt = events.find(AddNodeEvent.is);
     if (!evt) return [];
     
-    state.context.canvas.nodes.push(evt.payload.node);
+    mutateCanvasAtPath(state.context, state.context.navigationPath, canvas => {
+      canvas.nodes.push(evt.payload.node);
+    });
     return [];
   },
 });
@@ -44,12 +90,14 @@ const removeNodeRule = defineRule<CanvasContext>({
     if (!evt) return [];
     
     const { nodeId } = evt.payload;
-    state.context.canvas.nodes = state.context.canvas.nodes.filter(n => n.id !== nodeId);
-    state.context.canvas.connections = state.context.canvas.connections.filter(
-      c => c.from !== nodeId && c.to !== nodeId
-    );
+    mutateCanvasAtPath(state.context, state.context.navigationPath, canvas => {
+      canvas.nodes = canvas.nodes.filter(n => n.id !== nodeId);
+      canvas.connections = canvas.connections.filter(
+        c => c.from !== nodeId && c.to !== nodeId
+      );
+    });
     
-    // Remove node data
+    // Remove node data (always at root-level nodeData)
     const prefix = `${nodeId}:`;
     state.context.nodeData = Object.fromEntries(
       Object.entries(state.context.nodeData).filter(([key]) => !key.startsWith(prefix))
@@ -67,13 +115,15 @@ const updateNodeRule = defineRule<CanvasContext>({
     if (!evt) return [];
     
     const { nodeId, updates } = evt.payload;
-    const nodeIndex = state.context.canvas.nodes.findIndex(n => n.id === nodeId);
-    if (nodeIndex !== -1) {
-      state.context.canvas.nodes[nodeIndex] = {
-        ...state.context.canvas.nodes[nodeIndex],
-        ...updates
-      } as CanvasNode;
-    }
+    mutateCanvasAtPath(state.context, state.context.navigationPath, canvas => {
+      const nodeIndex = canvas.nodes.findIndex(n => n.id === nodeId);
+      if (nodeIndex !== -1) {
+        canvas.nodes[nodeIndex] = {
+          ...canvas.nodes[nodeIndex],
+          ...updates
+        } as CanvasNode;
+      }
+    });
     
     return [];
   },
@@ -87,10 +137,12 @@ const updateNodePositionRule = defineRule<CanvasContext>({
     if (!evt) return [];
     
     const { nodeId, x, y } = evt.payload;
-    const nodeIndex = state.context.canvas.nodes.findIndex(n => n.id === nodeId);
-    if (nodeIndex !== -1) {
-      state.context.canvas.nodes[nodeIndex].position = { x, y };
-    }
+    mutateCanvasAtPath(state.context, state.context.navigationPath, canvas => {
+      const nodeIndex = canvas.nodes.findIndex(n => n.id === nodeId);
+      if (nodeIndex !== -1) {
+        canvas.nodes[nodeIndex].position = { x, y };
+      }
+    });
     
     return [];
   },
@@ -103,7 +155,9 @@ const addConnectionRule = defineRule<CanvasContext>({
     const evt = events.find(AddConnectionEvent.is);
     if (!evt) return [];
     
-    state.context.canvas.connections.push(evt.payload.connection);
+    mutateCanvasAtPath(state.context, state.context.navigationPath, canvas => {
+      canvas.connections.push(evt.payload.connection);
+    });
     return [];
   },
 });
@@ -116,9 +170,11 @@ const removeConnectionRule = defineRule<CanvasContext>({
     if (!evt) return [];
     
     const { from, to, fromPort, toPort } = evt.payload;
-    state.context.canvas.connections = state.context.canvas.connections.filter(
-      c => !(c.from === from && c.to === to && c.fromPort === fromPort && c.toPort === toPort)
-    );
+    mutateCanvasAtPath(state.context, state.context.navigationPath, canvas => {
+      canvas.connections = canvas.connections.filter(
+        c => !(c.from === from && c.to === to && c.fromPort === fromPort && c.toPort === toPort)
+      );
+    });
     
     return [];
   },
@@ -132,6 +188,7 @@ const loadCanvasRule = defineRule<CanvasContext>({
     if (!evt) return [];
     
     state.context.canvas = evt.payload.canvas;
+    state.context.navigationPath = [];
     return [];
   },
 });
@@ -152,6 +209,7 @@ const clearCanvasRule = defineRule<CanvasContext>({
       version: '1.0.0'
     };
     state.context.nodeData = {};
+    state.context.navigationPath = [];
     
     return [];
   },
@@ -171,6 +229,39 @@ const updateNodeDataRule = defineRule<CanvasContext>({
   },
 });
 
+const navigateIntoRule = defineRule<CanvasContext>({
+  id: 'canvas.navigateInto',
+  description: 'Navigate into a sub-canvas node',
+  impl: (state, events) => {
+    const evt = events.find(NavigateIntoEvent.is);
+    if (!evt) return [];
+    state.context.navigationPath = [...state.context.navigationPath, evt.payload.nodeId];
+    return [];
+  },
+});
+
+const navigateOutRule = defineRule<CanvasContext>({
+  id: 'canvas.navigateOut',
+  description: 'Navigate out of the current sub-canvas',
+  impl: (state, events) => {
+    const evt = events.find(NavigateOutEvent.is);
+    if (!evt) return [];
+    state.context.navigationPath = state.context.navigationPath.slice(0, -1);
+    return [];
+  },
+});
+
+const navigateToRootRule = defineRule<CanvasContext>({
+  id: 'canvas.navigateToRoot',
+  description: 'Navigate back to the root canvas',
+  impl: (state, events) => {
+    const evt = events.find(NavigateToRootEvent.is);
+    if (!evt) return [];
+    state.context.navigationPath = [];
+    return [];
+  },
+});
+
 // Create the registry and register all rules
 const registry = new PraxisRegistry<CanvasContext>();
 registry.registerRule(addNodeRule);
@@ -182,6 +273,9 @@ registry.registerRule(removeConnectionRule);
 registry.registerRule(loadCanvasRule);
 registry.registerRule(clearCanvasRule);
 registry.registerRule(updateNodeDataRule);
+registry.registerRule(navigateIntoRule);
+registry.registerRule(navigateOutRule);
+registry.registerRule(navigateToRootRule);
 
 // Create the reactive engine with initial state
 export const canvasEngine = createPraxisEngine<CanvasContext>({
@@ -194,7 +288,8 @@ export const canvasEngine = createPraxisEngine<CanvasContext>({
       connections: [],
       version: '1.0.0'
     },
-    nodeData: {}
+    nodeData: {},
+    navigationPath: [],
   },
   registry
 });
@@ -249,6 +344,23 @@ export const canvasPraxisStore = {
   
   updateNodeData: (nodeId: string, portId: string, data: any) => {
     canvasEngine.step([UpdateNodeDataEvent.create({ nodeId, portId, data })]);
+  },
+  
+  // Navigation
+  navigateInto: (nodeId: string) => {
+    canvasEngine.step([NavigateIntoEvent.create({ nodeId })]);
+  },
+  
+  navigateOut: () => {
+    canvasEngine.step([NavigateOutEvent.create({} as Record<string, never>)]);
+  },
+  
+  navigateToRoot: () => {
+    canvasEngine.step([NavigateToRootEvent.create({} as Record<string, never>)]);
+  },
+  
+  get navigationPath() {
+    return canvasEngine.getContext().navigationPath;
   },
   
   // Helper to get node input data from connections

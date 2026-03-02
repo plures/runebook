@@ -3,34 +3,36 @@
  *
  * Defines the global CSS custom properties (design tokens) used across
  * all Plures applications and components.
+ *
+ * Palette inspired by Obsidian's calm, utilitarian aesthetic.
  */
 
 :root {
   /* ── Surface ───────────────────────────────────────────────── */
-  --surface-1: #1a1a2e;
-  --surface-2: #16213e;
-  --surface-3: #0f3460;
-  --surface-4: #533483;
+  --surface-1: #1e1e2e;
+  --surface-2: #252535;
+  --surface-3: #313145;
+  --surface-4: #3e3e5a;
 
   /* ── Text ──────────────────────────────────────────────────── */
-  --text-1: #e0e0e0;
-  --text-2: #a0a0b0;
-  --text-3: #606070;
+  --text-1: #cdd6f4;
+  --text-2: #8c8caa;
+  --text-3: #4a4a64;
 
   /* ── Brand / Accent ────────────────────────────────────────── */
-  --brand: #00d4ff;
-  --brand-2: #7b2fff;
-  --accent: #ff6b6b;
+  --brand: #b4a0ff;
+  --brand-2: #7c6fa0;
+  --accent: #f28b82;
 
   /* ── Status ────────────────────────────────────────────────── */
-  --success: #4caf50;
-  --warning: #ff9800;
-  --error: #f44336;
-  --info: #2196f3;
+  --success: #a6e3a1;
+  --warning: #f9e2af;
+  --error: #f38ba8;
+  --info: #89b4fa;
 
   /* ── Border ────────────────────────────────────────────────── */
-  --border-color: rgba(255, 255, 255, 0.1);
-  --border-color-strong: rgba(255, 255, 255, 0.25);
+  --border-color: rgba(255, 255, 255, 0.08);
+  --border-color-strong: rgba(255, 255, 255, 0.18);
 
   /* ── Spacing ───────────────────────────────────────────────── */
   --space-1: 0.25rem;
@@ -59,8 +61,8 @@
 
   /* ── Shadow ────────────────────────────────────────────────── */
   --shadow-1: 0 1px 2px rgba(0, 0, 0, 0.4);
-  --shadow-2: 0 4px 8px rgba(0, 0, 0, 0.5);
-  --shadow-3: 0 8px 24px rgba(0, 0, 0, 0.6);
+  --shadow-2: 0 2px 6px rgba(0, 0, 0, 0.5);
+  --shadow-3: 0 4px 14px rgba(0, 0, 0, 0.6);
 
   /* ── Transition ─────────────────────────────────────────────── */
   --transition-fast: 100ms ease;
