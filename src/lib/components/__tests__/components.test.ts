@@ -288,6 +288,22 @@ describe('TransformNode', () => {
     await new Promise(r => setTimeout(r, 50));
     expect(container.querySelector('.error-message')).toBeTruthy();
   });
+
+  it('should block code execution outside Tauri context (no window.__TAURI__)', async () => {
+    // In the test environment (happy-dom), __TAURI__ is not present, so execution
+    // should be blocked and produce the context-guard error message.
+    const transform = makeTransformNode({ id: 'guard-transform' });
+    canvasStore.addNode(makeInputNode({ id: 'guard-input' }));
+    canvasStore.addNode(transform);
+    canvasStore.addConnection({ from: 'guard-input', fromPort: 'value', to: 'guard-transform', toPort: 'input' });
+    updateNodeData('guard-input', 'value', [1, 2, 3]);
+
+    const { container } = render(TransformNode, { node: transform });
+    await new Promise(r => setTimeout(r, 50));
+    const errorMsg = container.querySelector('.error-message');
+    expect(errorMsg).toBeTruthy();
+    expect(errorMsg?.textContent).toContain('desktop app');
+  });
 });
 
 describe('Canvas', () => {

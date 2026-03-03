@@ -19,6 +19,13 @@
   // which would otherwise re-trigger this same effect.
   let lastInputSig = '';
 
+  // Runtime gate: code execution is only permitted in the Tauri desktop context.
+  // In a browser/web context, canvases can be loaded from untrusted sources, so
+  // running new Function() would be code-execution-via-data.
+  function isTauriContext(): boolean {
+    return typeof window !== 'undefined' && '__TAURI__' in window;
+  }
+
   // Subscribe to node data changes and apply transformation
   $effect(() => {
     const canvas = $canvasStore;
@@ -39,7 +46,13 @@
   async function applyTransform(inputData: any) {
     if (!node.code.trim()) {
       output = inputData;
-      updateNodeData(node.id, 'output', inputData);
+      updateNodeData(node.id, node.outputs[0]?.id ?? 'output', inputData);
+      return;
+    }
+
+    // Refuse to run arbitrary code outside the trusted Tauri desktop context.
+    if (!isTauriContext()) {
+      error = 'Transform code execution is only available in the desktop app';
       return;
     }
 
@@ -52,8 +65,8 @@
       switch (node.transformType) {
         case 'map':
           if (Array.isArray(inputData)) {
-            // Note: Using Function constructor allows user-defined transformations.
-            // Intended for local/desktop (Tauri) use only — not for untrusted input.
+            // new Function is intentional: TransformNode is a user-scripting sandbox
+            // in a Tauri (local desktop) context — guarded by isTauriContext() above.
             const mapFn = new Function('item', 'index', `"use strict"; return (${node.code})`);
             result = inputData.map((item, index) => mapFn(item, index));
           } else {
@@ -96,7 +109,7 @@
       }
 
       output = result;
-      updateNodeData(node.id, 'output', result);
+      updateNodeData(node.id, node.outputs[0]?.id ?? 'output', result);
     } catch (e) {
       error = e instanceof Error ? e.message : String(e);
       output = '';
