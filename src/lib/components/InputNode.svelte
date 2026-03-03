@@ -13,6 +13,14 @@
 
   let value = $state(node.value ?? '');
 
+  // Keep local value in sync when node.value changes externally (e.g. load, undo/redo).
+  $effect(() => {
+    const nodeValue = node.value ?? '';
+    if (nodeValue !== value) {
+      value = nodeValue;
+    }
+  });
+
   $effect(() => {
     // Capture value outside untrack to establish it as the only reactive
     // dependency. node properties are accessed inside untrack to prevent an
