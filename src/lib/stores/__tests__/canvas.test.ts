@@ -161,3 +161,45 @@ describe('getNodeInputData helper', () => {
     expect(result).toBeUndefined();
   });
 });
+
+describe('makeConnectionId', () => {
+  it('should generate a handle-based ID', async () => {
+    const { makeConnectionId } = await import('../canvas');
+    expect(makeConnectionId('n1', 'out', 'n2', 'in')).toBe('e-n1-out-n2-in');
+  });
+
+  it('should produce distinct IDs for different port combinations', async () => {
+    const { makeConnectionId } = await import('../canvas');
+    const id1 = makeConnectionId('n1', 'out', 'n2', 'in');
+    const id2 = makeConnectionId('n1', 'out2', 'n2', 'in');
+    const id3 = makeConnectionId('n1', 'out', 'n2', 'in2');
+    expect(id1).not.toBe(id2);
+    expect(id1).not.toBe(id3);
+    expect(id2).not.toBe(id3);
+  });
+});
+
+describe('canvasStore connection deduplication', () => {
+  beforeEach(() => {
+    canvasStore.clear();
+  });
+
+  it('should deduplicate connections with the same endpoints', () => {
+    const conn: Connection = { from: 'n1', to: 'n2', fromPort: 'out', toPort: 'in' };
+    canvasStore.addConnection(conn);
+    canvasStore.addConnection(conn);
+    const values: any[] = [];
+    const unsub = canvasStore.subscribe(c => values.push(c));
+    unsub();
+    expect(values[0].connections).toHaveLength(1);
+  });
+
+  it('should auto-generate a handle-based ID for connections', () => {
+    const conn: Connection = { from: 'n1', to: 'n2', fromPort: 'out', toPort: 'in' };
+    canvasStore.addConnection(conn);
+    const values: any[] = [];
+    const unsub = canvasStore.subscribe(c => values.push(c));
+    unsub();
+    expect(values[0].connections[0].id).toBe('e-n1-out-n2-in');
+  });
+});

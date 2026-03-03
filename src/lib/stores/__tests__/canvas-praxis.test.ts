@@ -173,3 +173,20 @@ describe('canvas-praxis store', () => {
     });
   });
 });
+
+describe('makeConnectionId', () => {
+  it('should generate a handle-based ID', async () => {
+    const { makeConnectionId } = await import('../canvas-praxis');
+    expect(makeConnectionId('n1', 'out', 'n2', 'in')).toBe('e-n1-out-n2-in');
+  });
+
+  it('should produce distinct IDs for different port combinations', async () => {
+    const { makeConnectionId } = await import('../canvas-praxis');
+    const id1 = makeConnectionId('n1', 'out', 'n2', 'in');
+    const id2 = makeConnectionId('n1', 'out2', 'n2', 'in');
+    const id3 = makeConnectionId('n1', 'out', 'n2', 'in2');
+    expect(id1).not.toBe(id2);
+    expect(id1).not.toBe(id3);
+    expect(id2).not.toBe(id3);
+  });
+});
