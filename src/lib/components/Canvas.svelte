@@ -55,10 +55,13 @@
     const canvas = $canvasStore;
 
     untrack(() => {
+      // Build a node lookup map once per effect run to avoid O(E * N) scans.
+      const nodeById = new Map(canvas.nodes.map((n) => [n.id, n] as const));
+
       for (const conn of canvas.connections) {
         const sourceValue = nodeData[`${conn.from}:${conn.fromPort}`];
         if (sourceValue === undefined) continue;
-        const targetNode = canvas.nodes.find((n) => n.id === conn.to);
+        const targetNode = nodeById.get(conn.to);
         if (!targetNode || targetNode.type !== 'display') continue;
         const currentContent = (targetNode as DisplayNode).content;
         if (currentContent === sourceValue) continue;
