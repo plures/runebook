@@ -17,8 +17,17 @@
   let isRunning = $state(false);
   let error = $state<string | null>(null);
 
+  function isTauriContext(): boolean {
+    return typeof window !== 'undefined' && '__TAURI__' in window;
+  }
+
   async function executeCommand() {
     if (isRunning) return;
+
+    if (!isTauriContext()) {
+      error = 'Terminal execution is only available in the desktop app';
+      return;
+    }
 
     isRunning = true;
     error = null;

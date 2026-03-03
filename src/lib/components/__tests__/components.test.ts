@@ -151,27 +151,53 @@ describe('TerminalNode', () => {
     expect(alertRegion?.getAttribute('aria-atomic')).toBe('true');
   });
 
-  it('should show error line with ✗ prefix after a failed command', async () => {
-    const { invoke } = await import('@tauri-apps/api/core') as any;
-    invoke.mockRejectedValueOnce(new Error('Command failed'));
+  it('should show error line with ✗ prefix when context guard fires (non-Tauri)', async () => {
     const { container } = render(TerminalNode, { node: makeTerminalNode() });
     const runButton = container.querySelector('.run-btn') as HTMLButtonElement;
     await fireEvent.click(runButton);
-    // Wait for async command to complete
-    await new Promise(r => setTimeout(r, 50));
-    const errorLine = container.querySelector('.error-line');
-    expect(errorLine?.textContent).toMatch(/✗/);
+    await waitFor(() => {
+      const errorLine = container.querySelector('.error-line');
+      expect(errorLine?.textContent).toMatch(/✗/);
+    });
   });
 
-  it('should announce error in the aria-live region after a failed command', async () => {
-    const { invoke } = await import('@tauri-apps/api/core') as any;
-    invoke.mockRejectedValueOnce(new Error('Command failed'));
+  it('should announce guard error in the aria-live region (non-Tauri)', async () => {
     const { container } = render(TerminalNode, { node: makeTerminalNode() });
     const runButton = container.querySelector('.run-btn') as HTMLButtonElement;
     await fireEvent.click(runButton);
-    await new Promise(r => setTimeout(r, 50));
-    const alertRegion = container.querySelector('[role="alert"]');
-    expect(alertRegion?.textContent).toContain('Command failed');
+    await waitFor(() => {
+      const alertRegion = container.querySelector('[role="alert"]');
+      expect(alertRegion?.textContent).toContain('desktop app');
+    });
+  });
+
+  describe('with Tauri context (simulated desktop)', () => {
+    beforeEach(() => { (window as any).__TAURI__ = {}; });
+    afterEach(() => { delete (window as any).__TAURI__; });
+
+    it('should show error line with ✗ prefix after a failed command', async () => {
+      const { invoke } = await import('@tauri-apps/api/core') as any;
+      invoke.mockRejectedValueOnce(new Error('Command failed'));
+      const { container } = render(TerminalNode, { node: makeTerminalNode() });
+      const runButton = container.querySelector('.run-btn') as HTMLButtonElement;
+      await fireEvent.click(runButton);
+      await waitFor(() => {
+        const errorLine = container.querySelector('.error-line');
+        expect(errorLine?.textContent).toMatch(/✗/);
+      });
+    });
+
+    it('should announce error in the aria-live region after a failed command', async () => {
+      const { invoke } = await import('@tauri-apps/api/core') as any;
+      invoke.mockRejectedValueOnce(new Error('Command failed'));
+      const { container } = render(TerminalNode, { node: makeTerminalNode() });
+      const runButton = container.querySelector('.run-btn') as HTMLButtonElement;
+      await fireEvent.click(runButton);
+      await waitFor(() => {
+        const alertRegion = container.querySelector('[role="alert"]');
+        expect(alertRegion?.textContent).toContain('Command failed');
+      });
+    });
   });
 });
 
@@ -286,8 +312,9 @@ describe('TransformNode', () => {
     updateNodeData('err-input', 'value', 'not-an-array');
 
     const { container } = render(TransformNode, { node: transform });
-    await new Promise(r => setTimeout(r, 50));
-    expect(container.querySelector('.error-message')).toBeTruthy();
+    await waitFor(() => {
+      expect(container.querySelector('.error-message')).toBeTruthy();
+    });
   });
 
   it('should block code execution outside Tauri context (no window.__TAURI__)', async () => {
@@ -300,10 +327,11 @@ describe('TransformNode', () => {
     updateNodeData('guard-input', 'value', [1, 2, 3]);
 
     const { container } = render(TransformNode, { node: transform });
-    await new Promise(r => setTimeout(r, 50));
-    const errorMsg = container.querySelector('.error-message');
-    expect(errorMsg).toBeTruthy();
-    expect(errorMsg?.textContent).toContain('desktop app');
+    await waitFor(() => {
+      const errorMsg = container.querySelector('.error-message');
+      expect(errorMsg).toBeTruthy();
+      expect(errorMsg?.textContent).toContain('desktop app');
+    });
   });
 });
 

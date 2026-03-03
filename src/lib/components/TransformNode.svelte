@@ -18,6 +18,7 @@
   // the infinite loop caused by applyTransform writing to nodeDataStore
   // which would otherwise re-trigger this same effect.
   let lastInputSig = '';
+  let sigCounter = 0;
 
   // Runtime gate: code execution is only permitted in the Tauri desktop context.
   // In a browser/web context, canvases can be loaded from untrusted sources, so
@@ -35,12 +36,18 @@
     if (node.inputs && node.inputs.length > 0) {
       const inputData = getNodeInputData(node.id, node.inputs[0].id, canvas.connections, nodeData);
       if (inputData !== undefined) {
-        const sig = JSON.stringify({
-          inputData,
-          code: node.code,
-          transformType: node.transformType,
-          inputId: node.inputs[0].id
-        });
+        let sig: string;
+        try {
+          sig = JSON.stringify({
+            inputData,
+            code: node.code,
+            transformType: node.transformType,
+            inputId: node.inputs[0].id
+          });
+        } catch {
+          // Non-serializable input (circular refs, etc.) — use a counter to ensure re-run
+          sig = String(sigCounter++);
+        }
         if (lastInputSig === sig) return;
         lastInputSig = sig;
         applyTransform(inputData);
@@ -50,6 +57,8 @@
 
   async function applyTransform(inputData: any) {
     if (!node.code.trim()) {
+      error = '';
+      isProcessing = false;
       output = inputData;
       updateNodeData(node.id, node.outputs[0]?.id ?? 'output', inputData);
       return;
