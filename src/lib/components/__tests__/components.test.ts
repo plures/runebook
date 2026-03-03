@@ -3,6 +3,7 @@
 
 import { describe, it, expect, vi, afterEach, beforeEach } from 'vitest';
 import { render, cleanup, fireEvent, waitFor } from '@testing-library/svelte';
+import { get } from 'svelte/store';
 import { canvasStore, updateNodeData } from '../../stores/canvas';
 import { canvasPraxisStore } from '../../stores/canvas-praxis';
 
@@ -414,13 +415,9 @@ describe('Graph execution layer', () => {
     render(Canvas);
 
     await waitFor(() => {
-      let updatedContent = '';
-      const unsub = canvasStore.subscribe((c) => {
-        const node = c.nodes.find((n) => n.id === 'dst');
-        if (node && node.type === 'display') updatedContent = node.content as string;
-      });
-      unsub();
-      expect(updatedContent).toBe('hello');
+      const canvas = get(canvasStore);
+      const dst = canvas.nodes.find((n) => n.id === 'dst') as DisplayNodeType | undefined;
+      expect(dst?.content).toBe('hello');
     });
   });
 
@@ -435,13 +432,9 @@ describe('Graph execution layer', () => {
     render(Canvas);
 
     await waitFor(() => {
-      let updatedContent = '';
-      const unsub = canvasStore.subscribe((c) => {
-        const node = c.nodes.find((n) => n.id === 'disp-dst');
-        if (node && node.type === 'display') updatedContent = node.content as string;
-      });
-      unsub();
-      expect(updatedContent).toBe('terminal output');
+      const canvas = get(canvasStore);
+      const dst = canvas.nodes.find((n) => n.id === 'disp-dst') as DisplayNodeType | undefined;
+      expect(dst?.content).toBe('terminal output');
     });
   });
 
