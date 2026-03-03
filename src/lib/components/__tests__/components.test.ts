@@ -2,7 +2,7 @@
 // Component tests for RuneBook canvas components
 
 import { describe, it, expect, vi, afterEach, beforeEach } from 'vitest';
-import { render, cleanup, fireEvent } from '@testing-library/svelte';
+import { render, cleanup, fireEvent, waitFor } from '@testing-library/svelte';
 import { canvasStore, updateNodeData } from '../../stores/canvas';
 import { canvasPraxisStore } from '../../stores/canvas-praxis';
 
@@ -405,7 +405,7 @@ describe('Graph execution layer', () => {
     expect(container.querySelectorAll('.node-wrapper').length).toBe(2);
   });
 
-  it('should propagate InputNode value to connected DisplayNode after source update', () => {
+  it('should propagate InputNode value to connected DisplayNode after source update', async () => {
     canvasStore.clear();
     canvasStore.addNode(makeInputNode({ id: 'src', value: 'hello' }));
     canvasStore.addNode(makeDisplayNode({ id: 'dst', content: '' }));
@@ -413,16 +413,18 @@ describe('Graph execution layer', () => {
 
     render(Canvas);
 
-    let updatedContent = '';
-    const unsub = canvasStore.subscribe((c) => {
-      const node = c.nodes.find((n) => n.id === 'dst');
-      if (node && node.type === 'display') updatedContent = node.content as string;
+    await waitFor(() => {
+      let updatedContent = '';
+      const unsub = canvasStore.subscribe((c) => {
+        const node = c.nodes.find((n) => n.id === 'dst');
+        if (node && node.type === 'display') updatedContent = node.content as string;
+      });
+      unsub();
+      expect(updatedContent).toBe('hello');
     });
-    unsub();
-    expect(updatedContent).toBe('hello');
   });
 
-  it('should propagate TerminalNode output to connected DisplayNode after source update', () => {
+  it('should propagate TerminalNode output to connected DisplayNode after source update', async () => {
     canvasStore.clear();
     canvasStore.addNode(makeTerminalNode({ id: 'term-src', outputs: [{ id: 'stdout', name: 'stdout', type: 'output' }] }));
     canvasStore.addNode(makeDisplayNode({ id: 'disp-dst', content: '' }));
@@ -432,13 +434,15 @@ describe('Graph execution layer', () => {
 
     render(Canvas);
 
-    let updatedContent = '';
-    const unsub = canvasStore.subscribe((c) => {
-      const node = c.nodes.find((n) => n.id === 'disp-dst');
-      if (node && node.type === 'display') updatedContent = node.content as string;
+    await waitFor(() => {
+      let updatedContent = '';
+      const unsub = canvasStore.subscribe((c) => {
+        const node = c.nodes.find((n) => n.id === 'disp-dst');
+        if (node && node.type === 'display') updatedContent = node.content as string;
+      });
+      unsub();
+      expect(updatedContent).toBe('terminal output');
     });
-    unsub();
-    expect(updatedContent).toBe('terminal output');
   });
 
   it('should not update DisplayNode content when no connection exists', () => {
