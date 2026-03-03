@@ -76,7 +76,15 @@
 
   onMount(() => {
     if (node.autoStart) {
-      executeCommand();
+      const shouldRun = window.confirm(
+        `This terminal node is configured to run the following command automatically:\n\n` +
+        `${node.command} ${(node.args || []).join(' ')}\n\n` +
+        `Do you want to run it now?`
+      );
+
+      if (shouldRun) {
+        executeCommand();
+      }
     }
   });
 </script>
