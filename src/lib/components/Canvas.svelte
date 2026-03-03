@@ -60,9 +60,9 @@
         if (sourceValue === undefined) continue;
         const targetNode = canvas.nodes.find((n) => n.id === conn.to);
         if (!targetNode || targetNode.type !== 'display') continue;
-        const valueStr = String(sourceValue);
-        if ((targetNode as DisplayNode).content === valueStr) continue;
-        canvasStore.updateNode(conn.to, { content: valueStr } as Partial<CanvasNode>);
+        const currentContent = (targetNode as DisplayNode).content;
+        if (currentContent === sourceValue) continue;
+        canvasStore.updateNode(conn.to, { content: sourceValue } as Partial<CanvasNode>);
       }
     });
   });
