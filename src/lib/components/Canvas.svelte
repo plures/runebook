@@ -1,8 +1,13 @@
 <script lang="ts">
-  import { canvasStore } from '../stores/canvas';
+  import { untrack } from 'svelte';
+  import { canvasStore, nodeDataStore, makeConnectionId } from '../stores/canvas';
   import TextCard from './TextCard.svelte';
+  import TerminalNodeComponent from './TerminalNode.svelte';
+  import InputNodeComponent from './InputNode.svelte';
+  import DisplayNodeComponent from './DisplayNode.svelte';
+  import TransformNodeComponent from './TransformNode.svelte';
   import ContextMenu from './ContextMenu.svelte';
-  import type { CanvasNode, Connection, TextNode, ContextMenuItem } from '../types/canvas';
+  import type { CanvasNode, Connection, TextNode, TerminalNode, InputNode, DisplayNode, TransformNode, ContextMenuItem } from '../types/canvas';
 
   interface Props {
     tui?: boolean;
@@ -43,6 +48,24 @@
   let ctxMenu = $state<{ x: number; y: number; items: ContextMenuItem[] } | null>(null);
 
   const canvasData = $derived($canvasStore);
+
+  // Graph execution layer: propagate source node outputs → connected DisplayNode content
+  $effect(() => {
+    const nodeData = $nodeDataStore;
+    const canvas = $canvasStore;
+
+    untrack(() => {
+      for (const conn of canvas.connections) {
+        const sourceValue = nodeData[`${conn.from}:${conn.fromPort}`];
+        if (sourceValue === undefined) continue;
+        const targetNode = canvas.nodes.find((n) => n.id === conn.to);
+        if (!targetNode || targetNode.type !== 'display') continue;
+        const valueStr = String(sourceValue);
+        if ((targetNode as DisplayNode).content === valueStr) continue;
+        canvasStore.updateNode(conn.to, { content: valueStr } as Partial<CanvasNode>);
+      }
+    });
+  });
 
   // Convert screen coords to canvas coords
   function screenToCanvas(sx: number, sy: number) {
@@ -117,11 +140,16 @@
   function handlePortMouseUp(event: MouseEvent, nodeId: string, portId: string, portType: 'input' | 'output') {
     if (!isConnecting || !connectFrom || portType !== 'input') return;
     if (connectFrom.nodeId === nodeId) return;
+    const fromNodeId = connectFrom.nodeId;
+    const fromPortId = connectFrom.portId;
+
+    // Check for duplicate (defense-in-depth; store also deduplicates)
     const exists = canvasData.connections.some(
-      c => c.from === connectFrom!.nodeId && c.to === nodeId && c.fromPort === connectFrom!.portId && c.toPort === portId
+      c => c.from === fromNodeId && c.to === nodeId && c.fromPort === fromPortId && c.toPort === portId
     );
     if (!exists) {
-      canvasStore.addConnection({ from: connectFrom.nodeId, to: nodeId, fromPort: connectFrom.portId, toPort: portId });
+      const id = makeConnectionId(fromNodeId, fromPortId, nodeId, portId);
+      canvasStore.addConnection({ id, from: fromNodeId, to: nodeId, fromPort: fromPortId, toPort: portId });
     }
     isConnecting = false;
     connectFrom = null;
@@ -250,6 +278,10 @@
       y: event.clientY,
       items: [
         { label: '📝 Add Text Card', action: () => addTextCard(p.x, p.y) },
+        { label: '⚡ Add Terminal', action: () => addTerminalNode(p.x, p.y) },
+        { label: '📝 Add Input', action: () => addInputNode(p.x, p.y) },
+        { label: '📊 Add Display', action: () => addDisplayNode(p.x, p.y) },
+        { label: '🔄 Add Transform', action: () => addTransformNode(p.x, p.y) },
       ],
     };
   }
@@ -292,6 +324,67 @@
       inputs: [{ id: 'in', name: 'in', type: 'input' }],
       outputs: [{ id: 'out', name: 'out', type: 'output' }],
     } satisfies TextNode);
+  }
+
+  function addTerminalNode(x: number, y: number) {
+    const id = `terminal-${Date.now()}`;
+    canvasStore.addNode({
+      id,
+      type: 'terminal',
+      position: { x, y },
+      size: { width: 320, height: 280 },
+      label: 'Terminal',
+      command: 'echo',
+      args: ['Hello, RuneBook!'],
+      autoStart: false,
+      inputs: [],
+      outputs: [{ id: 'stdout', name: 'stdout', type: 'output' }],
+    } satisfies TerminalNode);
+  }
+
+  function addInputNode(x: number, y: number) {
+    const id = `input-${Date.now()}`;
+    canvasStore.addNode({
+      id,
+      type: 'input',
+      position: { x, y },
+      size: { width: 280, height: 160 },
+      label: 'Text Input',
+      inputType: 'text',
+      value: '',
+      inputs: [],
+      outputs: [{ id: 'value', name: 'value', type: 'output' }],
+    } satisfies InputNode);
+  }
+
+  function addDisplayNode(x: number, y: number) {
+    const id = `display-${Date.now()}`;
+    canvasStore.addNode({
+      id,
+      type: 'display',
+      position: { x, y },
+      size: { width: 320, height: 240 },
+      label: 'Display',
+      displayType: 'text',
+      content: '',
+      inputs: [{ id: 'input', name: 'input', type: 'input' }],
+      outputs: [],
+    } satisfies DisplayNode);
+  }
+
+  function addTransformNode(x: number, y: number) {
+    const id = `transform-${Date.now()}`;
+    canvasStore.addNode({
+      id,
+      type: 'transform',
+      position: { x, y },
+      size: { width: 320, height: 280 },
+      label: 'Transform',
+      transformType: 'map',
+      code: 'item',
+      inputs: [{ id: 'input', name: 'input', type: 'input' }],
+      outputs: [{ id: 'output', name: 'output', type: 'output' }],
+    } satisfies TransformNode);
   }
 
   function duplicateNode(nodeId: string) {
@@ -430,6 +523,14 @@
         <div class="node-content">
           {#if node.type === 'text'}
             <TextCard {node} />
+          {:else if node.type === 'terminal'}
+            <TerminalNodeComponent {node} {tui} />
+          {:else if node.type === 'input'}
+            <InputNodeComponent {node} {tui} />
+          {:else if node.type === 'display'}
+            <DisplayNodeComponent {node} {tui} />
+          {:else if node.type === 'transform'}
+            <TransformNodeComponent {node} {tui} />
           {/if}
         </div>
 

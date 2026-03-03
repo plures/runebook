@@ -8,6 +8,7 @@
     title?: string;
     onclick?: (e: MouseEvent) => void;
     class?: string;
+    'aria-label'?: string;
     children?: Snippet;
   }
 
@@ -18,6 +19,7 @@
     title,
     onclick,
     class: cls = '',
+    'aria-label': ariaLabel,
     children
   }: Props = $props();
 </script>
@@ -28,6 +30,7 @@
   {title}
   {onclick}
   data-tui={tui}
+  aria-label={ariaLabel || undefined}
 >
   {@render children?.()}
 </button>
