@@ -21,17 +21,20 @@
     // re-trigger this effect indefinitely.
     const currentValue = value;
     untrack(() => {
+      // Normalize the value once so outputs and persisted value stay in sync.
+      let outputValue: any = currentValue;
+      let persistedValue: any = currentValue;
+      if (node.inputType === 'number' || node.inputType === 'slider') {
+        const coerced = Number(currentValue);
+        const normalized = Number.isNaN(coerced) ? 0 : coerced;
+        outputValue = normalized;
+        persistedValue = normalized;
+      }
       if (node.outputs.length > 0) {
-        // Coerce number/slider values to Number (item 6)
-        let outputValue: any = currentValue;
-        if (node.inputType === 'number' || node.inputType === 'slider') {
-          const coerced = Number(currentValue);
-          outputValue = Number.isNaN(coerced) ? 0 : coerced;
-        }
         updateNodeData(node.id, node.outputs[0].id, outputValue);
       }
       // Persist value back to the canvas store so it survives save/load.
-      canvasStore.updateNode(node.id, { value: currentValue });
+      canvasStore.updateNode(node.id, { value: persistedValue });
     });
   });
 </script>
