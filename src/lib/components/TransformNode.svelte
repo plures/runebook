@@ -35,7 +35,12 @@
     if (node.inputs && node.inputs.length > 0) {
       const inputData = getNodeInputData(node.id, node.inputs[0].id, canvas.connections, nodeData);
       if (inputData !== undefined) {
-        const sig = JSON.stringify(inputData);
+        const sig = JSON.stringify({
+          inputData,
+          code: node.code,
+          transformType: node.transformType,
+          inputId: node.inputs[0].id
+        });
         if (lastInputSig === sig) return;
         lastInputSig = sig;
         applyTransform(inputData);
