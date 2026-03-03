@@ -1,3 +1,7 @@
+## [0.8.1] — 2026-03-03
+
+- fix: implement sequenced backlog — node types, graph execution layer, accessibility, edge IDs (#135) (f170973)
+
 ## [0.8.0] — 2026-03-02
 
 - feat: Phase 1 Obsidian Canvas baseline — design-dojo components only + multi-select (#132) (a6e67b5)
