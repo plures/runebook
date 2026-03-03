@@ -68,6 +68,10 @@
   function clearOutput() {
     output = [];
     error = null;
+
+    if (node.outputs.length > 0) {
+      updateNodeData(node.id, node.outputs[0].id, '');
+    }
   }
 
   onMount(() => {
