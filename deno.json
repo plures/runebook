@@ -1,0 +1,36 @@
+{
+  "fmt": {
+    "include": [
+      "src/**/*.ts",
+      "packages/**/*.ts",
+      "packages/**/*.js",
+      "scripts/**/*.ts",
+      "scripts/**/*.js",
+      "scripts/**/*.cjs",
+      "*.ts"
+    ],
+    "exclude": [
+      "node_modules/",
+      ".svelte-kit/",
+      "build/",
+      "dist/"
+    ],
+    "useTabs": false,
+    "indentWidth": 2,
+    "singleQuote": true,
+    "lineWidth": 100,
+    "proseWrap": "preserve"
+  },
+  "lint": {
+    "include": [
+      "src/**/*.ts",
+      "packages/**/*.ts"
+    ],
+    "exclude": [
+      "node_modules/",
+      ".svelte-kit/",
+      "build/",
+      "dist/"
+    ]
+  }
+}
