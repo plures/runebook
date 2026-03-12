@@ -3,9 +3,11 @@
     "include": [
       "src/**/*.ts",
       "packages/**/*.ts",
+      "packages/**/*.js",
       "scripts/**/*.ts",
-      "*.ts",
-      "*.js"
+      "scripts/**/*.js",
+      "scripts/**/*.cjs",
+      "*.ts"
     ],
     "exclude": [
       "node_modules/",
