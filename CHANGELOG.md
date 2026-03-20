@@ -1,3 +1,8 @@
+## [0.9.0] — 2026-03-20
+
+- feat: establish repository best practices compliance (practice-001, practice-003) (#137) (8895328)
+- ci: add PR lane event relay to centralized merge FSM (9e9be79)
+
 ## [0.8.1] — 2026-03-03
 
 - fix: implement sequenced backlog — node types, graph execution layer, accessibility, edge IDs (#135) (f170973)
