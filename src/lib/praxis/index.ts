@@ -61,3 +61,17 @@ export {
   MEMORY_PRESSURE_FACT,
   CLEANUP_REQUIRED_FACT,
 } from './resource-management';
+
+// Runtime — singleton engine instances wired to app lifecycle
+export {
+  canvasValidationEngine,
+  syncValidationNodes,
+  validateConnection,
+  executionPolicyEngine,
+  scheduleExecution,
+  componentRegistryEngine,
+  resourceManagementEngine,
+  requestTerminal,
+  releaseTerminal,
+} from './runtime';
+

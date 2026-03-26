@@ -74,6 +74,8 @@ export const CANVAS_STATE_INVALID_FACT = 'canvas.state.invalid';
 
 /**
  * Reject self-loops: a node must not connect to itself.
+ * Also resets any stale validation state from a prior evaluation so that
+ * subsequent calls on the same engine instance always start clean.
  *
  * inputRules category — connection request validation
  */
@@ -85,9 +87,13 @@ const selfLoopCheckRule = defineRule<CanvasValidationContext>({
     const evt = events.find(ValidateConnectionEvent.is);
     if (!evt) return RuleResult.skip('no VALIDATE_CONNECTION event');
 
+    // Reset stale validation state so each new VALIDATE_CONNECTION event
+    // starts from a clean slate, regardless of what happened previously.
+    state.context.pendingConnection = null;
+    state.context.validationResult = null;
+
     const { from, to } = evt.payload;
     if (from === to) {
-      state.context.pendingConnection = evt.payload;
       state.context.validationResult = {
         valid: false,
         reason: 'Self-loops are not allowed',
@@ -115,27 +121,7 @@ const portTypeCompatibilityRule = defineRule<CanvasValidationContext>({
     const evt = events.find(ValidateConnectionEvent.is);
     if (!evt) return RuleResult.skip('no VALIDATE_CONNECTION event');
 
-    // Reset stale validation state if it belongs to a different connection.
-    const prev = state.context.pendingConnection as
-      | {
-          from?: string;
-          fromPort?: string;
-          to?: string;
-          toPort?: string;
-        }
-      | undefined;
-    if (
-      prev &&
-      (
-        prev.from !== evt.payload.from ||
-        prev.fromPort !== evt.payload.fromPort ||
-        prev.to !== evt.payload.to ||
-        prev.toPort !== evt.payload.toPort
-      )
-    ) {
-      state.context.pendingConnection = undefined;
-      state.context.validationResult = undefined;
-    }
+    // Short-circuit: selfLoopCheckRule already flagged this connection as invalid.
     if (state.context.validationResult?.valid === false) return RuleResult.noop('already failed');
 
     const { from, fromPort, to, toPort } = evt.payload;

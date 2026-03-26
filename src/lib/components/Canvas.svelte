@@ -1,6 +1,7 @@
 <script lang="ts">
   import { untrack } from 'svelte';
   import { canvasStore, nodeDataStore, makeConnectionId } from '../stores/canvas';
+  import { syncValidationNodes, validateConnection, scheduleExecution } from '../praxis/runtime';
   import TextCard from './TextCard.svelte';
   import TerminalNodeComponent from './TerminalNode.svelte';
   import InputNodeComponent from './InputNode.svelte';
@@ -67,6 +68,15 @@
         if (currentContent === sourceValue) continue;
         canvasStore.updateNode(conn.to, { content: sourceValue } as Partial<CanvasNode>);
       }
+    });
+  });
+
+  // Keep the execution-policy engine in sync with the canvas graph so that
+  // topological order and cycle detection are always up-to-date.
+  $effect(() => {
+    const canvas = $canvasStore;
+    untrack(() => {
+      scheduleExecution(canvas.nodes, canvas.connections);
     });
   });
 
@@ -151,8 +161,13 @@
       c => c.from === fromNodeId && c.to === nodeId && c.fromPort === fromPortId && c.toPort === portId
     );
     if (!exists) {
-      const id = makeConnectionId(fromNodeId, fromPortId, nodeId, portId);
-      canvasStore.addConnection({ id, from: fromNodeId, to: nodeId, fromPort: fromPortId, toPort: portId });
+      // Validate the connection through the canvas-validation Praxis module
+      // before committing it to the store.
+      syncValidationNodes(canvasData.nodes);
+      if (validateConnection(fromNodeId, fromPortId, nodeId, portId)) {
+        const id = makeConnectionId(fromNodeId, fromPortId, nodeId, portId);
+        canvasStore.addConnection({ id, from: fromNodeId, to: nodeId, fromPort: fromPortId, toPort: portId });
+      }
     }
     isConnecting = false;
     connectFrom = null;
