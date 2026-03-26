@@ -219,21 +219,11 @@ const checkPortCompatibilityRule = defineRule<ComponentRegistryContext>({
 });
 
 // ---------------------------------------------------------------------------
-// Constraints
-// ---------------------------------------------------------------------------
-
-const registeredComponentsConstraint = defineConstraint<ComponentRegistryContext>({
-  id: 'component-registry.noRemovedComponents',
-  description: 'No active component instance may reference a removed component type',
-  check: _state => true, // enforced reactively via rules; constraint is a guard
-});
-
-// ---------------------------------------------------------------------------
 // Module
 // ---------------------------------------------------------------------------
 
 export const componentRegistryModule: PraxisModule<ComponentRegistryContext> = defineModule({
   rules: [registerComponentRule, unregisterComponentRule, checkPortCompatibilityRule],
-  constraints: [registeredComponentsConstraint],
+  constraints: [],
   meta: { name: 'component-registry', version: '1.0.0' },
 });
