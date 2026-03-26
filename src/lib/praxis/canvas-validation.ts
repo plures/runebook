@@ -114,6 +114,28 @@ const portTypeCompatibilityRule = defineRule<CanvasValidationContext>({
   impl: (state, events) => {
     const evt = events.find(ValidateConnectionEvent.is);
     if (!evt) return RuleResult.skip('no VALIDATE_CONNECTION event');
+
+    // Reset stale validation state if it belongs to a different connection.
+    const prev = state.context.pendingConnection as
+      | {
+          from?: string;
+          fromPort?: string;
+          to?: string;
+          toPort?: string;
+        }
+      | undefined;
+    if (
+      prev &&
+      (
+        prev.from !== evt.payload.from ||
+        prev.fromPort !== evt.payload.fromPort ||
+        prev.to !== evt.payload.to ||
+        prev.toPort !== evt.payload.toPort
+      )
+    ) {
+      state.context.pendingConnection = undefined;
+      state.context.validationResult = undefined;
+    }
     if (state.context.validationResult?.valid === false) return RuleResult.noop('already failed');
 
     const { from, fromPort, to, toPort } = evt.payload;
