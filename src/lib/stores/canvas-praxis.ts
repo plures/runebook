@@ -9,8 +9,6 @@ import {
   PraxisRegistry,
   RuleResult,
 } from '@plures/praxis';
-import { createPraxisStore } from '@plures/praxis/svelte';
-import type { PraxisState, PraxisEvent } from '@plures/praxis';
 import type { Canvas, CanvasNode, Connection } from '../types/canvas';
 
 // Define the canvas context type
