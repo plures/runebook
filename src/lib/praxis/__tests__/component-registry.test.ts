@@ -32,7 +32,6 @@ describe('component-registry module', () => {
           type: 'terminal',
           label: 'Terminal',
           ports: [{ id: 'stdout', direction: 'output', dataType: 'string' }],
-          lifecycle: 'registered',
         }),
       ]);
       const regFact = result.state.facts.find(f => f.tag === COMPONENT_REGISTERED_FACT);
