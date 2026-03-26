@@ -49,7 +49,7 @@ export interface ComponentRegistryContext {
 /** Register a new component type with its declared capabilities. */
 export const RegisterComponentEvent = defineEvent<
   'REGISTER_COMPONENT',
-  ComponentCapability
+  Omit<ComponentCapability, 'lifecycle'>
 >('REGISTER_COMPONENT');
 
 /** Unregister (deprecate) a component type. */
