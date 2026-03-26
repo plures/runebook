@@ -1,3 +1,7 @@
+## [0.10.0] — 2026-03-26
+
+- feat: Adopt @plures/praxis v1.4.0 for declarative logic management (#139) (f59b94a)
+
 ## [0.9.0] — 2026-03-20
 
 - feat: establish repository best practices compliance (practice-001, practice-003) (#137) (8895328)
