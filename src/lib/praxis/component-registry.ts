@@ -5,7 +5,6 @@
 import {
   defineEvent,
   defineRule,
-  defineConstraint,
   defineModule,
   RuleResult,
   fact,
