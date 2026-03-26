@@ -1,6 +1,6 @@
 // Tests for canvas-validation PraxisModule
 
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import {
   createPraxisEngine,
   PraxisRegistry,
