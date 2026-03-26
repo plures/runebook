@@ -128,7 +128,7 @@ const unregisterComponentRule = defineRule<ComponentRegistryContext>({
 /**
  * Check whether two ports (by component type and port ID) are compatible.
  * Compatible means:
- *  1. Both component types are registered and active.
+ *  1. Both component types exist in the registry and are not marked as removed.
  *  2. The source port is an output; the target port is an input.
  *  3. Both ports have matching dataTypes or at least one is untyped (any).
  *
