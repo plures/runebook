@@ -2,6 +2,7 @@
   import { onMount } from 'svelte';
   import type { TerminalNode } from '../types/canvas';
   import { updateNodeData } from '../stores/canvas';
+  import { requestTerminal, releaseTerminal } from '../praxis/runtime';
   import { captureCommandStart, captureCommandResult, isAgentEnabled } from '../agent/integration';
   import type { TerminalEvent } from '../types/agent';
   import { Box, Button, Text } from '@plures/design-dojo';
@@ -26,6 +27,12 @@
 
     if (!isTauriContext()) {
       error = 'Terminal execution is only available in the desktop app';
+      return;
+    }
+
+    // Enforce process limit via the resource-management Praxis module.
+    if (!requestTerminal(node.id)) {
+      error = 'Terminal process limit reached';
       return;
     }
 
@@ -71,6 +78,7 @@
       }
     } finally {
       isRunning = false;
+      releaseTerminal(node.id);
     }
   }
 

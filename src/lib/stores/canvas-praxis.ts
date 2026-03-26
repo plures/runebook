@@ -1,9 +1,14 @@
 // Praxis-based canvas state management for RuneBook
 // Uses Praxis reactive engine for type-safe, testable state management
 
-import { createPraxisEngine, defineEvent, defineRule, PraxisRegistry } from '@plures/praxis';
-import { createPraxisStore } from '@plures/praxis/svelte';
-import type { PraxisState, PraxisEvent } from '@plures/praxis';
+import {
+  createPraxisEngine,
+  defineEvent,
+  defineRule,
+  defineModule,
+  PraxisRegistry,
+  RuleResult,
+} from '@plures/praxis';
 import type { Canvas, CanvasNode, Connection } from '../types/canvas';
 
 // Define the canvas context type
@@ -34,85 +39,89 @@ export function makeConnectionId(from: string, fromPort: string, to: string, toP
   return `e-${from}-${fromPort}-${to}-${toPort}`;
 }
 
-// Define rules for canvas operations
+// Define rules for canvas operations using RuleResult typed returns
 const addNodeRule = defineRule<CanvasContext>({
   id: 'canvas.addNode',
   description: 'Add a new node to the canvas',
+  eventTypes: 'ADD_NODE',
   impl: (state, events) => {
     const evt = events.find(AddNodeEvent.is);
-    if (!evt) return [];
-    
+    if (!evt) return RuleResult.skip('no ADD_NODE event');
     state.context.canvas.nodes.push(evt.payload.node);
-    return [];
+    return RuleResult.noop('node added');
   },
 });
 
 const removeNodeRule = defineRule<CanvasContext>({
   id: 'canvas.removeNode',
   description: 'Remove a node from the canvas',
+  eventTypes: 'REMOVE_NODE',
   impl: (state, events) => {
     const evt = events.find(RemoveNodeEvent.is);
-    if (!evt) return [];
-    
+    if (!evt) return RuleResult.skip('no REMOVE_NODE event');
+
     const { nodeId } = evt.payload;
     state.context.canvas.nodes = state.context.canvas.nodes.filter(n => n.id !== nodeId);
     state.context.canvas.connections = state.context.canvas.connections.filter(
-      c => c.from !== nodeId && c.to !== nodeId
+      c => c.from !== nodeId && c.to !== nodeId,
     );
-    
+
     // Remove node data
     const prefix = `${nodeId}:`;
     state.context.nodeData = Object.fromEntries(
-      Object.entries(state.context.nodeData).filter(([key]) => !key.startsWith(prefix))
+      Object.entries(state.context.nodeData).filter(([key]) => !key.startsWith(prefix)),
     );
-    
-    return [];
+
+    return RuleResult.noop('node removed');
   },
 });
 
 const updateNodeRule = defineRule<CanvasContext>({
   id: 'canvas.updateNode',
-  description: 'Update a node\'s properties',
+  description: "Update a node's properties",
+  eventTypes: 'UPDATE_NODE',
   impl: (state, events) => {
     const evt = events.find(UpdateNodeEvent.is);
-    if (!evt) return [];
-    
+    if (!evt) return RuleResult.skip('no UPDATE_NODE event');
+
     const { nodeId, updates } = evt.payload;
     const nodeIndex = state.context.canvas.nodes.findIndex(n => n.id === nodeId);
     if (nodeIndex !== -1) {
       state.context.canvas.nodes[nodeIndex] = {
         ...state.context.canvas.nodes[nodeIndex],
-        ...updates
+        ...updates,
       } as CanvasNode;
     }
-    
-    return [];
+
+    return RuleResult.noop('node updated');
   },
 });
 
 const updateNodePositionRule = defineRule<CanvasContext>({
   id: 'canvas.updateNodePosition',
-  description: 'Update a node\'s position',
+  description: "Update a node's position",
+  eventTypes: 'UPDATE_NODE_POSITION',
   impl: (state, events) => {
     const evt = events.find(UpdateNodePositionEvent.is);
-    if (!evt) return [];
-    
+    if (!evt) return RuleResult.skip('no UPDATE_NODE_POSITION event');
+
     const { nodeId, x, y } = evt.payload;
     const nodeIndex = state.context.canvas.nodes.findIndex(n => n.id === nodeId);
     if (nodeIndex !== -1) {
       state.context.canvas.nodes[nodeIndex].position = { x, y };
     }
-    
-    return [];
+
+    return RuleResult.noop('node position updated');
   },
 });
 
 const addConnectionRule = defineRule<CanvasContext>({
   id: 'canvas.addConnection',
   description: 'Add a connection between nodes',
+  eventTypes: 'ADD_CONNECTION',
   impl: (state, events) => {
     const evt = events.find(AddConnectionEvent.is);
-    if (!evt) return [];
+    if (!evt) return RuleResult.skip('no ADD_CONNECTION event');
 
     const conn = evt.payload.connection;
     // Auto-generate a handle-based ID when not provided
@@ -125,90 +134,102 @@ const addConnectionRule = defineRule<CanvasContext>({
         c.from === connection.from &&
         c.to === connection.to &&
         c.fromPort === connection.fromPort &&
-        c.toPort === connection.toPort
+        c.toPort === connection.toPort,
     );
     if (!duplicate) {
       state.context.canvas.connections.push(connection);
     }
 
-    return [];
+    return RuleResult.noop('connection added');
   },
 });
 
 const removeConnectionRule = defineRule<CanvasContext>({
   id: 'canvas.removeConnection',
   description: 'Remove a connection',
+  eventTypes: 'REMOVE_CONNECTION',
   impl: (state, events) => {
     const evt = events.find(RemoveConnectionEvent.is);
-    if (!evt) return [];
-    
+    if (!evt) return RuleResult.skip('no REMOVE_CONNECTION event');
+
     const { from, to, fromPort, toPort } = evt.payload;
     state.context.canvas.connections = state.context.canvas.connections.filter(
-      c => !(c.from === from && c.to === to && c.fromPort === fromPort && c.toPort === toPort)
+      c => !(c.from === from && c.to === to && c.fromPort === fromPort && c.toPort === toPort),
     );
-    
-    return [];
+
+    return RuleResult.noop('connection removed');
   },
 });
 
 const loadCanvasRule = defineRule<CanvasContext>({
   id: 'canvas.loadCanvas',
   description: 'Load a canvas from data',
+  eventTypes: 'LOAD_CANVAS',
   impl: (state, events) => {
     const evt = events.find(LoadCanvasEvent.is);
-    if (!evt) return [];
-    
+    if (!evt) return RuleResult.skip('no LOAD_CANVAS event');
+
     state.context.canvas = evt.payload.canvas;
-    return [];
+    return RuleResult.noop('canvas loaded');
   },
 });
 
 const clearCanvasRule = defineRule<CanvasContext>({
   id: 'canvas.clearCanvas',
   description: 'Clear the canvas',
+  eventTypes: 'CLEAR_CANVAS',
   impl: (state, events) => {
     const evt = events.find(ClearCanvasEvent.is);
-    if (!evt) return [];
-    
+    if (!evt) return RuleResult.skip('no CLEAR_CANVAS event');
+
     state.context.canvas = {
       id: 'default',
       name: 'Untitled Canvas',
       description: '',
       nodes: [],
       connections: [],
-      version: '1.0.0'
+      version: '1.0.0',
     };
     state.context.nodeData = {};
-    
-    return [];
+
+    return RuleResult.noop('canvas cleared');
   },
 });
 
 const updateNodeDataRule = defineRule<CanvasContext>({
   id: 'canvas.updateNodeData',
   description: 'Update node output data',
+  eventTypes: 'UPDATE_NODE_DATA',
   impl: (state, events) => {
     const evt = events.find(UpdateNodeDataEvent.is);
-    if (!evt) return [];
-    
+    if (!evt) return RuleResult.skip('no UPDATE_NODE_DATA event');
+
     const { nodeId, portId, data } = evt.payload;
     state.context.nodeData[`${nodeId}:${portId}`] = data;
-    
-    return [];
+
+    return RuleResult.noop('node data updated');
   },
 });
 
-// Create the registry and register all rules
+// Bundle all canvas rules into a PraxisModule
+export const canvasModule = defineModule<CanvasContext>({
+  rules: [
+    addNodeRule,
+    removeNodeRule,
+    updateNodeRule,
+    updateNodePositionRule,
+    addConnectionRule,
+    removeConnectionRule,
+    loadCanvasRule,
+    clearCanvasRule,
+    updateNodeDataRule,
+  ],
+  meta: { name: 'canvas', version: '1.0.0' },
+});
+
+// Create the registry and register the canvas module
 const registry = new PraxisRegistry<CanvasContext>();
-registry.registerRule(addNodeRule);
-registry.registerRule(removeNodeRule);
-registry.registerRule(updateNodeRule);
-registry.registerRule(updateNodePositionRule);
-registry.registerRule(addConnectionRule);
-registry.registerRule(removeConnectionRule);
-registry.registerRule(loadCanvasRule);
-registry.registerRule(clearCanvasRule);
-registry.registerRule(updateNodeDataRule);
+registry.registerModule(canvasModule);
 
 // Create the reactive engine with initial state
 export const canvasEngine = createPraxisEngine<CanvasContext>({
