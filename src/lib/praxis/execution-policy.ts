@@ -91,8 +91,9 @@ function topologicalSort(
   const queue = nodes.filter(id => (inDegree.get(id) ?? 0) === 0);
   const order: string[] = [];
 
-  while (queue.length > 0) {
-    const node = queue.shift()!;
+  // Use an index-based queue to keep dequeue operations O(1).
+  for (let i = 0; i < queue.length; i++) {
+    const node = queue[i]!;
     order.push(node);
     for (const neighbor of adjacency.get(node) ?? []) {
       const deg = (inDegree.get(neighbor) ?? 0) - 1;
