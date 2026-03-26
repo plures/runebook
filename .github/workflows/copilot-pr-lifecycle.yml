@@ -50,12 +50,14 @@ jobs:
 
       - name: Process open PRs and advance queue
         uses: actions/github-script@v7
+        env:
+          COPILOT_BOT_ID: ${{ vars.COPILOT_BOT_ID }}
         with:
           github-token: ${{ secrets.COPILOT_PAT }}
           script: |
             const owner = context.repo.owner;
             const repo = context.repo.repo;
-            const botId = 'BOT_kgDOC9w8XQ';
+            const botId = process.env.COPILOT_BOT_ID;
 
             // Phase 1: Check open Copilot PRs — approve+merge if ready
             const copilotPRs = await github.paginate(
