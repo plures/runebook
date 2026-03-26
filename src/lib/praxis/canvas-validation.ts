@@ -121,6 +121,10 @@ const portTypeCompatibilityRule = defineRule<CanvasValidationContext>({
     const evt = events.find(ValidateConnectionEvent.is);
     if (!evt) return RuleResult.skip('no VALIDATE_CONNECTION event');
 
+    // Store the current request immediately so context always reflects the
+    // most-recent validation request, even on failure paths.
+    state.context.pendingConnection = evt.payload;
+
     // Short-circuit: selfLoopCheckRule already flagged this connection as invalid.
     if (state.context.validationResult?.valid === false) return RuleResult.noop('already failed');
 

@@ -171,6 +171,22 @@ describe('canvas-validation module', () => {
       const afterSecond = engine.getContext();
       expect(afterSecond.validationResult?.valid).toBe(true);
     });
+
+    it('sets pendingConnection to the current request even when validation fails', () => {
+      const engine = makeEngine();
+      engine.step([
+        ValidateConnectionEvent.create({
+          from: 'ghost',
+          fromPort: 'out',
+          to: 'n2',
+          toPort: 'in',
+        }),
+      ]);
+      const ctx = engine.getContext();
+      // pendingConnection must reflect the most-recent request, not stale data
+      expect(ctx.pendingConnection?.from).toBe('ghost');
+      expect(ctx.pendingConnection?.to).toBe('n2');
+    });
   });
   describe('canvas state consistency', () => {
     it('emits a valid fact for a consistent canvas', () => {
