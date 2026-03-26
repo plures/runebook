@@ -38,8 +38,20 @@ jobs:
       github.event_name == 'workflow_dispatch' ||
       github.event_name == 'schedule'
     steps:
+      - name: Skip when COPILOT_PAT is missing
+        id: preflight
+        env:
+          HAS_PAT: ${{ secrets.COPILOT_PAT != '' }}
+        run: |
+          if [ -z "$HAS_PAT" ] || [ "$HAS_PAT" != "true" ]; then
+            echo "Skipping: missing COPILOT_PAT secret"
+            echo "enabled=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "enabled=true" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Notify QA repo
-        if: github.event.action == 'closed' && github.event.pull_request.merged == true
+        if: steps.preflight.outputs.enabled == 'true' && github.event.action == 'closed' && github.event.pull_request.merged == true
         run: |
           gh api repos/plures/qa/dispatches \
             --method POST \
@@ -49,6 +61,7 @@ jobs:
           GH_TOKEN: ${{ secrets.COPILOT_PAT }}
 
       - name: Process open PRs and advance queue
+        if: steps.preflight.outputs.enabled == 'true'
         uses: actions/github-script@v7
         env:
           COPILOT_BOT_ID: ${{ vars.COPILOT_BOT_ID }}
@@ -76,23 +89,30 @@ jobs:
               const relevant = checks.data.check_runs.filter(c =>
                 !['lifecycle', 'queue-advance', 'Copilot code review'].includes(c.name)
               );
-              const allDone = relevant.length === 0 || relevant.every(c => c.status === 'completed');
-              const allGreen = allDone && (relevant.length === 0 || relevant.every(c =>
+              const completedRelevant = relevant.filter(c => c.status === 'completed');
+              const allDone = relevant.length > 0 && completedRelevant.length === relevant.length;
+              const allGreen = allDone && completedRelevant.every(c =>
                 c.conclusion === 'success' || c.conclusion === 'skipped'
-              ));
-              const failing = relevant.filter(c => c.conclusion === 'failure');
+              );
+              const failing = completedRelevant.filter(c =>
+                c.conclusion !== 'success' && c.conclusion !== 'skipped'
+              );
 
               // Check reviews
               const reviews = await github.rest.pulls.listReviews({
                 owner, repo, pull_number: pr.number
               });
-              const copilotReview = reviews.data.find(r =>
+              const copilotReviews = reviews.data.filter(r =>
                 r.user.login === 'copilot-pull-request-reviewer[bot]'
               );
+              const latestCopilotReview = copilotReviews.length > 0
+                ? copilotReviews[copilotReviews.length - 1]
+                : null;
+              const copilotApproved = latestCopilotReview && latestCopilotReview.state === 'APPROVED';
               const hasApproval = reviews.data.some(r => r.state === 'APPROVED');
 
-              if (allGreen && !copilotReview) {
-                // CI green but no review yet — request Copilot code review
+              if (allGreen && !copilotApproved) {
+                // CI green but no approved review yet — request Copilot code review
                 const reviewers = await github.rest.pulls.listRequestedReviewers({
                   owner, repo, pull_number: pr.number
                 });
@@ -111,8 +131,8 @@ jobs:
                 return;
               }
 
-              if (allGreen && copilotReview && !hasApproval) {
-                // CI green + Copilot reviewed → approve and merge
+              if (allGreen && copilotApproved && !hasApproval) {
+                // CI green + Copilot approved → approve and merge
                 await github.rest.pulls.createReview({
                   owner, repo, pull_number: pr.number,
                   event: 'APPROVE',
@@ -182,9 +202,9 @@ jobs:
                   await github.rest.issues.removeLabel({ owner, repo, issue_number: pr.number, name: cl.name }).catch(() => {});
                 }
                 await github.rest.issues.addLabels({ owner, repo, issue_number: pr.number, labels: [`queue-check:${count + 1}`] }).catch(() => {});
-                console.log(`🔄 Periodic check ${count + 1}/4 on PR #${pr.number} (CI done: ${allDone}, green: ${allGreen}, reviewed: ${!!copilotReview})`);
+                console.log(`🔄 Periodic check ${count + 1}/4 on PR #${pr.number} (CI done: ${allDone}, green: ${allGreen}, copilot approved: ${copilotApproved})`);
               } else {
-                console.log(`⏸️ PR #${pr.number} open but not ready (CI done: ${allDone}, green: ${allGreen}, reviewed: ${!!copilotReview})`);
+                console.log(`⏸️ PR #${pr.number} open but not ready (CI done: ${allDone}, green: ${allGreen}, copilot approved: ${copilotApproved})`);
               }
               return;
             }
