@@ -142,6 +142,36 @@ describe('canvas-validation module', () => {
     });
   });
 
+  describe('regressions', () => {
+    it('allows a valid connection after a failed validation on the same engine instance', () => {
+      const engine = makeEngine();
+      const firstResult = engine.step([
+        ValidateConnectionEvent.create({
+          from: 'ghost',
+          fromPort: 'out',
+          to: 'n2',
+          toPort: 'in',
+        }),
+      ]);
+      const firstInvalidFact = firstResult.state.facts.find(f => f.tag === CONNECTION_INVALID_FACT);
+      expect(firstInvalidFact).toBeDefined();
+      const afterFirst = engine.getContext();
+      expect(afterFirst.validationResult?.valid).toBe(false);
+
+      const secondResult = engine.step([
+        ValidateConnectionEvent.create({
+          from: 'n1',
+          fromPort: 'out',
+          to: 'n2',
+          toPort: 'in',
+        }),
+      ]);
+      const secondValidFact = secondResult.state.facts.find(f => f.tag === CONNECTION_VALID_FACT);
+      expect(secondValidFact).toBeDefined();
+      const afterSecond = engine.getContext();
+      expect(afterSecond.validationResult?.valid).toBe(true);
+    });
+  });
   describe('canvas state consistency', () => {
     it('emits a valid fact for a consistent canvas', () => {
       const engine = makeEngine();
