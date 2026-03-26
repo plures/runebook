@@ -38,7 +38,11 @@ jobs:
           fi
 
           echo "skip=false" >> "$GITHUB_OUTPUT"
-          echo "pr_title=$PR_TITLE" >> "$GITHUB_OUTPUT"
+          {
+            echo "pr_title<<EOF_PR_TITLE" >> "$GITHUB_OUTPUT"
+            echo "$PR_TITLE" >> "$GITHUB_OUTPUT"
+            echo "EOF_PR_TITLE" >> "$GITHUB_OUTPUT"
+          }
           echo "pr_num=$PR_NUM" >> "$GITHUB_OUTPUT"
           echo "$CHANGED" > /tmp/changed_files.txt
           echo "$DIFF" > /tmp/code_diff.txt
