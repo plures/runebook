@@ -142,7 +142,7 @@ const scheduleExecutionRule = defineRule<ExecutionPolicyContext>({
  */
 const detectCyclesRule = defineRule<ExecutionPolicyContext>({
   id: 'execution-policy.detectCycles',
-  description: 'Detect cycles in the execution graph without recomputing order',
+  description: 'Detect cycles in the execution graph using topological sort (order discarded)',
   eventTypes: 'DETECT_CYCLES',
   impl: (state, events) => {
     const evt = events.find(DetectCyclesEvent.is);
