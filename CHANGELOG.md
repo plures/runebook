@@ -1,3 +1,8 @@
+## [0.11.0] — 2026-03-27
+
+- feat: Obsidian Canvas foundation — nested sub-canvas containers with in-place navigation (#141) (b3613df)
+- chore: apply org-standard automation files (#140) (32182db)
+
 ## [0.10.0] — 2026-03-26
 
 - feat: Adopt @plures/praxis v1.4.0 for declarative logic management (#139) (f59b94a)
