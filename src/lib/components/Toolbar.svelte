@@ -1,6 +1,7 @@
 <script lang="ts">
   import { canvasStore } from '../stores/canvas';
   import { saveCanvas, loadCanvas } from '../utils/storage';
+  import { createSubCanvasNode } from '../utils/canvas-nodes';
   import { StatusBar, Button } from '@plures/design-dojo';
   import type { TextNode } from '../types/canvas';
 
@@ -27,6 +28,11 @@
       inputs: [{ id: 'in', name: 'in', type: 'input' }],
       outputs: [{ id: 'out', name: 'out', type: 'output' }],
     } satisfies TextNode);
+  }
+
+  function addSubCanvasNode() {
+    const id = `sub-canvas-${Date.now()}`;
+    canvasStore.addNode(createSubCanvasNode({ id, x: 80, y: 80 }));
   }
 
   async function handleSave() {
@@ -57,6 +63,9 @@
   <nav class="toolbar-nav" aria-label="Canvas toolbar">
     <Button variant="secondary" onclick={addTextCard} class="tool-btn" title="Add Text Card">
       📝
+    </Button>
+    <Button variant="secondary" onclick={addSubCanvasNode} class="tool-btn" title="Add Sub-Canvas">
+      ⬡
     </Button>
     <Button variant="secondary" onclick={handleSave} class="tool-btn" title="Save board">
       {#if saveStatus === 'saved'}✅{:else if saveStatus === 'error'}❌{:else}💾{/if}

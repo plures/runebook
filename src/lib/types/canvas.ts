@@ -1,5 +1,5 @@
 // Canvas node types for RuneBook
-export type NodeType = 'text' | 'terminal' | 'input' | 'display' | 'transform';
+export type NodeType = 'text' | 'terminal' | 'input' | 'display' | 'transform' | 'sub-canvas';
 
 export interface Position {
   x: number;
@@ -72,7 +72,12 @@ export interface TransformNode extends BaseNode {
   code: string;
 }
 
-export type CanvasNode = TextNode | TerminalNode | InputNode | DisplayNode | TransformNode;
+export interface SubCanvasNode extends BaseNode {
+  type: 'sub-canvas';
+  children: Canvas;
+}
+
+export type CanvasNode = TextNode | TerminalNode | InputNode | DisplayNode | TransformNode | SubCanvasNode;
 
 export interface Canvas {
   id: string;
