@@ -514,7 +514,7 @@
         onclick={(e) => { e.stopPropagation(); handleNavigateTo(0); }}
         aria-label="Go to root canvas"
       >
-        {canvasData.name || 'Root'}
+        {($navStore[0]?.canvas?.name || $navStore[0]?.label || canvasData.name || 'Root')}
       </button>
       {#each $navStore as entry, i (entry.nodeId)}
         <span class="breadcrumb-sep" aria-hidden="true">›</span>
