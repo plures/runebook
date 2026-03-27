@@ -516,7 +516,7 @@
       >
         {($navStore[0]?.canvas?.name || $navStore[0]?.label || canvasData.name || 'Root')}
       </button>
-      {#each $navStore as entry, i (entry.nodeId)}
+      {#each $navStore as entry, i (entry.nodeId + '-' + i)}
         <span class="breadcrumb-sep" aria-hidden="true">›</span>
         {#if i < $navStore.length - 1}
           <!-- svelte-ignore a11y_click_events_have_key_events -->
