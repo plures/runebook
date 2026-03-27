@@ -3,17 +3,25 @@
 import { EventEmitter } from 'events';
 import { readFileSync, writeFileSync } from 'fs';
 import { spawn } from 'child_process';
-import type { Canvas, CanvasNode } from '../types/canvas';
-import { saveCanvasToYAML, parseCanvasFromYAML } from '../utils/yaml-loader';
+import type { Canvas, CanvasNode, TerminalNode } from '../types/canvas';
+import { parseCanvasFromYAML, saveCanvasToYAML } from '../utils/yaml-loader';
 
 // ─── Box-drawing characters ───────────────────────────────────────────────────
 
 const BOX = {
-  h: '─', v: '│',
-  tl: '┌', tr: '┐', bl: '└', br: '┘',
+  h: '─',
+  v: '│',
+  tl: '┌',
+  tr: '┐',
+  bl: '└',
+  br: '┘',
   // Selected (double-line)
-  sh: '═', sv: '║',
-  stl: '╔', str: '╗', sbl: '╚', sbr: '╝',
+  sh: '═',
+  sv: '║',
+  stl: '╔',
+  str: '╗',
+  sbl: '╚',
+  sbr: '╝',
 };
 
 // ─── ANSI helpers ─────────────────────────────────────────────────────────────
@@ -46,7 +54,7 @@ function pad(s: string, w: number): string {
 // ─── Layout constants ─────────────────────────────────────────────────────────
 
 const BOX_W = 18; // Node box width in terminal cells
-const BOX_H = 4;  // Node box height in terminal cells
+const BOX_H = 4; // Node box height in terminal cells
 const VMAX = 1200; // Max canvas coordinate for scaling
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -140,8 +148,8 @@ export class TUIApp extends EventEmitter {
 
   selectPrev(): void {
     if (this.nodes.length === 0) return;
-    this.state.selectedIndex =
-      (this.state.selectedIndex - 1 + this.nodes.length) % this.nodes.length;
+    this.state.selectedIndex = (this.state.selectedIndex - 1 + this.nodes.length) %
+      this.nodes.length;
   }
 
   // ── Node operations ─────────────────────────────────────────────────────────
@@ -151,9 +159,9 @@ export class TUIApp extends EventEmitter {
     if (!this.state.canvas || this.nodes.length === 0) return;
     const node = this.selectedNode;
     if (!node) return;
-    this.state.canvas.nodes = this.state.canvas.nodes.filter(n => n.id !== node.id);
+    this.state.canvas.nodes = this.state.canvas.nodes.filter((n) => n.id !== node.id);
     this.state.canvas.connections = this.state.canvas.connections.filter(
-      c => c.from !== node.id && c.to !== node.id,
+      (c) => c.from !== node.id && c.to !== node.id,
     );
     if (this.state.selectedIndex >= this.nodes.length) {
       this.state.selectedIndex = Math.max(0, this.nodes.length - 1);
@@ -163,7 +171,7 @@ export class TUIApp extends EventEmitter {
 
   // ── Terminal execution ──────────────────────────────────────────────────────
 
-  /** Run the selected node's command. Phase 1: only text cards are supported. */
+  /** Run the selected node's command. Supports terminal nodes. */
   async runSelected(): Promise<void> {
     if (this._activeProc) {
       this.state.message = 'A process is already running — press c to clear output';
@@ -177,9 +185,82 @@ export class TUIApp extends EventEmitter {
       this.render();
       return;
     }
-    // Phase 1: only text cards are supported; no runnable node type.
-    this.state.message = 'Run is not supported for this node type in Phase 1';
+
+    if (node.type !== 'terminal') {
+      this.state.message =
+        `Cannot run node of type "${node.type}" — only terminal nodes are runnable`;
+      this.render();
+      return;
+    }
+
+    const termNode = node as TerminalNode;
+    if (!termNode.command) {
+      this.state.message = 'Terminal node has no command configured';
+      this.render();
+      return;
+    }
+
+    this.state.mode = 'run';
+    this.state.terminalOutput = [];
+    this.state.message = `Running: ${termNode.command}`;
     this.render();
+
+    try {
+      await new Promise<void>((resolve, reject) => {
+        const args = termNode.args ?? [];
+        // Use shell mode only when no separate args are provided (command may contain pipes, etc.)
+        const useShell = args.length === 0;
+        const proc = spawn(termNode.command, args, {
+          cwd: termNode.cwd || undefined,
+          env: termNode.env ? { ...process.env, ...termNode.env } : process.env,
+          shell: useShell,
+          stdio: ['ignore', 'pipe', 'pipe'],
+        });
+        this._activeProc = proc;
+
+        const pushLine = (line: string) => {
+          this.state.terminalOutput.push(line);
+          this.render();
+        };
+
+        let stdoutBuf = '';
+        proc.stdout?.on('data', (chunk: Buffer) => {
+          stdoutBuf += chunk.toString('utf-8');
+          const lines = stdoutBuf.split('\n');
+          stdoutBuf = lines.pop() ?? '';
+          for (const line of lines) pushLine(line);
+        });
+
+        let stderrBuf = '';
+        proc.stderr?.on('data', (chunk: Buffer) => {
+          stderrBuf += chunk.toString('utf-8');
+          const lines = stderrBuf.split('\n');
+          stderrBuf = lines.pop() ?? '';
+          for (const line of lines) pushLine(`[err] ${line}`);
+        });
+
+        proc.on('close', (code) => {
+          // Flush remaining partial lines
+          if (stdoutBuf) pushLine(stdoutBuf);
+          if (stderrBuf) pushLine(`[err] ${stderrBuf}`);
+          this._activeProc = null;
+          this.state.mode = 'normal';
+          this.state.message = `Process exited with code ${code ?? 'unknown'}`;
+          this.render();
+          resolve();
+        });
+
+        proc.on('error', (err) => {
+          this._activeProc = null;
+          this.state.mode = 'normal';
+          this.state.message = `Process error: ${err.message}`;
+          this.render();
+          reject(err);
+        });
+      });
+    } catch {
+      // Error already handled in the 'error' event handler above
+    }
   }
 
   // ── Keyboard input ──────────────────────────────────────────────────────────
@@ -305,8 +386,14 @@ export class TUIApp extends EventEmitter {
       const node = this.nodes[i];
       const isSelected = i === this.state.selectedIndex;
 
-      const nx = Math.max(0, Math.min(Math.floor((node.position.x / VMAX) * (w - BOX_W)), w - BOX_W));
-      const ny = Math.max(0, Math.min(Math.floor((node.position.y / VMAX) * (h - BOX_H)), h - BOX_H));
+      const nx = Math.max(
+        0,
+        Math.min(Math.floor((node.position.x / VMAX) * (w - BOX_W)), w - BOX_W),
+      );
+      const ny = Math.max(
+        0,
+        Math.min(Math.floor((node.position.y / VMAX) * (h - BOX_H)), h - BOX_H),
+      );
 
       const tl = isSelected ? BOX.stl : BOX.tl;
       const tr = isSelected ? BOX.str : BOX.tr;
@@ -340,25 +427,42 @@ export class TUIApp extends EventEmitter {
 
     // Draw connections (L-shaped routing)
     for (const conn of (this.state.canvas?.connections ?? [])) {
-      const from = this.nodes.find(n => n.id === conn.from);
-      const to = this.nodes.find(n => n.id === conn.to);
+      const from = this.nodes.find((n) => n.id === conn.from);
+      const to = this.nodes.find((n) => n.id === conn.to);
       if (!from || !to) continue;
 
-      const fx = Math.max(0, Math.min(Math.floor((from.position.x / VMAX) * (w - BOX_W)) + BOX_W / 2, w - 1));
-      const fy = Math.max(0, Math.min(Math.floor((from.position.y / VMAX) * (h - BOX_H)) + BOX_H - 1, h - 1));
-      const tx = Math.max(0, Math.min(Math.floor((to.position.x / VMAX) * (w - BOX_W)) + BOX_W / 2, w - 1));
+      const fx = Math.max(
+        0,
+        Math.min(Math.floor((from.position.x / VMAX) * (w - BOX_W)) + BOX_W / 2, w - 1),
+      );
+      const fy = Math.max(
+        0,
+        Math.min(Math.floor((from.position.y / VMAX) * (h - BOX_H)) + BOX_H - 1, h - 1),
+      );
+      const tx = Math.max(
+        0,
+        Math.min(Math.floor((to.position.x / VMAX) * (w - BOX_W)) + BOX_W / 2, w - 1),
+      );
       const ty = Math.max(0, Math.min(Math.floor((to.position.y / VMAX) * (h - BOX_H)), h - 1));
 
       const midY = Math.floor((fy + ty) / 2);
-      for (let y = Math.min(fy, midY); y <= Math.max(fy, midY); y++) this.setCell(grid, y, Math.floor(fx), BOX.v);
-      for (let x = Math.min(Math.floor(fx), Math.floor(tx)); x <= Math.max(Math.floor(fx), Math.floor(tx)); x++) {
+      for (let y = Math.min(fy, midY); y <= Math.max(fy, midY); y++) {
+        this.setCell(grid, y, Math.floor(fx), BOX.v);
+      }
+      for (
+        let x = Math.min(Math.floor(fx), Math.floor(tx));
+        x <= Math.max(Math.floor(fx), Math.floor(tx));
+        x++
+      ) {
         this.setCell(grid, midY, x, BOX.h);
       }
-      for (let y = Math.min(midY, ty); y <= Math.max(midY, ty); y++) this.setCell(grid, y, Math.floor(tx), BOX.v);
+      for (let y = Math.min(midY, ty); y <= Math.max(midY, ty); y++) {
+        this.setCell(grid, y, Math.floor(tx), BOX.v);
+      }
       if (ty >= 0) this.setCell(grid, ty, Math.floor(tx), ty >= fy ? '▼' : '▲');
     }
 
-    return grid.map(row => row.join(''));
+    return grid.map((row) => row.join(''));
   }
 
   private buildProperties(w: number, h: number): string[] {
@@ -412,7 +516,12 @@ export class TUIApp extends EventEmitter {
       ['X', String(node.position.x)],
       ['Y', String(node.position.y)],
     ];
-    // Phase 1: show text card content excerpt
+    if (node.type === 'terminal') {
+      const t = node as TerminalNode;
+      props.push(['Cmd', (t.command || '').substring(0, 14)]);
+      if (t.args?.length) props.push(['Args', t.args.join(' ').substring(0, 14)]);
+      if (t.cwd) props.push(['Cwd', t.cwd.substring(0, 14)]);
+    }
     if (typeof n['content'] === 'string') {
       props.push(['Content', String(n['content']).substring(0, 14)]);
     }
@@ -445,7 +554,10 @@ export class TUIApp extends EventEmitter {
       process.stdout.removeListener('resize', this._resizeHandler);
       this._resizeHandler = null;
     }
-    if ((process.stdin as NodeJS.ReadStream).isTTY && typeof (process.stdin as NodeJS.ReadStream).setRawMode === 'function') {
+    if (
+      (process.stdin as NodeJS.ReadStream).isTTY &&
+      typeof (process.stdin as NodeJS.ReadStream).setRawMode === 'function'
+    ) {
       (process.stdin as NodeJS.ReadStream).setRawMode(false);
     }
     process.stdin.pause();
@@ -500,7 +612,7 @@ export class TUIApp extends EventEmitter {
 
     try {
       this.render();
-      await new Promise<void>(resolve => {
+      await new Promise<void>((resolve) => {
         this.once('quit', resolve);
       });
     } catch (err) {
