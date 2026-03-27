@@ -194,7 +194,7 @@ const timeoutEnforcementRule = defineRule<ExecutionPolicyContext>({
 const acyclicGraphConstraint = defineConstraint<ExecutionPolicyContext>({
   id: 'execution-policy.acyclicGraph',
   description: 'The execution graph must be acyclic before scheduling',
-  check: state => !state.context.hasCycles || 'Execution graph contains a cycle',
+  impl: state => !state.context.hasCycles || 'Execution graph contains a cycle',
 });
 
 // ---------------------------------------------------------------------------

@@ -197,7 +197,7 @@ const cleanupTriggerRule = defineRule<ResourceManagementContext>({
 const terminalLimitConstraint = defineConstraint<ResourceManagementContext>({
   id: 'resource-management.terminalLimit',
   description: 'Active terminal count must not exceed the configured maximum',
-  check: state =>
+  impl: state =>
     state.context.terminalCount <= state.context.maxTerminals ||
     `Terminal count ${state.context.terminalCount} exceeds max ${state.context.maxTerminals}`,
 });
@@ -205,7 +205,7 @@ const terminalLimitConstraint = defineConstraint<ResourceManagementContext>({
 const memoryBudgetConstraint = defineConstraint<ResourceManagementContext>({
   id: 'resource-management.memoryBudgetConstraint',
   description: 'Memory usage must remain within budget when a budget is configured',
-  check: state => {
+  impl: state => {
     const { memoryBudget, memoryUsage } = state.context;
     if (memoryBudget === 0) return true;
     return (

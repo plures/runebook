@@ -218,7 +218,7 @@ const canvasStateConsistencyRule = defineRule<CanvasValidationContext>({
 const noSelfLoopConstraint = defineConstraint<CanvasValidationContext>({
   id: 'canvas-validation.noSelfLoop',
   description: 'A validated connection must not be a self-loop',
-  check: state => {
+  impl: state => {
     const { pendingConnection, validationResult } = state.context;
     if (!pendingConnection || !validationResult?.valid) return true;
     return pendingConnection.from !== pendingConnection.to;

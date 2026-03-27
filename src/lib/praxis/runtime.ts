@@ -24,6 +24,7 @@ import {
   componentRegistryModule,
   RegisterComponentEvent,
   type ComponentRegistryContext,
+  type ComponentCapability,
 } from './component-registry';
 import {
   resourceManagementModule,
@@ -138,40 +139,40 @@ export const componentRegistryEngine = createPraxisEngine<ComponentRegistryConte
 // Port declarations use `undefined` dataType (any) since each node instance
 // may carry typed ports at runtime; type-checking is done per-instance via
 // the canvas-validation engine.
-const BUILTIN_COMPONENTS = [
+const BUILTIN_COMPONENTS: Array<Omit<ComponentCapability, 'lifecycle'>> = [
   { type: 'text', label: 'Text', ports: [] },
   {
     type: 'terminal',
     label: 'Terminal',
-    ports: [{ id: 'stdout', direction: 'output' as const }],
+    ports: [{ id: 'stdout', direction: 'output' }],
   },
   {
     type: 'input',
     label: 'Input',
-    ports: [{ id: 'value', direction: 'output' as const }],
+    ports: [{ id: 'value', direction: 'output' }],
   },
   {
     type: 'display',
     label: 'Display',
-    ports: [{ id: 'content', direction: 'input' as const }],
+    ports: [{ id: 'content', direction: 'input' }],
   },
   {
     type: 'transform',
     label: 'Transform',
     ports: [
-      { id: 'input', direction: 'input' as const },
-      { id: 'output', direction: 'output' as const },
+      { id: 'input', direction: 'input' },
+      { id: 'output', direction: 'output' },
     ],
   },
   {
     type: 'sub-canvas',
     label: 'Sub-Canvas',
     ports: [
-      { id: 'in', direction: 'input' as const },
-      { id: 'out', direction: 'output' as const },
+      { id: 'in', direction: 'input' },
+      { id: 'out', direction: 'output' },
     ],
   },
-] as const;
+];
 
 for (const cap of BUILTIN_COMPONENTS) {
   componentRegistryEngine.step([RegisterComponentEvent.create(cap)]);
@@ -217,7 +218,8 @@ export function requestTerminal(nodeId: string): boolean {
     },
     [RequestTerminalEvent.create({ nodeId })],
   );
-  return result.state.context.terminalCount > countBefore;
+  const { context } = result.state as { context: ResourceManagementContext };
+  return context.terminalCount > countBefore;
 }
 
 /**
