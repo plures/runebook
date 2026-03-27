@@ -9,12 +9,24 @@ import {
   PraxisRegistry,
   RuleResult,
 } from '@plures/praxis';
-import type { Canvas, CanvasNode, Connection } from '../types/canvas';
+import type { Canvas, CanvasNode, Connection, SubCanvasNode } from '../types/canvas';
+
+/** One entry in the canvas navigation breadcrumb stack. */
+export interface CanvasNavEntry {
+  /** The parent canvas saved before navigating in. */
+  canvas: Canvas;
+  /** ID of the sub-canvas node in the parent that was entered. */
+  nodeId: string;
+  /** Breadcrumb label (usually the sub-canvas node's label). */
+  label: string;
+}
 
 // Define the canvas context type
 export interface CanvasContext {
   canvas: Canvas;
   nodeData: Record<string, any>; // Node output data: `${nodeId}:${portId}` -> data
+  /** Navigation stack: empty = root canvas is active. */
+  navStack: CanvasNavEntry[];
 }
 
 // Define events for canvas operations
@@ -27,6 +39,8 @@ export const RemoveConnectionEvent = defineEvent<'REMOVE_CONNECTION', { from: st
 export const LoadCanvasEvent = defineEvent<'LOAD_CANVAS', { canvas: Canvas }>('LOAD_CANVAS');
 export const ClearCanvasEvent = defineEvent<'CLEAR_CANVAS', {}>('CLEAR_CANVAS');
 export const UpdateNodeDataEvent = defineEvent<'UPDATE_NODE_DATA', { nodeId: string; portId: string; data: any }>('UPDATE_NODE_DATA');
+export const NavigateIntoSubCanvasEvent = defineEvent<'NAVIGATE_INTO_SUB_CANVAS', { nodeId: string; label: string }>('NAVIGATE_INTO_SUB_CANVAS');
+export const NavigateUpEvent = defineEvent<'NAVIGATE_UP', {}>('NAVIGATE_UP');
 
 /**
  * Generate a deterministic, handle-based edge ID that prevents ID collisions
@@ -170,6 +184,7 @@ const loadCanvasRule = defineRule<CanvasContext>({
     if (!evt) return RuleResult.skip('no LOAD_CANVAS event');
 
     state.context.canvas = evt.payload.canvas;
+    state.context.navStack = [];
     return RuleResult.noop('canvas loaded');
   },
 });
@@ -191,6 +206,7 @@ const clearCanvasRule = defineRule<CanvasContext>({
       version: '1.0.0',
     };
     state.context.nodeData = {};
+    state.context.navStack = [];
 
     return RuleResult.noop('canvas cleared');
   },
@@ -211,6 +227,56 @@ const updateNodeDataRule = defineRule<CanvasContext>({
   },
 });
 
+const navigateIntoSubCanvasRule = defineRule<CanvasContext>({
+  id: 'canvas.navigateIntoSubCanvas',
+  description: 'Navigate into a sub-canvas node, pushing the current canvas to the nav stack',
+  eventTypes: 'NAVIGATE_INTO_SUB_CANVAS',
+  impl: (state, events) => {
+    const evt = events.find(NavigateIntoSubCanvasEvent.is);
+    if (!evt) return RuleResult.skip('no NAVIGATE_INTO_SUB_CANVAS event');
+
+    const { nodeId, label } = evt.payload;
+    const node = state.context.canvas.nodes.find(n => n.id === nodeId);
+    if (!node || node.type !== 'sub-canvas') return RuleResult.skip('not a sub-canvas node');
+
+    // Push current canvas onto the stack and descend into the children canvas.
+    state.context.navStack.push({
+      canvas: state.context.canvas,
+      nodeId,
+      label,
+    });
+    state.context.canvas = (node as SubCanvasNode).children;
+    state.context.nodeData = {};
+
+    return RuleResult.noop('navigated into sub-canvas');
+  },
+});
+
+const navigateUpRule = defineRule<CanvasContext>({
+  id: 'canvas.navigateUp',
+  description: 'Navigate back up to the parent canvas, saving any changes back into the sub-canvas node',
+  eventTypes: 'NAVIGATE_UP',
+  impl: (state, events) => {
+    const evt = events.find(NavigateUpEvent.is);
+    if (!evt) return RuleResult.skip('no NAVIGATE_UP event');
+    if (state.context.navStack.length === 0) return RuleResult.skip('already at root');
+
+    const entry = state.context.navStack.pop()!;
+    const modifiedChildren = state.context.canvas;
+
+    // Write the modified sub-canvas back into the parent node.
+    const parentNodeIdx = entry.canvas.nodes.findIndex(n => n.id === entry.nodeId);
+    if (parentNodeIdx !== -1 && entry.canvas.nodes[parentNodeIdx].type === 'sub-canvas') {
+      (entry.canvas.nodes[parentNodeIdx] as SubCanvasNode).children = modifiedChildren;
+    }
+
+    state.context.canvas = entry.canvas;
+    state.context.nodeData = {};
+
+    return RuleResult.noop('navigated up');
+  },
+});
+
 // Bundle all canvas rules into a PraxisModule
 export const canvasModule = defineModule<CanvasContext>({
   rules: [
@@ -223,6 +289,8 @@ export const canvasModule = defineModule<CanvasContext>({
     loadCanvasRule,
     clearCanvasRule,
     updateNodeDataRule,
+    navigateIntoSubCanvasRule,
+    navigateUpRule,
   ],
   meta: { name: 'canvas', version: '1.0.0' },
 });
@@ -242,7 +310,8 @@ export const canvasEngine = createPraxisEngine<CanvasContext>({
       connections: [],
       version: '1.0.0'
     },
-    nodeData: {}
+    nodeData: {},
+    navStack: [],
   },
   registry
 });
@@ -297,6 +366,18 @@ export const canvasPraxisStore = {
   
   updateNodeData: (nodeId: string, portId: string, data: any) => {
     canvasEngine.step([UpdateNodeDataEvent.create({ nodeId, portId, data })]);
+  },
+
+  navigateInto: (nodeId: string, label: string) => {
+    canvasEngine.step([NavigateIntoSubCanvasEvent.create({ nodeId, label })]);
+  },
+
+  navigateUp: () => {
+    canvasEngine.step([NavigateUpEvent.create({})]);
+  },
+
+  get navStack() {
+    return canvasEngine.getContext().navStack;
   },
   
   // Helper to get node input data from connections

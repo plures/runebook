@@ -171,6 +171,76 @@ describe('canvas-praxis store', () => {
       expect(ctx.canvas).toBeDefined();
       expect(ctx.nodeData).toBeDefined();
     });
+
+    it('should expose navStack through context', () => {
+      const ctx = canvasPraxisStore.context;
+      expect(Array.isArray(ctx.navStack)).toBe(true);
+    });
+  });
+
+  describe('sub-canvas navigation', () => {
+    const makeSubCanvasNode = (id: string): import('../../types/canvas').SubCanvasNode => ({
+      id,
+      type: 'sub-canvas',
+      position: { x: 0, y: 0 },
+      label: 'Inner',
+      inputs: [],
+      outputs: [],
+      children: {
+        id: `canvas-${id}`,
+        name: 'Inner Canvas',
+        description: '',
+        nodes: [],
+        connections: [],
+        version: '1.0.0',
+      },
+    });
+
+    it('should navigate into a sub-canvas node', () => {
+      const sub = makeSubCanvasNode('sub1');
+      canvasPraxisStore.addNode(sub);
+      canvasPraxisStore.navigateInto('sub1', 'Inner');
+      expect(canvasPraxisStore.navStack).toHaveLength(1);
+      expect(canvasPraxisStore.canvas.id).toBe('canvas-sub1');
+    });
+
+    it('should do nothing when navigating into a non-sub-canvas node', () => {
+      canvasPraxisStore.addNode(makeTextNode('text1'));
+      canvasPraxisStore.navigateInto('text1', 'Text');
+      expect(canvasPraxisStore.navStack).toHaveLength(0);
+    });
+
+    it('should navigate back up from a sub-canvas', () => {
+      const sub = makeSubCanvasNode('sub1');
+      canvasPraxisStore.addNode(sub);
+      canvasPraxisStore.navigateInto('sub1', 'Inner');
+      canvasPraxisStore.navigateUp();
+      expect(canvasPraxisStore.navStack).toHaveLength(0);
+      expect(canvasPraxisStore.canvas.id).toBe('default');
+    });
+
+    it('should save changes made inside sub-canvas back to the parent', () => {
+      const sub = makeSubCanvasNode('sub1');
+      canvasPraxisStore.addNode(sub);
+      canvasPraxisStore.navigateInto('sub1', 'Inner');
+
+      // Add a node inside the sub-canvas
+      canvasPraxisStore.addNode(makeTextNode('inner-node'));
+      expect(canvasPraxisStore.canvas.nodes).toHaveLength(1);
+
+      canvasPraxisStore.navigateUp();
+
+      // After navigating up the parent sub-canvas node should have the inner node
+      const updatedSub = canvasPraxisStore.canvas.nodes.find(n => n.id === 'sub1') as import('../../types/canvas').SubCanvasNode;
+      expect(updatedSub.children.nodes).toHaveLength(1);
+      expect(updatedSub.children.nodes[0].id).toBe('inner-node');
+    });
+
+    it('should not navigate up when already at root', () => {
+      canvasPraxisStore.navigateUp();
+      expect(canvasPraxisStore.navStack).toHaveLength(0);
+      expect(canvasPraxisStore.canvas.id).toBe('default');
+    });
   });
 });
 

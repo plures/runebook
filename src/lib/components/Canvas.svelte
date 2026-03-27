@@ -1,14 +1,25 @@
 <script lang="ts">
   import { untrack } from 'svelte';
-  import { canvasStore, nodeDataStore, makeConnectionId } from '../stores/canvas';
+  import { canvasStore, nodeDataStore, navStore, makeConnectionId } from '../stores/canvas';
   import { syncValidationNodes, validateConnection, scheduleExecution } from '../praxis/runtime';
   import TextCard from './TextCard.svelte';
   import TerminalNodeComponent from './TerminalNode.svelte';
   import InputNodeComponent from './InputNode.svelte';
   import DisplayNodeComponent from './DisplayNode.svelte';
   import TransformNodeComponent from './TransformNode.svelte';
+  import SubCanvasCardComponent from './SubCanvasCard.svelte';
   import ContextMenu from './ContextMenu.svelte';
-  import type { CanvasNode, Connection, TextNode, TerminalNode, InputNode, DisplayNode, TransformNode, ContextMenuItem } from '../types/canvas';
+  import type {
+    CanvasNode,
+    Connection,
+    TextNode,
+    TerminalNode,
+    InputNode,
+    DisplayNode,
+    TransformNode,
+    SubCanvasNode,
+    ContextMenuItem,
+  } from '../types/canvas';
 
   interface Props {
     tui?: boolean;
@@ -300,6 +311,7 @@
         { label: '📝 Add Input', action: () => addInputNode(p.x, p.y) },
         { label: '📊 Add Display', action: () => addDisplayNode(p.x, p.y) },
         { label: '🔄 Add Transform', action: () => addTransformNode(p.x, p.y) },
+        { label: '⬡ Add Sub-Canvas', action: () => addSubCanvasNode(p.x, p.y) },
       ],
     };
   }
@@ -405,6 +417,54 @@
     } satisfies TransformNode);
   }
 
+  function addSubCanvasNode(x: number, y: number) {
+    const id = `sub-canvas-${Date.now()}`;
+    canvasStore.addNode({
+      id,
+      type: 'sub-canvas',
+      position: { x, y },
+      size: { width: 320, height: 200 },
+      label: 'Sub-Canvas',
+      inputs: [{ id: 'in', name: 'in', type: 'input' }],
+      outputs: [{ id: 'out', name: 'out', type: 'output' }],
+      children: {
+        id: `canvas-${id}`,
+        name: 'Sub-Canvas',
+        description: '',
+        nodes: [],
+        connections: [],
+        version: '1.0.0',
+      },
+    } satisfies SubCanvasNode);
+  }
+
+  function handleNavigateInto(nodeId: string) {
+    const node = canvasData.nodes.find(n => n.id === nodeId);
+    if (!node || node.type !== 'sub-canvas') return;
+    canvasStore.navigateInto(nodeId, node.label);
+    // Reset pan/zoom for the new level
+    panX = 0;
+    panY = 0;
+    zoom = 1;
+  }
+
+  function handleNavigateUp() {
+    canvasStore.navigateUp();
+    panX = 0;
+    panY = 0;
+    zoom = 1;
+  }
+
+  function handleNavigateTo(index: number) {
+    const depth = $navStore.length - index;
+    for (let i = 0; i < depth; i++) {
+      canvasStore.navigateUp();
+    }
+    panX = 0;
+    panY = 0;
+    zoom = 1;
+  }
+
   function duplicateNode(nodeId: string) {
     const node = canvasData.nodes.find(n => n.id === nodeId);
     if (!node) return;
@@ -444,6 +504,47 @@
   role="application"
   aria-label="Canvas board"
 >
+  <!-- Breadcrumb navigation (shown when inside a sub-canvas) -->
+  {#if $navStore.length > 0}
+    <nav class="breadcrumb" aria-label="Canvas navigation">
+      <!-- svelte-ignore a11y_click_events_have_key_events -->
+      <!-- svelte-ignore a11y_no_static_element_interactions -->
+      <button
+        class="breadcrumb-item breadcrumb-root"
+        onclick={(e) => { e.stopPropagation(); handleNavigateTo(0); }}
+        aria-label="Go to root canvas"
+      >
+        {canvasData.name || 'Root'}
+      </button>
+      {#each $navStore as entry, i (entry.nodeId)}
+        <span class="breadcrumb-sep" aria-hidden="true">›</span>
+        {#if i < $navStore.length - 1}
+          <!-- svelte-ignore a11y_click_events_have_key_events -->
+          <!-- svelte-ignore a11y_no_static_element_interactions -->
+          <button
+            class="breadcrumb-item"
+            onclick={(e) => { e.stopPropagation(); handleNavigateTo(i + 1); }}
+            aria-label="Go to {entry.label}"
+          >
+            {entry.label}
+          </button>
+        {:else}
+          <span class="breadcrumb-item breadcrumb-current" aria-current="page">
+            {entry.label}
+          </span>
+        {/if}
+      {/each}
+      <!-- Back button -->
+      <button
+        class="breadcrumb-back"
+        onclick={(e) => { e.stopPropagation(); handleNavigateUp(); }}
+        aria-label="Go up to parent canvas"
+        title="Back"
+      >
+        ← Back
+      </button>
+    </nav>
+  {/if}
   <!-- Infinite pan/zoom viewport -->
   <div
     class="viewport"
@@ -549,6 +650,8 @@
             <DisplayNodeComponent {node} {tui} />
           {:else if node.type === 'transform'}
             <TransformNodeComponent {node} {tui} />
+          {:else if node.type === 'sub-canvas'}
+            <SubCanvasCardComponent {node} onnavigate={handleNavigateInto} />
           {/if}
         </div>
 
@@ -594,6 +697,89 @@
 
   .canvas-container.panning {
     cursor: grab;
+  }
+
+  /* Breadcrumb navigation */
+  .breadcrumb {
+    position: absolute;
+    top: var(--space-2, 6px);
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 200;
+    display: flex;
+    align-items: center;
+    gap: var(--space-1, 4px);
+    background: var(--surface-2, #16213e);
+    border: 1px solid var(--border-color, rgba(255, 255, 255, 0.1));
+    border-radius: 20px;
+    padding: 3px 10px;
+    font-size: 0.75rem;
+    font-family: var(--font-sans);
+    max-width: 70%;
+    overflow: hidden;
+    pointer-events: all;
+  }
+
+  .breadcrumb-item {
+    background: transparent;
+    border: none;
+    color: var(--text-2, #aaa);
+    cursor: pointer;
+    padding: 1px 4px;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 120px;
+  }
+
+  .breadcrumb-item:hover {
+    color: var(--text-1, #e0e0e0);
+    background: var(--surface-3, rgba(255, 255, 255, 0.05));
+  }
+
+  .breadcrumb-root {
+    color: var(--text-1, #e0e0e0);
+  }
+
+  .breadcrumb-current {
+    color: var(--brand, #00d4ff);
+    font-weight: 600;
+    background: transparent;
+    border: none;
+    padding: 1px 4px;
+    font-size: 0.75rem;
+    font-family: var(--font-sans);
+  }
+
+  .breadcrumb-sep {
+    color: var(--text-3, #555);
+    flex-shrink: 0;
+  }
+
+  .breadcrumb-back {
+    margin-left: var(--space-2, 6px);
+    background: transparent;
+    border: 1px solid var(--border-color, rgba(255, 255, 255, 0.15));
+    color: var(--text-2, #aaa);
+    border-radius: 12px;
+    padding: 1px 8px;
+    font-size: 0.7rem;
+    cursor: pointer;
+    flex-shrink: 0;
+    font-family: var(--font-sans);
+  }
+
+  .breadcrumb-back:hover {
+    color: var(--text-1, #e0e0e0);
+    border-color: var(--text-2, #aaa);
+  }
+
+  .breadcrumb-back:focus-visible,
+  .breadcrumb-item:focus-visible {
+    outline: 2px solid var(--brand, #00d4ff);
+    outline-offset: 2px;
   }
 
   .viewport {

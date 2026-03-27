@@ -4,6 +4,7 @@
 import {
   canvasEngine,
   type CanvasContext,
+  type CanvasNavEntry,
   AddNodeEvent,
   RemoveNodeEvent,
   UpdateNodeEvent,
@@ -13,12 +14,15 @@ import {
   LoadCanvasEvent,
   ClearCanvasEvent,
   UpdateNodeDataEvent,
+  NavigateIntoSubCanvasEvent,
+  NavigateUpEvent,
   makeConnectionId,
 } from './canvas-praxis';
 import { createPraxisStore } from '@plures/praxis/svelte';
 import type { Canvas, CanvasNode, Connection } from '../types/canvas';
 
 export { makeConnectionId };
+export type { CanvasNavEntry };
 
 // Create a Svelte store from the praxis engine.
 // All mutations go through praxisStore.dispatch() so that subscribers are
@@ -41,9 +45,19 @@ export const canvasStore = {
   removeConnection: (from: string, to: string, fromPort: string, toPort: string) => praxisStore.dispatch([RemoveConnectionEvent.create({ from, to, fromPort, toPort })]),
   loadCanvas: (canvas: Canvas) => praxisStore.dispatch([LoadCanvasEvent.create({ canvas })]),
   clear: () => praxisStore.dispatch([ClearCanvasEvent.create({})]),
+  navigateInto: (nodeId: string, label: string) =>
+    praxisStore.dispatch([NavigateIntoSubCanvasEvent.create({ nodeId, label })]),
+  navigateUp: () => praxisStore.dispatch([NavigateUpEvent.create({})]),
 };
 
-// Create a derived store for node data
+// Create a derived store for the navigation stack
+export const navStore = {
+  subscribe: (fn: (value: CanvasNavEntry[]) => void) => {
+    return praxisStore.subscribe((state) => {
+      fn(state.context.navStack);
+    });
+  },
+};
 export const nodeDataStore = {
   subscribe: (fn: (value: Record<string, any>) => void) => {
     return praxisStore.subscribe((state) => {

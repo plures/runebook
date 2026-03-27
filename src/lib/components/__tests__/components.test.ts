@@ -23,6 +23,7 @@ import TerminalNode from '../TerminalNode.svelte';
 import InputNode from '../InputNode.svelte';
 import DisplayNode from '../DisplayNode.svelte';
 import TransformNode from '../TransformNode.svelte';
+import SubCanvasCard from '../SubCanvasCard.svelte';
 
 import type {
   TextNode,
@@ -30,6 +31,7 @@ import type {
   InputNode as InputNodeType,
   DisplayNode as DisplayNodeType,
   TransformNode as TransformNodeType,
+  SubCanvasNode,
 } from '../../types/canvas';
 
 const makeTextNode = (overrides: Partial<TextNode> = {}): TextNode => ({
@@ -483,6 +485,117 @@ describe('Graph execution layer', () => {
     });
     unsub();
     expect(content).toBe('original');
+  });
+});
+
+const makeSubCanvasNode = (overrides: Partial<SubCanvasNode> = {}): SubCanvasNode => ({
+  id: 'sub-1',
+  type: 'sub-canvas',
+  position: { x: 100, y: 100 },
+  size: { width: 320, height: 200 },
+  label: 'My Sub-Canvas',
+  inputs: [{ id: 'in', name: 'in', type: 'input' }],
+  outputs: [{ id: 'out', name: 'out', type: 'output' }],
+  children: {
+    id: 'canvas-sub-1',
+    name: 'Inner',
+    description: '',
+    nodes: [],
+    connections: [],
+    version: '1.0.0',
+  },
+  ...overrides,
+});
+
+describe('SubCanvasCard', () => {
+  afterEach(cleanup);
+
+  it('renders without crashing', () => {
+    const { container } = render(SubCanvasCard, {
+      node: makeSubCanvasNode(),
+      onnavigate: () => {},
+    });
+    expect(container.querySelector('.sub-canvas-card')).toBeTruthy();
+  });
+
+  it('shows the sub-canvas label', () => {
+    const { container } = render(SubCanvasCard, {
+      node: makeSubCanvasNode({ label: 'Agent Workflow' }),
+      onnavigate: () => {},
+    });
+    const titleInput = container.querySelector('.card-title') as HTMLInputElement;
+    expect(titleInput).toBeTruthy();
+    expect(titleInput.value).toBe('Agent Workflow');
+  });
+
+  it('shows 0 nodes and 0 links for empty children', () => {
+    const { container } = render(SubCanvasCard, {
+      node: makeSubCanvasNode(),
+      onnavigate: () => {},
+    });
+    expect(container.textContent).toContain('0 nodes');
+    expect(container.textContent).toContain('0 links');
+  });
+
+  it('shows correct node and link counts', () => {
+    const node = makeSubCanvasNode({
+      children: {
+        id: 'canvas-sub-1',
+        name: 'Inner',
+        description: '',
+        nodes: [
+          { id: 'n1', type: 'text', position: { x: 0, y: 0 }, label: 'A', content: '', inputs: [], outputs: [] },
+          { id: 'n2', type: 'text', position: { x: 100, y: 0 }, label: 'B', content: '', inputs: [], outputs: [] },
+        ],
+        connections: [{ id: 'c1', from: 'n1', to: 'n2', fromPort: 'out', toPort: 'in' }],
+        version: '1.0.0',
+      },
+    });
+    const { container } = render(SubCanvasCard, { node, onnavigate: () => {} });
+    expect(container.textContent).toContain('2 nodes');
+    expect(container.textContent).toContain('1 link');
+  });
+
+  it('calls onnavigate with the node id when Open button is clicked', async () => {
+    let navigatedTo: string | null = null;
+    const { container } = render(SubCanvasCard, {
+      node: makeSubCanvasNode({ id: 'sub-click' }),
+      onnavigate: (id: string) => { navigatedTo = id; },
+    });
+    const btn = container.querySelector('.navigate-btn') as HTMLButtonElement;
+    expect(btn).toBeTruthy();
+    await fireEvent.click(btn);
+    expect(navigatedTo).toBe('sub-click');
+  });
+
+  it('renders mini-preview nodes for children', () => {
+    const node = makeSubCanvasNode({
+      children: {
+        id: 'canvas-sub-1',
+        name: 'Inner',
+        description: '',
+        nodes: [
+          { id: 'n1', type: 'text', position: { x: 0, y: 0 }, label: 'A', content: '', inputs: [], outputs: [] },
+        ],
+        connections: [],
+        version: '1.0.0',
+      },
+    });
+    const { container } = render(SubCanvasCard, { node, onnavigate: () => {} });
+    expect(container.querySelector('.preview-node')).toBeTruthy();
+  });
+});
+
+describe('Canvas with sub-canvas node', () => {
+  beforeEach(() => { canvasPraxisStore.clear(); });
+  afterEach(cleanup);
+
+  it('renders sub-canvas node type without crashing', () => {
+    canvasPraxisStore.clear();
+    canvasStore.addNode(makeSubCanvasNode({ id: 'sub-canvas-test' }));
+    const { container } = render(Canvas);
+    expect(container.querySelector('.canvas-container')).toBeTruthy();
+    expect(container.querySelector('.node-wrapper')).toBeTruthy();
   });
 });
 
