@@ -163,6 +163,14 @@ const BUILTIN_COMPONENTS = [
       { id: 'output', direction: 'output' as const },
     ],
   },
+  {
+    type: 'sub-canvas',
+    label: 'Sub-Canvas',
+    ports: [
+      { id: 'in', direction: 'input' as const },
+      { id: 'out', direction: 'output' as const },
+    ],
+  },
 ] as const;
 
 for (const cap of BUILTIN_COMPONENTS) {
