@@ -9,6 +9,7 @@
   import TransformNodeComponent from './TransformNode.svelte';
   import SubCanvasCardComponent from './SubCanvasCard.svelte';
   import ContextMenu from './ContextMenu.svelte';
+  import { createSubCanvasNode } from '../utils/canvas-nodes';
   import type {
     CanvasNode,
     Connection,
@@ -17,7 +18,6 @@
     InputNode,
     DisplayNode,
     TransformNode,
-    SubCanvasNode,
     ContextMenuItem,
   } from '../types/canvas';
 
@@ -419,23 +419,7 @@
 
   function addSubCanvasNode(x: number, y: number) {
     const id = `sub-canvas-${Date.now()}`;
-    canvasStore.addNode({
-      id,
-      type: 'sub-canvas',
-      position: { x, y },
-      size: { width: 320, height: 200 },
-      label: 'Sub-Canvas',
-      inputs: [{ id: 'in', name: 'in', type: 'input' }],
-      outputs: [{ id: 'out', name: 'out', type: 'output' }],
-      children: {
-        id: `canvas-${id}`,
-        name: 'Sub-Canvas',
-        description: '',
-        nodes: [],
-        connections: [],
-        version: '1.0.0',
-      },
-    } satisfies SubCanvasNode);
+    canvasStore.addNode(createSubCanvasNode({ id, x, y }));
   }
 
   function handleNavigateInto(nodeId: string) {

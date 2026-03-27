@@ -1,8 +1,9 @@
 <script lang="ts">
   import { canvasStore } from '../stores/canvas';
   import { saveCanvas, loadCanvas } from '../utils/storage';
+  import { createSubCanvasNode } from '../utils/canvas-nodes';
   import { StatusBar, Button } from '@plures/design-dojo';
-  import type { TextNode, SubCanvasNode } from '../types/canvas';
+  import type { TextNode } from '../types/canvas';
 
   interface Props {
     tui?: boolean;
@@ -31,23 +32,7 @@
 
   function addSubCanvasNode() {
     const id = `sub-canvas-${Date.now()}`;
-    canvasStore.addNode({
-      id,
-      type: 'sub-canvas',
-      position: { x: 80, y: 80 },
-      size: { width: 320, height: 200 },
-      label: 'Sub-Canvas',
-      inputs: [{ id: 'in', name: 'in', type: 'input' }],
-      outputs: [{ id: 'out', name: 'out', type: 'output' }],
-      children: {
-        id: `canvas-${id}`,
-        name: 'Sub-Canvas',
-        description: '',
-        nodes: [],
-        connections: [],
-        version: '1.0.0',
-      },
-    } satisfies SubCanvasNode);
+    canvasStore.addNode(createSubCanvasNode({ id, x: 80, y: 80 }));
   }
 
   async function handleSave() {
