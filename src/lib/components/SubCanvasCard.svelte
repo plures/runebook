@@ -21,14 +21,6 @@
     e.stopPropagation();
     onnavigate(node.id);
   }
-
-  function handleKeyNavigate(e: KeyboardEvent) {
-    if (e.key === 'Enter' || e.key === ' ') {
-      e.preventDefault();
-      e.stopPropagation();
-      onnavigate(node.id);
-    }
-  }
 </script>
 
 <div class="sub-canvas-card" aria-label="Sub-canvas: {node.label}">
@@ -71,7 +63,6 @@
     <button
       class="navigate-btn"
       onclick={handleNavigate}
-      onkeydown={handleKeyNavigate}
       aria-label="Open sub-canvas {node.label}"
       title="Open sub-canvas"
     >
