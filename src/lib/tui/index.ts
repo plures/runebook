@@ -211,8 +211,7 @@ export class TUIApp extends EventEmitter {
         const command = termNode.command;
         // Use shell mode only when no separate args are provided *and* the command
         // appears to be a shell expression (e.g. contains pipes, redirects, etc.).
-        const needsShell =
-          args.length === 0 && /[|&;<>()$`\\]/.test(command);
+        const needsShell = args.length === 0 && /[|&;<>()$`\\]/.test(command);
         const proc = spawn(command, args, {
           cwd: termNode.cwd || undefined,
           env: termNode.env ? { ...process.env, ...termNode.env } : process.env,
@@ -229,7 +228,7 @@ export class TUIApp extends EventEmitter {
         let stdoutBuf = '';
         proc.stdout?.on('data', (chunk: Buffer) => {
           stdoutBuf += chunk.toString('utf-8');
-          const lines = stdoutBuf.split('\n');
+          const lines = stdoutBuf.split(/\r?\n/);
           stdoutBuf = lines.pop() ?? '';
           for (const line of lines) pushLine(line);
         });
@@ -237,7 +236,7 @@ export class TUIApp extends EventEmitter {
         let stderrBuf = '';
         proc.stderr?.on('data', (chunk: Buffer) => {
           stderrBuf += chunk.toString('utf-8');
-          const lines = stderrBuf.split('\n');
+          const lines = stderrBuf.split(/\r?\n/);
           stderrBuf = lines.pop() ?? '';
           for (const line of lines) pushLine(`[err] ${line}`);
         });

@@ -614,8 +614,8 @@ describe('TUIApp', () => {
           position: { x: 0, y: 0 },
           inputs: [],
           outputs: [],
-          command: 'echo',
-          args: ['oops >&2'],
+          command: 'node',
+          args: ['-e', 'console.error("oops")'],
         } as any,
       ],
       connections: [],
@@ -628,10 +628,10 @@ describe('TUIApp', () => {
     await app.runSelected();
 
     const output = (app as any).state.terminalOutput as string[];
-    expect(output.some((l: string) => l.includes('[err]') || l.includes('oops'))).toBe(true);
+    expect(output.some((l: string) => l.includes('[err]') && l.includes('oops'))).toBe(true);
   });
 
-  it('runSelected() switches mode to run during execution', async () => {
+  it('runSelected() returns mode to normal after execution completes', async () => {
     const chunks: string[] = [];
     const fakeOut = {
       write: (s: string) => {
@@ -648,7 +648,7 @@ describe('TUIApp', () => {
         {
           id: 'term-mode',
           type: 'terminal',
-          label: 'Sleep',
+          label: 'Echo',
           position: { x: 0, y: 0 },
           inputs: [],
           outputs: [],
@@ -663,9 +663,12 @@ describe('TUIApp', () => {
     const app = new TUIApp({ output: fakeOut });
     (app as any).state.canvas = canvas;
 
-    // After completion, mode should return to normal
+    // Mode should be 'run' during execution — verify via rendered output
     await app.runSelected();
     expect(app.mode).toBe('normal');
+    // The rendered output should have included RUN mode at some point
+    const rendered = chunks.join('');
+    expect(rendered).toContain('RUN');
   });
 
   // ── nodeProps (terminal fields) ───────────────────────────────────────────────
