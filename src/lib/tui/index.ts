@@ -208,12 +208,15 @@ export class TUIApp extends EventEmitter {
     try {
       await new Promise<void>((resolve, reject) => {
         const args = termNode.args ?? [];
-        // Use shell mode only when no separate args are provided (command may contain pipes, etc.)
-        const useShell = args.length === 0;
-        const proc = spawn(termNode.command, args, {
+        const command = termNode.command;
+        // Use shell mode only when no separate args are provided *and* the command
+        // appears to be a shell expression (e.g. contains pipes, redirects, etc.).
+        const needsShell =
+          args.length === 0 && /[|&;<>()$`\\]/.test(command);
+        const proc = spawn(command, args, {
           cwd: termNode.cwd || undefined,
           env: termNode.env ? { ...process.env, ...termNode.env } : process.env,
-          shell: useShell,
+          shell: needsShell,
           stdio: ['ignore', 'pipe', 'pipe'],
         });
         this._activeProc = proc;
