@@ -418,6 +418,64 @@ describe('Toolbar', () => {
     const buttons = container.querySelectorAll('button');
     expect(buttons.length).toBeGreaterThan(0);
   });
+
+  it('has buttons for all 5 core node types', () => {
+    const { getByTitle } = render(Toolbar);
+    expect(getByTitle('Add Text Card')).toBeTruthy();
+    expect(getByTitle('Add Terminal')).toBeTruthy();
+    expect(getByTitle('Add Input')).toBeTruthy();
+    expect(getByTitle('Add Display')).toBeTruthy();
+    expect(getByTitle('Add Transform')).toBeTruthy();
+    expect(getByTitle('Add Sub-Canvas')).toBeTruthy();
+  });
+
+  it('clicking Add Text Card adds a text node to the canvas', async () => {
+    canvasStore.clear();
+    const { getByTitle } = render(Toolbar);
+    await fireEvent.click(getByTitle('Add Text Card'));
+    const canvas = get(canvasStore);
+    expect(canvas.nodes.some(n => n.type === 'text')).toBe(true);
+  });
+
+  it('clicking Add Terminal adds a terminal node to the canvas', async () => {
+    canvasStore.clear();
+    const { getByTitle } = render(Toolbar);
+    await fireEvent.click(getByTitle('Add Terminal'));
+    const canvas = get(canvasStore);
+    expect(canvas.nodes.some(n => n.type === 'terminal')).toBe(true);
+  });
+
+  it('clicking Add Input adds an input node to the canvas', async () => {
+    canvasStore.clear();
+    const { getByTitle } = render(Toolbar);
+    await fireEvent.click(getByTitle('Add Input'));
+    const canvas = get(canvasStore);
+    expect(canvas.nodes.some(n => n.type === 'input')).toBe(true);
+  });
+
+  it('clicking Add Display adds a display node to the canvas', async () => {
+    canvasStore.clear();
+    const { getByTitle } = render(Toolbar);
+    await fireEvent.click(getByTitle('Add Display'));
+    const canvas = get(canvasStore);
+    expect(canvas.nodes.some(n => n.type === 'display')).toBe(true);
+  });
+
+  it('clicking Add Transform adds a transform node to the canvas', async () => {
+    canvasStore.clear();
+    const { getByTitle } = render(Toolbar);
+    await fireEvent.click(getByTitle('Add Transform'));
+    const canvas = get(canvasStore);
+    expect(canvas.nodes.some(n => n.type === 'transform')).toBe(true);
+  });
+
+  it('clicking Add Sub-Canvas adds a sub-canvas node to the canvas', async () => {
+    canvasStore.clear();
+    const { getByTitle } = render(Toolbar);
+    await fireEvent.click(getByTitle('Add Sub-Canvas'));
+    const canvas = get(canvasStore);
+    expect(canvas.nodes.some(n => n.type === 'sub-canvas')).toBe(true);
+  });
 });
 
 describe('Graph execution layer', () => {

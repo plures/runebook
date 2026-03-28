@@ -9,15 +9,17 @@
   import TransformNodeComponent from './TransformNode.svelte';
   import SubCanvasCardComponent from './SubCanvasCard.svelte';
   import ContextMenu from './ContextMenu.svelte';
-  import { createSubCanvasNode } from '../utils/canvas-nodes';
+  import {
+    createTextNode,
+    createTerminalNode,
+    createInputNode,
+    createDisplayNode,
+    createTransformNode,
+    createSubCanvasNode,
+  } from '../utils/canvas-nodes';
   import type {
     CanvasNode,
     Connection,
-    TextNode,
-    TerminalNode,
-    InputNode,
-    DisplayNode,
-    TransformNode,
     ContextMenuItem,
   } from '../types/canvas';
 
@@ -343,83 +345,27 @@
   }
 
   function addTextCard(x: number, y: number) {
-    const id = `text-${Date.now()}`;
-    canvasStore.addNode({
-      id,
-      type: 'text',
-      position: { x, y },
-      size: { width: 280, height: 200 },
-      label: 'Note',
-      content: '',
-      inputs: [{ id: 'in', name: 'in', type: 'input' }],
-      outputs: [{ id: 'out', name: 'out', type: 'output' }],
-    } satisfies TextNode);
+    canvasStore.addNode(createTextNode({ id: `text-${Date.now()}`, x, y }));
   }
 
   function addTerminalNode(x: number, y: number) {
-    const id = `terminal-${Date.now()}`;
-    canvasStore.addNode({
-      id,
-      type: 'terminal',
-      position: { x, y },
-      size: { width: 320, height: 280 },
-      label: 'Terminal',
-      command: 'echo',
-      args: ['Hello, RuneBook!'],
-      autoStart: false,
-      inputs: [],
-      outputs: [{ id: 'stdout', name: 'stdout', type: 'output' }],
-    } satisfies TerminalNode);
+    canvasStore.addNode(createTerminalNode({ id: `terminal-${Date.now()}`, x, y }));
   }
 
   function addInputNode(x: number, y: number) {
-    const id = `input-${Date.now()}`;
-    canvasStore.addNode({
-      id,
-      type: 'input',
-      position: { x, y },
-      size: { width: 280, height: 160 },
-      label: 'Text Input',
-      inputType: 'text',
-      value: '',
-      inputs: [],
-      outputs: [{ id: 'value', name: 'value', type: 'output' }],
-    } satisfies InputNode);
+    canvasStore.addNode(createInputNode({ id: `input-${Date.now()}`, x, y }));
   }
 
   function addDisplayNode(x: number, y: number) {
-    const id = `display-${Date.now()}`;
-    canvasStore.addNode({
-      id,
-      type: 'display',
-      position: { x, y },
-      size: { width: 320, height: 240 },
-      label: 'Display',
-      displayType: 'text',
-      content: '',
-      inputs: [{ id: 'input', name: 'input', type: 'input' }],
-      outputs: [],
-    } satisfies DisplayNode);
+    canvasStore.addNode(createDisplayNode({ id: `display-${Date.now()}`, x, y }));
   }
 
   function addTransformNode(x: number, y: number) {
-    const id = `transform-${Date.now()}`;
-    canvasStore.addNode({
-      id,
-      type: 'transform',
-      position: { x, y },
-      size: { width: 320, height: 280 },
-      label: 'Transform',
-      transformType: 'map',
-      code: 'item',
-      inputs: [{ id: 'input', name: 'input', type: 'input' }],
-      outputs: [{ id: 'output', name: 'output', type: 'output' }],
-    } satisfies TransformNode);
+    canvasStore.addNode(createTransformNode({ id: `transform-${Date.now()}`, x, y }));
   }
 
   function addSubCanvasNode(x: number, y: number) {
-    const id = `sub-canvas-${Date.now()}`;
-    canvasStore.addNode(createSubCanvasNode({ id, x, y }));
+    canvasStore.addNode(createSubCanvasNode({ id: `sub-canvas-${Date.now()}`, x, y }));
   }
 
   function handleNavigateInto(nodeId: string) {

@@ -1,9 +1,15 @@
 <script lang="ts">
   import { canvasStore } from '../stores/canvas';
   import { saveCanvas, loadCanvas } from '../utils/storage';
-  import { createSubCanvasNode } from '../utils/canvas-nodes';
+  import {
+    createTextNode,
+    createTerminalNode,
+    createInputNode,
+    createDisplayNode,
+    createTransformNode,
+    createSubCanvasNode,
+  } from '../utils/canvas-nodes';
   import { StatusBar, Button } from '@plures/design-dojo';
-  import type { TextNode } from '../types/canvas';
 
   interface Props {
     tui?: boolean;
@@ -16,23 +22,41 @@
 
   let saveStatus = $state<'idle' | 'saved' | 'error'>('idle');
 
+  /** Returns a staggered default position to avoid node overlap. */
+  function defaultPosition() {
+    const count = $canvasStore.nodes.length;
+    const offset = (count % 10) * 24;
+    return { x: 80 + offset, y: 80 + offset };
+  }
+
   function addTextCard() {
-    const id = `text-${Date.now()}`;
-    canvasStore.addNode({
-      id,
-      type: 'text',
-      position: { x: 80, y: 80 },
-      size: { width: 280, height: 200 },
-      label: 'Note',
-      content: '',
-      inputs: [{ id: 'in', name: 'in', type: 'input' }],
-      outputs: [{ id: 'out', name: 'out', type: 'output' }],
-    } satisfies TextNode);
+    const { x, y } = defaultPosition();
+    canvasStore.addNode(createTextNode({ id: `text-${Date.now()}`, x, y }));
+  }
+
+  function addTerminalNode() {
+    const { x, y } = defaultPosition();
+    canvasStore.addNode(createTerminalNode({ id: `terminal-${Date.now()}`, x, y }));
+  }
+
+  function addInputNode() {
+    const { x, y } = defaultPosition();
+    canvasStore.addNode(createInputNode({ id: `input-${Date.now()}`, x, y }));
+  }
+
+  function addDisplayNode() {
+    const { x, y } = defaultPosition();
+    canvasStore.addNode(createDisplayNode({ id: `display-${Date.now()}`, x, y }));
+  }
+
+  function addTransformNode() {
+    const { x, y } = defaultPosition();
+    canvasStore.addNode(createTransformNode({ id: `transform-${Date.now()}`, x, y }));
   }
 
   function addSubCanvasNode() {
-    const id = `sub-canvas-${Date.now()}`;
-    canvasStore.addNode(createSubCanvasNode({ id, x: 80, y: 80 }));
+    const { x, y } = defaultPosition();
+    canvasStore.addNode(createSubCanvasNode({ id: `sub-canvas-${Date.now()}`, x, y }));
   }
 
   async function handleSave() {
@@ -64,6 +88,18 @@
     <Button variant="secondary" onclick={addTextCard} class="tool-btn" title="Add Text Card">
       📝
     </Button>
+    <Button variant="secondary" onclick={addTerminalNode} class="tool-btn" title="Add Terminal">
+      ⚡
+    </Button>
+    <Button variant="secondary" onclick={addInputNode} class="tool-btn" title="Add Input">
+      🔤
+    </Button>
+    <Button variant="secondary" onclick={addDisplayNode} class="tool-btn" title="Add Display">
+      📊
+    </Button>
+    <Button variant="secondary" onclick={addTransformNode} class="tool-btn" title="Add Transform">
+      🔄
+    </Button>
     <Button variant="secondary" onclick={addSubCanvasNode} class="tool-btn" title="Add Sub-Canvas">
       ⬡
     </Button>
@@ -86,7 +122,6 @@
     align-items: center;
     padding: var(--space-2, 8px) 0;
     gap: 0;
-    /* Offset below the 40 px TitleBar */
     top: 40px !important;
   }
 
