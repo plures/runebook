@@ -1,3 +1,12 @@
+## [0.12.0] — 2026-03-28
+
+- feat: implement terminal node command execution in TUI mode (#142) (47f43eb)
+- chore: standardize copilot-pr-lifecycle.yml to canonical version (1c2d2ae)
+- docs: add ROADMAP.md (6e6e2c9)
+- chore: cleanup and housekeeping (d466119)
+- chore: standardize CI workflow (7dad3e1)
+- chore: enforce strict type-safety across org (ef5c6fb)
+
 ## [0.11.0] — 2026-03-27
 
 - feat: Obsidian Canvas foundation — nested sub-canvas containers with in-place navigation (#141) (b3613df)
