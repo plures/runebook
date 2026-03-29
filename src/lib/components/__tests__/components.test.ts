@@ -419,7 +419,7 @@ describe('Toolbar', () => {
     expect(buttons.length).toBeGreaterThan(0);
   });
 
-  it('has buttons for all 5 core node types', () => {
+  it('has buttons for all 6 node types', () => {
     const { getByTitle } = render(Toolbar);
     expect(getByTitle('Add Text Card')).toBeTruthy();
     expect(getByTitle('Add Terminal')).toBeTruthy();
