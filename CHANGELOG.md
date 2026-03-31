@@ -1,3 +1,8 @@
+## [0.12.1] — 2026-03-31
+
+- fix(lifecycle): rewrite v9 — apply suggestions, merge, no nudges (3c18420)
+- chore: standardize license to MIT (e7cf72c)
+
 ## [0.12.0] — 2026-03-28
 
 - feat: implement terminal node command execution in TUI mode (#142) (47f43eb)
