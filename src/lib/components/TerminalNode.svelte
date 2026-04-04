@@ -154,8 +154,7 @@
       resizeObserver.observe(terminalEl);
     }
 
-    const onWindowResize = () => fitTerminal();
-    window.addEventListener('resize', onWindowResize);
+    window.addEventListener('resize', fitTerminal);
 
     if (node.autoStart) {
       const shouldRun = window.confirm(
@@ -168,13 +167,10 @@
         executeCommand();
       }
     }
-
-    return () => {
-      window.removeEventListener('resize', onWindowResize);
-    };
   });
 
   onDestroy(() => {
+    window.removeEventListener('resize', fitTerminal);
     resizeObserver?.disconnect();
     term?.dispose();
   });
