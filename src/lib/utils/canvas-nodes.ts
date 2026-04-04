@@ -1,4 +1,13 @@
-import type { TextNode, TerminalNode, InputNode, DisplayNode, TransformNode, SubCanvasNode } from '../types/canvas';
+import type { Port, TextNode, TerminalNode, InputNode, DisplayNode, TransformNode, SubCanvasNode } from '../types/canvas';
+
+/**
+ * Resolve the index of a port by its ID within a port array.
+ * Returns the found index, or 0 as a safe fallback when the port ID is not found.
+ */
+export function resolvePortIndex(ports: Port[], portId: string): number {
+  const idx = ports.findIndex(p => p.id === portId);
+  return idx >= 0 ? idx : 0;
+}
 
 export interface CreateNodeOptions {
   id: string;

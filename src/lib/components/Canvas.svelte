@@ -16,7 +16,7 @@
     DisplayNode,
     ContextMenuItem,
   } from '../types/canvas';
-  import { createTextNode, createTerminalNode, createInputNode, createDisplayNode, createTransformNode } from '../utils/canvas-nodes';
+  import { createTextNode, createTerminalNode, createInputNode, createDisplayNode, createTransformNode, resolvePortIndex } from '../utils/canvas-nodes';
 
   interface Props {
     tui?: boolean;
@@ -481,8 +481,10 @@
         {@const fromNode = canvasData.nodes.find(n => n.id === connection.from)}
         {@const toNode = canvasData.nodes.find(n => n.id === connection.to)}
         {#if fromNode && toNode}
-          {@const fp = getPortPos(fromNode, 0, fromNode.outputs.length, 'output')}
-          {@const tp = getPortPos(toNode, 0, toNode.inputs.length, 'input')}
+          {@const fromPortIdx = resolvePortIndex(fromNode.outputs, connection.fromPort)}
+          {@const toPortIdx = resolvePortIndex(toNode.inputs, connection.toPort)}
+          {@const fp = getPortPos(fromNode, fromPortIdx, fromNode.outputs.length, 'output')}
+          {@const tp = getPortPos(toNode, toPortIdx, toNode.inputs.length, 'input')}
           {@const dx = Math.abs(tp.x - fp.x) * 0.5}
           <path
             d="M {fp.x} {fp.y} C {fp.x + dx} {fp.y}, {tp.x - dx} {tp.y}, {tp.x} {tp.y}"
