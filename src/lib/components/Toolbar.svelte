@@ -1,9 +1,15 @@
 <script lang="ts">
   import { canvasStore } from '../stores/canvas';
   import { saveCanvas, loadCanvas } from '../utils/storage';
-  import { createSubCanvasNode } from '../utils/canvas-nodes';
+  import {
+    createTextNode,
+    createTerminalNode,
+    createInputNode,
+    createDisplayNode,
+    createTransformNode,
+    createSubCanvasNode,
+  } from '../utils/canvas-nodes';
   import { StatusBar, Button } from '@plures/design-dojo';
-  import type { TextNode } from '../types/canvas';
 
   interface Props {
     tui?: boolean;
@@ -16,23 +22,30 @@
 
   let saveStatus = $state<'idle' | 'saved' | 'error'>('idle');
 
+  const DEFAULT_POSITION = { x: 80, y: 80 };
+
   function addTextCard() {
-    const id = `text-${Date.now()}`;
-    canvasStore.addNode({
-      id,
-      type: 'text',
-      position: { x: 80, y: 80 },
-      size: { width: 280, height: 200 },
-      label: 'Note',
-      content: '',
-      inputs: [{ id: 'in', name: 'in', type: 'input' }],
-      outputs: [{ id: 'out', name: 'out', type: 'output' }],
-    } satisfies TextNode);
+    canvasStore.addNode(createTextNode({ id: `text-${Date.now()}`, ...DEFAULT_POSITION }));
+  }
+
+  function addTerminalNode() {
+    canvasStore.addNode(createTerminalNode({ id: `terminal-${Date.now()}`, ...DEFAULT_POSITION }));
+  }
+
+  function addInputNode() {
+    canvasStore.addNode(createInputNode({ id: `input-${Date.now()}`, ...DEFAULT_POSITION }));
+  }
+
+  function addDisplayNode() {
+    canvasStore.addNode(createDisplayNode({ id: `display-${Date.now()}`, ...DEFAULT_POSITION }));
+  }
+
+  function addTransformNode() {
+    canvasStore.addNode(createTransformNode({ id: `transform-${Date.now()}`, ...DEFAULT_POSITION }));
   }
 
   function addSubCanvasNode() {
-    const id = `sub-canvas-${Date.now()}`;
-    canvasStore.addNode(createSubCanvasNode({ id, x: 80, y: 80 }));
+    canvasStore.addNode(createSubCanvasNode({ id: `sub-canvas-${Date.now()}`, ...DEFAULT_POSITION }));
   }
 
   async function handleSave() {
@@ -63,6 +76,18 @@
   <nav class="toolbar-nav" aria-label="Canvas toolbar">
     <Button variant="secondary" onclick={addTextCard} class="tool-btn" title="Add Text Card">
       📝
+    </Button>
+    <Button variant="secondary" onclick={addTerminalNode} class="tool-btn" title="Add Terminal">
+      ⚡
+    </Button>
+    <Button variant="secondary" onclick={addInputNode} class="tool-btn" title="Add Input">
+      🎛️
+    </Button>
+    <Button variant="secondary" onclick={addDisplayNode} class="tool-btn" title="Add Display">
+      📊
+    </Button>
+    <Button variant="secondary" onclick={addTransformNode} class="tool-btn" title="Add Transform">
+      🔄
     </Button>
     <Button variant="secondary" onclick={addSubCanvasNode} class="tool-btn" title="Add Sub-Canvas">
       ⬡

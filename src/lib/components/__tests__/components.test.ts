@@ -418,6 +418,62 @@ describe('Toolbar', () => {
     const buttons = container.querySelectorAll('button');
     expect(buttons.length).toBeGreaterThan(0);
   });
+
+  it('has buttons for all 5 core node types plus sub-canvas', () => {
+    const { container } = render(Toolbar);
+    const buttons = Array.from(container.querySelectorAll('button'));
+    const titles = buttons.map((b) => b.getAttribute('title'));
+    expect(titles).toContain('Add Text Card');
+    expect(titles).toContain('Add Terminal');
+    expect(titles).toContain('Add Input');
+    expect(titles).toContain('Add Display');
+    expect(titles).toContain('Add Transform');
+    expect(titles).toContain('Add Sub-Canvas');
+  });
+
+  it('clicking Add Terminal button adds a terminal node to the canvas', async () => {
+    canvasStore.clear();
+    const { container } = render(Toolbar);
+    const buttons = Array.from(container.querySelectorAll('button'));
+    const terminalBtn = buttons.find((b) => b.getAttribute('title') === 'Add Terminal');
+    expect(terminalBtn).toBeTruthy();
+    await fireEvent.click(terminalBtn!);
+    const canvas = get(canvasStore);
+    expect(canvas.nodes.some((n) => n.type === 'terminal')).toBe(true);
+  });
+
+  it('clicking Add Input button adds an input node to the canvas', async () => {
+    canvasStore.clear();
+    const { container } = render(Toolbar);
+    const buttons = Array.from(container.querySelectorAll('button'));
+    const inputBtn = buttons.find((b) => b.getAttribute('title') === 'Add Input');
+    expect(inputBtn).toBeTruthy();
+    await fireEvent.click(inputBtn!);
+    const canvas = get(canvasStore);
+    expect(canvas.nodes.some((n) => n.type === 'input')).toBe(true);
+  });
+
+  it('clicking Add Display button adds a display node to the canvas', async () => {
+    canvasStore.clear();
+    const { container } = render(Toolbar);
+    const buttons = Array.from(container.querySelectorAll('button'));
+    const displayBtn = buttons.find((b) => b.getAttribute('title') === 'Add Display');
+    expect(displayBtn).toBeTruthy();
+    await fireEvent.click(displayBtn!);
+    const canvas = get(canvasStore);
+    expect(canvas.nodes.some((n) => n.type === 'display')).toBe(true);
+  });
+
+  it('clicking Add Transform button adds a transform node to the canvas', async () => {
+    canvasStore.clear();
+    const { container } = render(Toolbar);
+    const buttons = Array.from(container.querySelectorAll('button'));
+    const transformBtn = buttons.find((b) => b.getAttribute('title') === 'Add Transform');
+    expect(transformBtn).toBeTruthy();
+    await fireEvent.click(transformBtn!);
+    const canvas = get(canvasStore);
+    expect(canvas.nodes.some((n) => n.type === 'transform')).toBe(true);
+  });
 });
 
 describe('Graph execution layer', () => {
