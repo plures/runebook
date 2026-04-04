@@ -1,3 +1,7 @@
+## [0.13.1] — 2026-04-04
+
+- fix: render canvas connections at actual port positions (#154) (9153ff6)
+
 ## [0.13.0] — 2026-04-04
 
 - feat: add quick-create toolbar buttons for all node types (#153) (9ceca61)
