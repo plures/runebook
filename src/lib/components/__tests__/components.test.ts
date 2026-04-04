@@ -16,6 +16,34 @@ vi.mock('@tauri-apps/api/window', () => ({
 }));
 vi.mock('@tauri-apps/api/event', () => ({ listen: vi.fn().mockResolvedValue(() => {}) }));
 
+// Mock xterm.js packages (canvas/WebGL not available in happy-dom)
+const mockTerminalOpen = vi.fn();
+const mockTerminalWriteln = vi.fn();
+const mockTerminalClear = vi.fn();
+const mockTerminalReset = vi.fn();
+const mockTerminalDispose = vi.fn();
+const mockTerminalLoadAddon = vi.fn();
+vi.mock('@xterm/xterm', () => ({
+  Terminal: vi.fn().mockImplementation(() => ({
+    open: mockTerminalOpen,
+    writeln: mockTerminalWriteln,
+    clear: mockTerminalClear,
+    reset: mockTerminalReset,
+    dispose: mockTerminalDispose,
+    loadAddon: mockTerminalLoadAddon,
+  })),
+}));
+const mockFitAddonFit = vi.fn();
+vi.mock('@xterm/addon-fit', () => ({
+  FitAddon: vi.fn().mockImplementation(() => ({ fit: mockFitAddonFit })),
+}));
+vi.mock('@xterm/addon-web-links', () => ({
+  WebLinksAddon: vi.fn().mockImplementation(() => ({})),
+}));
+vi.mock('@xterm/addon-webgl', () => ({
+  WebglAddon: vi.fn().mockImplementation(() => ({})),
+}));
+
 import TextCard from '../TextCard.svelte';
 import Canvas from '../Canvas.svelte';
 import Toolbar from '../Toolbar.svelte';
@@ -200,6 +228,28 @@ describe('TerminalNode', () => {
         expect(alertRegion?.textContent).toContain('Command failed');
       });
     });
+  });
+
+  it('should render the xterm container element', () => {
+    const { container } = render(TerminalNode, { node: makeTerminalNode() });
+    expect(container.querySelector('.xterm-container')).toBeTruthy();
+  });
+
+  it('should open the xterm terminal in the container on mount', () => {
+    render(TerminalNode, { node: makeTerminalNode() });
+    expect(mockTerminalOpen).toHaveBeenCalled();
+  });
+
+  it('should write a placeholder message to the terminal in non-Tauri context', () => {
+    render(TerminalNode, { node: makeTerminalNode() });
+    expect(mockTerminalWriteln).toHaveBeenCalledWith(
+      expect.stringContaining('desktop app')
+    );
+  });
+
+  it('should call fitAddon.fit() after opening the terminal', () => {
+    render(TerminalNode, { node: makeTerminalNode() });
+    expect(mockFitAddonFit).toHaveBeenCalled();
   });
 });
 

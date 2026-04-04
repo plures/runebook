@@ -1,5 +1,9 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
+  import { onMount, onDestroy } from 'svelte';
+  import { Terminal } from '@xterm/xterm';
+  import { FitAddon } from '@xterm/addon-fit';
+  import { WebLinksAddon } from '@xterm/addon-web-links';
+  import { WebglAddon } from '@xterm/addon-webgl';
   import type { TerminalNode } from '../types/canvas';
   import { updateNodeData } from '../stores/canvas';
   import { requestTerminal, releaseTerminal } from '../praxis/runtime';
@@ -14,12 +18,26 @@
 
   let { node, tui = false }: Props = $props();
 
-  let output = $state<string[]>([]);
+  let terminalEl = $state<HTMLDivElement | null>(null);
   let isRunning = $state(false);
   let error = $state<string | null>(null);
 
+  let term: Terminal | null = null;
+  let fitAddon: FitAddon | null = null;
+  let resizeObserver: ResizeObserver | null = null;
+
   function isTauriContext(): boolean {
     return typeof window !== 'undefined' && '__TAURI__' in window;
+  }
+
+  function fitTerminal() {
+    if (fitAddon) {
+      try {
+        fitAddon.fit();
+      } catch {
+        // ignore fit errors (e.g. zero-size container during test)
+      }
+    }
   }
 
   async function executeCommand() {
@@ -27,18 +45,20 @@
 
     if (!isTauriContext()) {
       error = 'Terminal execution is only available in the desktop app';
+      term?.writeln('\x1b[31m✗ Terminal execution is only available in the desktop app\x1b[0m');
       return;
     }
 
     // Enforce process limit via the resource-management Praxis module.
     if (!requestTerminal(node.id)) {
       error = 'Terminal process limit reached';
+      term?.writeln('\x1b[31m✗ Terminal process limit reached\x1b[0m');
       return;
     }
 
     isRunning = true;
     error = null;
-    output = [];
+    term?.writeln(`\x1b[33m$ ${node.command} ${(node.args || []).join(' ')}\x1b[0m`);
 
     // Capture command start for agent
     let agentEvent: TerminalEvent | null = null;
@@ -60,7 +80,7 @@
         cwd: node.cwd || ''
       });
 
-      output = [...output, result];
+      term?.writeln(result);
 
       if (agentEvent) {
         await captureCommandResult(agentEvent, result, '', 0);
@@ -72,6 +92,7 @@
     } catch (e) {
       const errorMsg = String(e);
       error = errorMsg;
+      term?.writeln(`\x1b[31m✗ ${errorMsg}\x1b[0m`);
 
       if (agentEvent) {
         await captureCommandResult(agentEvent, '', errorMsg, 1);
@@ -83,8 +104,9 @@
   }
 
   function clearOutput() {
-    output = [];
     error = null;
+    term?.clear();
+    term?.reset();
 
     if (node.outputs.length > 0) {
       updateNodeData(node.id, node.outputs[0].id, '');
@@ -92,6 +114,49 @@
   }
 
   onMount(() => {
+    if (terminalEl) {
+      term = new Terminal({
+        cursorBlink: true,
+        fontSize: 13,
+        fontFamily: 'var(--font-mono, monospace)',
+        convertEol: true,
+        disableStdin: true,
+        scrollback: 1000,
+        theme: {
+          background: '#0d0d0d',
+          foreground: '#d4d4d4',
+          cursor: '#d4d4d4',
+        },
+      });
+
+      fitAddon = new FitAddon();
+      term.loadAddon(fitAddon);
+      term.loadAddon(new WebLinksAddon());
+
+      term.open(terminalEl);
+
+      // Try WebGL renderer; fall back to canvas renderer silently.
+      try {
+        const webglAddon = new WebglAddon();
+        term.loadAddon(webglAddon);
+      } catch {
+        // WebGL unavailable – canvas renderer already active.
+      }
+
+      fitTerminal();
+
+      if (!isTauriContext()) {
+        term.writeln('\x1b[2mTerminal output will appear here when running in the desktop app.\x1b[0m');
+      }
+
+      // Observe container resize to keep terminal fitted.
+      resizeObserver = new ResizeObserver(() => fitTerminal());
+      resizeObserver.observe(terminalEl);
+    }
+
+    const onWindowResize = () => fitTerminal();
+    window.addEventListener('resize', onWindowResize);
+
     if (node.autoStart) {
       const shouldRun = window.confirm(
         `This terminal node is configured to run the following command automatically:\n\n` +
@@ -103,6 +168,15 @@
         executeCommand();
       }
     }
+
+    return () => {
+      window.removeEventListener('resize', onWindowResize);
+    };
+  });
+
+  onDestroy(() => {
+    resizeObserver?.disconnect();
+    term?.dispose();
   });
 </script>
 
@@ -117,19 +191,11 @@
       <Text mono class="command-text"><code>{node.command} {(node.args || []).join(' ')}</code></Text>
     </Box>
 
-    <Box class="output-container" surface={1} pad={2} radius={2}>
-      {#if output.length > 0}
-        {#each output as line}
-          <Text mono variant={1} class="output-line">{line}</Text>
-        {/each}
-      {:else}
-        <Text variant={2} class="output-placeholder">No output yet</Text>
-      {/if}
+    <div class="xterm-container" bind:this={terminalEl}></div>
 
-      {#if error}
-        <Text class="error-line">✗ {error}</Text>
-      {/if}
-    </Box>
+    {#if error}
+      <Text class="error-line">✗ {error}</Text>
+    {/if}
   </Box>
 
   <Box class="node-footer" pad={2}>
@@ -177,37 +243,38 @@
 
   :global(.terminal-node .node-body) {
     padding: var(--space-3);
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
   }
 
   :global(.terminal-node .command-display) {
     margin-bottom: var(--space-2);
     font-size: var(--font-size-0);
+    flex-shrink: 0;
   }
 
   :global(.terminal-node .command-text) {
     color: var(--brand);
   }
 
-  :global(.terminal-node .output-container) {
-    max-height: 200px;
-    overflow-y: auto;
-    min-height: 60px;
-    font-size: var(--font-size-0);
+  .xterm-container {
+    flex: 1;
+    min-height: 120px;
+    overflow: hidden;
+    border-radius: var(--radius-2);
   }
 
-  :global(.terminal-node .output-line) {
-    display: block;
-    margin: 2px 0;
-    word-break: break-word;
-  }
-
-  :global(.terminal-node .output-placeholder) {
-    font-style: italic;
+  /* Let xterm.js manage its own sizing inside the container */
+  .xterm-container :global(.xterm) {
+    height: 100%;
   }
 
   :global(.terminal-node .error-line) {
     display: block;
-    margin: 2px 0;
+    margin-top: var(--space-1);
+    font-size: var(--font-size-0);
     color: var(--error);
   }
 
