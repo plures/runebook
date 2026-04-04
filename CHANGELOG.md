@@ -1,3 +1,8 @@
+## [0.13.0] — 2026-04-04
+
+- feat: add quick-create toolbar buttons for all node types (#153) (9ceca61)
+- ci: centralize lifecycle — event-driven with schedule guard (927de2f)
+
 ## [0.12.2] — 2026-03-31
 
 - fix(lifecycle): v9.1 — fix QA dispatch (client_payload as JSON object) (5a81524)
