@@ -1,42 +1,44 @@
 // Unit tests for the TUI module
 
-import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { unlinkSync, writeFileSync } from 'fs';
-import { join } from 'path';
-import { tmpdir } from 'os';
-import { randomUUID } from 'crypto';
-import type { Canvas } from '../../types/canvas';
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import { unlinkSync, writeFileSync } from "fs";
+import { join } from "path";
+import { tmpdir } from "os";
+import { randomUUID } from "crypto";
+import type { Canvas } from "../../types/canvas";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 /** Minimal canvas fixture */
 const SAMPLE_CANVAS: Canvas = {
-  id: 'test-canvas',
-  name: 'Test Canvas',
+  id: "test-canvas",
+  name: "Test Canvas",
   nodes: [
     {
-      id: 'node-1',
-      type: 'terminal',
-      label: 'My Terminal',
+      id: "node-1",
+      type: "terminal",
+      label: "My Terminal",
       position: { x: 100, y: 100 },
       inputs: [],
       outputs: [],
-      command: 'echo hello',
+      command: "echo hello",
       args: [],
     } as any,
     {
-      id: 'node-2',
-      type: 'display',
-      label: 'Output',
+      id: "node-2",
+      type: "display",
+      label: "Output",
       position: { x: 500, y: 500 },
       inputs: [],
       outputs: [],
-      displayType: 'text',
+      displayType: "text",
       content: null,
     } as any,
   ],
-  connections: [{ from: 'node-1', to: 'node-2', fromPort: 'out', toPort: 'in' }],
-  version: '1.0.0',
+  connections: [
+    { from: "node-1", to: "node-2", fromPort: "out", toPort: "in" },
+  ],
+  version: "1.0.0",
 };
 
 function canvasYAML(canvas: Canvas = SAMPLE_CANVAS): string {
@@ -45,8 +47,9 @@ function canvasYAML(canvas: Canvas = SAMPLE_CANVAS): string {
 name: "${canvas.name}"
 version: "${canvas.version}"
 nodes:
-${
-    canvas.nodes.map((n) =>
+${canvas.nodes
+  .map(
+    (n) =>
       `  - id: ${n.id}
     type: ${n.type}
     label: "${n.label}"
@@ -54,41 +57,42 @@ ${
       x: ${n.position.x}
       y: ${n.position.y}
     inputs: []
-    outputs: []`
-    ).join('\n')
-  }
+    outputs: []`,
+  )
+  .join("\n")}
 connections:
-${
-    canvas.connections.map((c) =>
+${canvas.connections
+  .map(
+    (c) =>
       `  - from: ${c.from}
     to: ${c.to}
     fromPort: ${c.fromPort}
-    toPort: ${c.toPort}`
-    ).join('\n')
-  }
+    toPort: ${c.toPort}`,
+  )
+  .join("\n")}
 `;
 }
 
 /** Create a temp YAML file and return its path */
 function writeTempCanvas(canvas: Canvas = SAMPLE_CANVAS): string {
   const path = join(tmpdir(), `runebook-test-${randomUUID()}.yaml`);
-  writeFileSync(path, canvasYAML(canvas), 'utf-8');
+  writeFileSync(path, canvasYAML(canvas), "utf-8");
   return path;
 }
 
 // ─── Tests ────────────────────────────────────────────────────────────────────
 
-describe('TUIApp', () => {
+describe("TUIApp", () => {
   // Lazy import so vitest mock hoisting works
-  let TUIApp: typeof import('../index').TUIApp;
+  let TUIApp: typeof import("../index").TUIApp;
 
   beforeEach(async () => {
-    ({ TUIApp } = await import('../index'));
+    ({ TUIApp } = await import("../index"));
   });
 
   // ── Construction ─────────────────────────────────────────────────────────────
 
-  it('starts with no canvas', () => {
+  it("starts with no canvas", () => {
     const app = new TUIApp();
     expect(app.nodes).toHaveLength(0);
     expect(app.selectedNode).toBeNull();
@@ -96,34 +100,34 @@ describe('TUIApp', () => {
 
   // ── loadFromFile ─────────────────────────────────────────────────────────────
 
-  it('loads a canvas from a YAML file', () => {
+  it("loads a canvas from a YAML file", () => {
     const path = writeTempCanvas();
     try {
       const app = new TUIApp();
       app.loadFromFile(path);
       expect(app.nodes).toHaveLength(2);
-      expect(app.nodes[0].id).toBe('node-1');
-      expect(app.nodes[1].id).toBe('node-2');
+      expect(app.nodes[0].id).toBe("node-1");
+      expect(app.nodes[1].id).toBe("node-2");
     } finally {
       unlinkSync(path);
     }
   });
 
-  it('sets filePath and message after load', () => {
+  it("sets filePath and message after load", () => {
     const path = writeTempCanvas();
     try {
       const app = new TUIApp();
       app.loadFromFile(path);
-      expect(app.message).toContain('Loaded');
+      expect(app.message).toContain("Loaded");
     } finally {
       unlinkSync(path);
     }
   });
 
-  it('throws on a YAML file missing required canvas fields', () => {
+  it("throws on a YAML file missing required canvas fields", () => {
     const path = join(tmpdir(), `invalid-${randomUUID()}.yaml`);
     // Valid YAML but missing the required canvas fields (id, name, nodes)
-    writeFileSync(path, 'foo: bar\nbaz: 123\n', 'utf-8');
+    writeFileSync(path, "foo: bar\nbaz: 123\n", "utf-8");
     try {
       const app = new TUIApp();
       expect(() => app.loadFromFile(path)).toThrow(/invalid canvas yaml/i);
@@ -134,7 +138,7 @@ describe('TUIApp', () => {
 
   // ── saveToFile ────────────────────────────────────────────────────────────────
 
-  it('saves the canvas to a YAML file', () => {
+  it("saves the canvas to a YAML file", () => {
     const loadPath = writeTempCanvas();
     const savePath = join(tmpdir(), `runebook-save-${randomUUID()}.yaml`);
     try {
@@ -146,16 +150,18 @@ describe('TUIApp', () => {
       const app2 = new TUIApp();
       app2.loadFromFile(savePath);
       expect(app2.nodes).toHaveLength(2);
-      expect(app2.nodes[0].id).toBe('node-1');
+      expect(app2.nodes[0].id).toBe("node-1");
     } finally {
       unlinkSync(loadPath);
       try {
         unlinkSync(savePath);
-      } catch { /* ignore */ }
+      } catch {
+        /* ignore */
+      }
     }
   });
 
-  it('sets message if no path is available when saving', () => {
+  it("sets message if no path is available when saving", () => {
     const app = new TUIApp();
     // canvas is null, no file path
     app.saveToFile();
@@ -164,36 +170,36 @@ describe('TUIApp', () => {
 
   // ── Navigation ────────────────────────────────────────────────────────────────
 
-  it('selectNext cycles through nodes', () => {
+  it("selectNext cycles through nodes", () => {
     const path = writeTempCanvas();
     try {
       const app = new TUIApp();
       app.loadFromFile(path);
-      expect(app.selectedNode?.id).toBe('node-1');
+      expect(app.selectedNode?.id).toBe("node-1");
       app.selectNext();
-      expect(app.selectedNode?.id).toBe('node-2');
+      expect(app.selectedNode?.id).toBe("node-2");
       app.selectNext(); // wraps around
-      expect(app.selectedNode?.id).toBe('node-1');
+      expect(app.selectedNode?.id).toBe("node-1");
     } finally {
       unlinkSync(path);
     }
   });
 
-  it('selectPrev cycles backwards through nodes', () => {
+  it("selectPrev cycles backwards through nodes", () => {
     const path = writeTempCanvas();
     try {
       const app = new TUIApp();
       app.loadFromFile(path);
       app.selectPrev(); // wraps to last node
-      expect(app.selectedNode?.id).toBe('node-2');
+      expect(app.selectedNode?.id).toBe("node-2");
       app.selectPrev();
-      expect(app.selectedNode?.id).toBe('node-1');
+      expect(app.selectedNode?.id).toBe("node-1");
     } finally {
       unlinkSync(path);
     }
   });
 
-  it('selectNext/Prev are no-ops on empty canvas', () => {
+  it("selectNext/Prev are no-ops on empty canvas", () => {
     const app = new TUIApp();
     expect(() => {
       app.selectNext();
@@ -204,7 +210,7 @@ describe('TUIApp', () => {
 
   // ── deleteSelected ────────────────────────────────────────────────────────────
 
-  it('deletes the selected node and its connections', () => {
+  it("deletes the selected node and its connections", () => {
     const path = writeTempCanvas();
     try {
       const app = new TUIApp();
@@ -212,7 +218,7 @@ describe('TUIApp', () => {
       expect(app.nodes).toHaveLength(2);
       app.deleteSelected(); // delete node-1
       expect(app.nodes).toHaveLength(1);
-      expect(app.nodes[0].id).toBe('node-2');
+      expect(app.nodes[0].id).toBe("node-2");
       // Connection involving node-1 should be removed
       expect((app as any).state.canvas.connections).toHaveLength(0);
     } finally {
@@ -220,7 +226,7 @@ describe('TUIApp', () => {
     }
   });
 
-  it('sets message after deleting', () => {
+  it("sets message after deleting", () => {
     const path = writeTempCanvas();
     try {
       const app = new TUIApp();
@@ -232,118 +238,122 @@ describe('TUIApp', () => {
     }
   });
 
-  it('deleteSelected is a no-op on empty canvas', () => {
+  it("deleteSelected is a no-op on empty canvas", () => {
     const app = new TUIApp();
     expect(() => app.deleteSelected()).not.toThrow();
   });
 
   // ── handleKey ─────────────────────────────────────────────────────────────────
 
-  it('Tab key calls selectNext', () => {
+  it("Tab key calls selectNext", () => {
     const path = writeTempCanvas();
     try {
       const app = new TUIApp();
       app.loadFromFile(path);
-      const spy = vi.spyOn(app, 'selectNext');
-      app.handleKey('\t', Buffer.from([0x09]));
+      const spy = vi.spyOn(app, "selectNext");
+      app.handleKey("\t", Buffer.from([0x09]));
       expect(spy).toHaveBeenCalledOnce();
     } finally {
       unlinkSync(path);
     }
   });
 
-  it('↑ arrow key calls selectPrev', () => {
+  it("↑ arrow key calls selectPrev", () => {
     const path = writeTempCanvas();
     try {
       const app = new TUIApp();
       app.loadFromFile(path);
-      const spy = vi.spyOn(app, 'selectPrev');
-      app.handleKey('\x1b[A', Buffer.from([0x1b, 0x5b, 0x41]));
+      const spy = vi.spyOn(app, "selectPrev");
+      app.handleKey("\x1b[A", Buffer.from([0x1b, 0x5b, 0x41]));
       expect(spy).toHaveBeenCalledOnce();
     } finally {
       unlinkSync(path);
     }
   });
 
-  it('↓ arrow key calls selectNext', () => {
+  it("↓ arrow key calls selectNext", () => {
     const path = writeTempCanvas();
     try {
       const app = new TUIApp();
       app.loadFromFile(path);
-      const spy = vi.spyOn(app, 'selectNext');
-      app.handleKey('\x1b[B', Buffer.from([0x1b, 0x5b, 0x42]));
+      const spy = vi.spyOn(app, "selectNext");
+      app.handleKey("\x1b[B", Buffer.from([0x1b, 0x5b, 0x42]));
       expect(spy).toHaveBeenCalledOnce();
     } finally {
       unlinkSync(path);
     }
   });
 
-  it('d key calls deleteSelected', () => {
+  it("d key calls deleteSelected", () => {
     const path = writeTempCanvas();
     try {
       const app = new TUIApp();
       app.loadFromFile(path);
-      const spy = vi.spyOn(app, 'deleteSelected');
-      app.handleKey('d', Buffer.from([0x64]));
+      const spy = vi.spyOn(app, "deleteSelected");
+      app.handleKey("d", Buffer.from([0x64]));
       expect(spy).toHaveBeenCalledOnce();
     } finally {
       unlinkSync(path);
     }
   });
 
-  it('Ctrl+S calls saveToFile', () => {
+  it("Ctrl+S calls saveToFile", () => {
     const path = writeTempCanvas();
     try {
       const app = new TUIApp();
       app.loadFromFile(path);
-      const spy = vi.spyOn(app, 'saveToFile');
-      app.handleKey('\x13', Buffer.from([0x13]));
+      const spy = vi.spyOn(app, "saveToFile");
+      app.handleKey("\x13", Buffer.from([0x13]));
       expect(spy).toHaveBeenCalledOnce();
     } finally {
       unlinkSync(path);
     }
   });
 
-  it('q key calls quit()', () => {
+  it("q key calls quit()", () => {
     const path = writeTempCanvas();
     try {
       const app = new TUIApp();
       app.loadFromFile(path);
-      const spy = vi.spyOn(app, 'quit').mockImplementation(() => {/* stub */});
-      app.handleKey('q', Buffer.from([0x71]));
+      const spy = vi.spyOn(app, "quit").mockImplementation(() => {
+        /* stub */
+      });
+      app.handleKey("q", Buffer.from([0x71]));
       expect(spy).toHaveBeenCalledOnce();
     } finally {
       unlinkSync(path);
     }
   });
 
-  it('Ctrl+C calls quit()', () => {
+  it("Ctrl+C calls quit()", () => {
     const path = writeTempCanvas();
     try {
       const app = new TUIApp();
       app.loadFromFile(path);
-      const spy = vi.spyOn(app, 'quit').mockImplementation(() => {/* stub */});
-      app.handleKey('\x03', Buffer.from([0x03]));
+      const spy = vi.spyOn(app, "quit").mockImplementation(() => {
+        /* stub */
+      });
+      app.handleKey("\x03", Buffer.from([0x03]));
       expect(spy).toHaveBeenCalledOnce();
     } finally {
       unlinkSync(path);
     }
   });
 
-  it('r key calls runSelected()', () => {
+  it("r key calls runSelected()", () => {
     const path = writeTempCanvas();
     try {
       const app = new TUIApp();
       app.loadFromFile(path);
-      const spy = vi.spyOn(app, 'runSelected').mockResolvedValue();
-      app.handleKey('r', Buffer.from([0x72]));
+      const spy = vi.spyOn(app, "runSelected").mockResolvedValue();
+      app.handleKey("r", Buffer.from([0x72]));
       expect(spy).toHaveBeenCalledOnce();
     } finally {
       unlinkSync(path);
     }
   });
 
-  it('c key clears terminal output', () => {
+  it("c key clears terminal output", () => {
     const path = writeTempCanvas();
     try {
       const chunks: string[] = [];
@@ -357,8 +367,8 @@ describe('TUIApp', () => {
       const app = new TUIApp({ output: fakeOut });
       app.loadFromFile(path);
       // Seed terminal output
-      (app as any).state.terminalOutput = ['line1', 'line2'];
-      app.handleKey('c', Buffer.from([0x63]));
+      (app as any).state.terminalOutput = ["line1", "line2"];
+      app.handleKey("c", Buffer.from([0x63]));
       expect((app as any).state.terminalOutput).toHaveLength(0);
     } finally {
       unlinkSync(path);
@@ -367,7 +377,7 @@ describe('TUIApp', () => {
 
   // ── render (smoke test) ───────────────────────────────────────────────────────
 
-  it('render() writes output without throwing', () => {
+  it("render() writes output without throwing", () => {
     const chunks: string[] = [];
     const fakeOut = {
       write: (s: string) => {
@@ -382,18 +392,18 @@ describe('TUIApp', () => {
       const app = new TUIApp({ output: fakeOut });
       app.loadFromFile(path);
       expect(() => app.render()).not.toThrow();
-      const output = chunks.join('');
+      const output = chunks.join("");
       // Should contain node labels
-      expect(output).toContain('My Terminal');
-      expect(output).toContain('Output');
+      expect(output).toContain("My Terminal");
+      expect(output).toContain("Output");
       // Should contain mode in status bar
-      expect(output).toContain('NORMAL');
+      expect(output).toContain("NORMAL");
     } finally {
       unlinkSync(path);
     }
   });
 
-  it('render() shows (empty) message when there are no nodes', () => {
+  it("render() shows (empty) message when there are no nodes", () => {
     const chunks: string[] = [];
     const fakeOut = {
       write: (s: string) => {
@@ -406,17 +416,17 @@ describe('TUIApp', () => {
     const app = new TUIApp({ output: fakeOut });
     // Create blank canvas
     (app as any).state.canvas = {
-      id: 'blank',
-      name: 'Blank',
+      id: "blank",
+      name: "Blank",
       nodes: [],
       connections: [],
-      version: '1.0.0',
+      version: "1.0.0",
     };
 
     expect(() => app.render()).not.toThrow();
   });
 
-  it('render() shows Output pane when terminal output is present', () => {
+  it("render() shows Output pane when terminal output is present", () => {
     const chunks: string[] = [];
     const fakeOut = {
       write: (s: string) => {
@@ -430,17 +440,17 @@ describe('TUIApp', () => {
     try {
       const app = new TUIApp({ output: fakeOut });
       app.loadFromFile(path);
-      (app as any).state.terminalOutput = ['hello world'];
+      (app as any).state.terminalOutput = ["hello world"];
       app.render();
-      const output = chunks.join('');
-      expect(output).toContain('Output');
-      expect(output).toContain('hello world');
+      const output = chunks.join("");
+      expect(output).toContain("Output");
+      expect(output).toContain("hello world");
     } finally {
       unlinkSync(path);
     }
   });
 
-  it('render() shows Output pane when mode is run', () => {
+  it("render() shows Output pane when mode is run", () => {
     const chunks: string[] = [];
     const fakeOut = {
       write: (s: string) => {
@@ -454,11 +464,11 @@ describe('TUIApp', () => {
     try {
       const app = new TUIApp({ output: fakeOut });
       app.loadFromFile(path);
-      (app as any).state.mode = 'run';
+      (app as any).state.mode = "run";
       app.render();
-      const output = chunks.join('');
-      expect(output).toContain('Output');
-      expect(output).toContain('RUN');
+      const output = chunks.join("");
+      expect(output).toContain("Output");
+      expect(output).toContain("RUN");
     } finally {
       unlinkSync(path);
     }
@@ -466,14 +476,14 @@ describe('TUIApp', () => {
 
   // ── mode ──────────────────────────────────────────────────────────────────────
 
-  it('starts in normal mode', () => {
+  it("starts in normal mode", () => {
     const app = new TUIApp();
-    expect(app.mode).toBe('normal');
+    expect(app.mode).toBe("normal");
   });
 
   // ── runSelected (terminal execution) ──────────────────────────────────────────
 
-  it('runSelected() executes a terminal node command and captures output', async () => {
+  it("runSelected() executes a terminal node command and captures output", async () => {
     const chunks: string[] = [];
     const fakeOut = {
       write: (s: string) => {
@@ -484,39 +494,39 @@ describe('TUIApp', () => {
     } as any;
 
     const canvas: Canvas = {
-      id: 'test-exec',
-      name: 'Exec Canvas',
+      id: "test-exec",
+      name: "Exec Canvas",
       nodes: [
         {
-          id: 'term-1',
-          type: 'terminal',
-          label: 'Echo',
+          id: "term-1",
+          type: "terminal",
+          label: "Echo",
           position: { x: 0, y: 0 },
           inputs: [],
           outputs: [],
-          command: 'echo',
-          args: ['hello world'],
+          command: "echo",
+          args: ["hello world"],
         } as any,
       ],
       connections: [],
-      version: '1.0.0',
+      version: "1.0.0",
     };
 
     const app = new TUIApp({ output: fakeOut });
     (app as any).state.canvas = canvas;
-    expect(app.selectedNode?.id).toBe('term-1');
+    expect(app.selectedNode?.id).toBe("term-1");
 
     await app.runSelected();
 
-    expect(app.mode).toBe('normal');
+    expect(app.mode).toBe("normal");
     const output = (app as any).state.terminalOutput as string[];
-    expect(output.some((l: string) => l.includes('hello world'))).toBe(true);
+    expect(output.some((l: string) => l.includes("hello world"))).toBe(true);
     // Message is cleared by render(), so check output buffer
-    const rendered = chunks.join('');
-    expect(rendered).toContain('exited with code 0');
+    const rendered = chunks.join("");
+    expect(rendered).toContain("exited with code 0");
   });
 
-  it('runSelected() rejects non-terminal node types', async () => {
+  it("runSelected() rejects non-terminal node types", async () => {
     const chunks: string[] = [];
     const fakeOut = {
       write: (s: string) => {
@@ -527,22 +537,22 @@ describe('TUIApp', () => {
     } as any;
 
     const canvas: Canvas = {
-      id: 'test-norun',
-      name: 'NoRun Canvas',
+      id: "test-norun",
+      name: "NoRun Canvas",
       nodes: [
         {
-          id: 'disp-1',
-          type: 'display',
-          label: 'Display',
+          id: "disp-1",
+          type: "display",
+          label: "Display",
           position: { x: 0, y: 0 },
           inputs: [],
           outputs: [],
-          displayType: 'text',
+          displayType: "text",
           content: null,
         } as any,
       ],
       connections: [],
-      version: '1.0.0',
+      version: "1.0.0",
     };
 
     const app = new TUIApp({ output: fakeOut });
@@ -550,12 +560,12 @@ describe('TUIApp', () => {
 
     await app.runSelected();
 
-    expect(app.mode).toBe('normal');
-    const rendered = chunks.join('');
+    expect(app.mode).toBe("normal");
+    const rendered = chunks.join("");
     expect(rendered).toMatch(/only terminal nodes/i);
   });
 
-  it('runSelected() shows error for terminal node with no command', async () => {
+  it("runSelected() shows error for terminal node with no command", async () => {
     const chunks: string[] = [];
     const fakeOut = {
       write: (s: string) => {
@@ -566,21 +576,21 @@ describe('TUIApp', () => {
     } as any;
 
     const canvas: Canvas = {
-      id: 'test-nocmd',
-      name: 'NoCmd Canvas',
+      id: "test-nocmd",
+      name: "NoCmd Canvas",
       nodes: [
         {
-          id: 'term-empty',
-          type: 'terminal',
-          label: 'Empty',
+          id: "term-empty",
+          type: "terminal",
+          label: "Empty",
           position: { x: 0, y: 0 },
           inputs: [],
           outputs: [],
-          command: '',
+          command: "",
         } as any,
       ],
       connections: [],
-      version: '1.0.0',
+      version: "1.0.0",
     };
 
     const app = new TUIApp({ output: fakeOut });
@@ -588,12 +598,12 @@ describe('TUIApp', () => {
 
     await app.runSelected();
 
-    expect(app.mode).toBe('normal');
-    const rendered = chunks.join('');
+    expect(app.mode).toBe("normal");
+    const rendered = chunks.join("");
     expect(rendered).toMatch(/no command/i);
   });
 
-  it('runSelected() captures stderr with [err] prefix', async () => {
+  it("runSelected() captures stderr with [err] prefix", async () => {
     const chunks: string[] = [];
     const fakeOut = {
       write: (s: string) => {
@@ -604,22 +614,22 @@ describe('TUIApp', () => {
     } as any;
 
     const canvas: Canvas = {
-      id: 'test-stderr',
-      name: 'Stderr Canvas',
+      id: "test-stderr",
+      name: "Stderr Canvas",
       nodes: [
         {
-          id: 'term-err',
-          type: 'terminal',
-          label: 'Stderr',
+          id: "term-err",
+          type: "terminal",
+          label: "Stderr",
           position: { x: 0, y: 0 },
           inputs: [],
           outputs: [],
-          command: 'node',
-          args: ['-e', 'console.error("oops")'],
+          command: "node",
+          args: ["-e", 'console.error("oops")'],
         } as any,
       ],
       connections: [],
-      version: '1.0.0',
+      version: "1.0.0",
     };
 
     const app = new TUIApp({ output: fakeOut });
@@ -628,10 +638,12 @@ describe('TUIApp', () => {
     await app.runSelected();
 
     const output = (app as any).state.terminalOutput as string[];
-    expect(output.some((l: string) => l.includes('[err]') && l.includes('oops'))).toBe(true);
+    expect(
+      output.some((l: string) => l.includes("[err]") && l.includes("oops")),
+    ).toBe(true);
   });
 
-  it('runSelected() returns mode to normal after execution completes', async () => {
+  it("runSelected() returns mode to normal after execution completes", async () => {
     const chunks: string[] = [];
     const fakeOut = {
       write: (s: string) => {
@@ -642,22 +654,22 @@ describe('TUIApp', () => {
     } as any;
 
     const canvas: Canvas = {
-      id: 'test-mode',
-      name: 'Mode Canvas',
+      id: "test-mode",
+      name: "Mode Canvas",
       nodes: [
         {
-          id: 'term-mode',
-          type: 'terminal',
-          label: 'Echo',
+          id: "term-mode",
+          type: "terminal",
+          label: "Echo",
           position: { x: 0, y: 0 },
           inputs: [],
           outputs: [],
-          command: 'echo',
-          args: ['done'],
+          command: "echo",
+          args: ["done"],
         } as any,
       ],
       connections: [],
-      version: '1.0.0',
+      version: "1.0.0",
     };
 
     const app = new TUIApp({ output: fakeOut });
@@ -665,15 +677,15 @@ describe('TUIApp', () => {
 
     // Mode should be 'run' during execution — verify via rendered output
     await app.runSelected();
-    expect(app.mode).toBe('normal');
+    expect(app.mode).toBe("normal");
     // The rendered output should have included RUN mode at some point
-    const rendered = chunks.join('');
-    expect(rendered).toContain('RUN');
+    const rendered = chunks.join("");
+    expect(rendered).toContain("RUN");
   });
 
   // ── nodeProps (terminal fields) ───────────────────────────────────────────────
 
-  it('render() shows terminal-specific properties (Cmd, Args, Cwd)', () => {
+  it("render() shows terminal-specific properties (Cmd, Args, Cwd)", () => {
     const chunks: string[] = [];
     const fakeOut = {
       write: (s: string) => {
@@ -684,32 +696,32 @@ describe('TUIApp', () => {
     } as any;
 
     const canvas: Canvas = {
-      id: 'test-props',
-      name: 'Props Canvas',
+      id: "test-props",
+      name: "Props Canvas",
       nodes: [
         {
-          id: 'term-props',
-          type: 'terminal',
-          label: 'MyTerm',
+          id: "term-props",
+          type: "terminal",
+          label: "MyTerm",
           position: { x: 0, y: 0 },
           inputs: [],
           outputs: [],
-          command: 'ls',
-          args: ['-la'],
-          cwd: '/tmp',
+          command: "ls",
+          args: ["-la"],
+          cwd: "/tmp",
         } as any,
       ],
       connections: [],
-      version: '1.0.0',
+      version: "1.0.0",
     };
 
     const app = new TUIApp({ output: fakeOut });
     (app as any).state.canvas = canvas;
     app.render();
 
-    const output = chunks.join('');
-    expect(output).toContain('Cmd: ls');
-    expect(output).toContain('Args: -la');
-    expect(output).toContain('Cwd: /tmp');
+    const output = chunks.join("");
+    expect(output).toContain("Cmd: ls");
+    expect(output).toContain("Args: -la");
+    expect(output).toContain("Cwd: /tmp");
   });
 });

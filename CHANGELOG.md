@@ -114,6 +114,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.3.0] - 2026-01-25
 
 ### Added
+
 - **Praxis Integration**: Integrated @plures/praxis v1.2.0 for reactive state management
   - Type-safe event-driven architecture with defineEvent and defineRule
   - Reactive logic engine replacing manual Svelte stores
@@ -121,6 +122,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Backward-compatible API wrapper for existing components
 
 ### Changed
+
 - Refactored canvas state management to use Praxis reactive engine
 - State updates now use events (AddNodeEvent, UpdateNodeEvent, etc.) for better traceability
 - Improved type safety across the state management layer
@@ -128,6 +130,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.2.0] - 2024-12-27
 
 ### Added
+
 - **Transform Nodes**: New node type for data transformation between nodes
   - Map transform: Apply functions to array elements
   - Filter transform: Filter array elements based on conditions
@@ -146,6 +149,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Storage settings UI to switch between LocalStorage and PluresDB
 
 ### Changed
+
 - Updated all dependencies to latest versions
 - Improved documentation structure
 - README.md now focuses on latest features
@@ -153,6 +157,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Toolbar reorganized with save/load options and storage settings
 
 ### Security
+
 - Added "use strict" mode for JavaScript expression execution in transform nodes
 - Input validation for transform node arrays
 - Canvas data validation in storage layer
@@ -161,6 +166,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - CodeQL security scan: 0 alerts
 
 ### Documentation
+
 - Created CHANGELOG.md for version history tracking
 - Updated IMPLEMENTATION.md to reflect actual completion status
 - Clarified roadmap items in README.md as implemented vs. planned
@@ -171,6 +177,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.1.0] - 2024-11-21
 
 ### Added
+
 - Initial Tauri + Svelte 5 project structure
 - Canvas UI system with infinite workspace and grid background
 - Three core node types:
@@ -198,6 +205,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - LICENSE: MIT License
 
 ### Security
+
 - Command execution without shell interpretation to prevent injection attacks
 - Environment variable name validation
 - Input validation for commands and arguments
@@ -205,6 +213,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Planned Features
+
 - PluresDB integration for persistent storage
 - MCP (Model Context Protocol) integration for AI assistance
 - Sudolang support for natural language scripting

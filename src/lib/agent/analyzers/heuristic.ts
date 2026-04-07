@@ -1,31 +1,41 @@
 // Layer 1: Heuristic Classifiers
 // Common error patterns: nix errors, git auth, missing attrs, syntax errors
 
-import type { Analyzer, AnalysisContext, AnalysisSuggestion } from '../analysis-pipeline';
-import type { EventStore } from '../../core/types';
+import type {
+  Analyzer,
+  AnalysisContext,
+  AnalysisSuggestion,
+} from "../analysis-pipeline";
+import type { EventStore } from "../../core/types";
 
 /**
  * Heuristic analyzer for common Nix errors
  */
 export class NixErrorAnalyzer implements Analyzer {
-  name = 'nix-error';
+  name = "nix-error";
   layer = 1;
 
-  async analyze(context: AnalysisContext, _store: EventStore): Promise<AnalysisSuggestion[]> {
+  async analyze(
+    context: AnalysisContext,
+    _store: EventStore,
+  ): Promise<AnalysisSuggestion[]> {
     const suggestions: AnalysisSuggestion[] = [];
     const stderr = context.stderr.toLowerCase();
     const stdout = context.stdout.toLowerCase();
 
     // Missing attribute errors
-    if (stderr.includes('attribute') && (stderr.includes('missing') || stderr.includes('undefined'))) {
+    if (
+      stderr.includes("attribute") &&
+      (stderr.includes("missing") || stderr.includes("undefined"))
+    ) {
       const attrMatch = context.stderr.match(/attribute ['"]([^'"]+)['"]/i);
-      const attrName = attrMatch ? attrMatch[1] : 'unknown';
-      
+      const attrName = attrMatch ? attrMatch[1] : "unknown";
+
       suggestions.push({
         id: `suggestion_${Date.now()}_nix_missing_attr`,
-        type: 'warning',
-        priority: 'high',
-        title: 'Missing Nix Attribute',
+        type: "warning",
+        priority: "high",
+        title: "Missing Nix Attribute",
         description: `The attribute "${attrName}" is not defined. Check your flake.nix or configuration.`,
         confidence: 0.9,
         actionableSnippet: `# Check if "${attrName}" is defined in your flake.nix or imported modules`,
@@ -39,13 +49,17 @@ export class NixErrorAnalyzer implements Analyzer {
     }
 
     // flake-parts template path errors
-    if (stderr.includes('template') && (stderr.includes('path') || stderr.includes('not found'))) {
+    if (
+      stderr.includes("template") &&
+      (stderr.includes("path") || stderr.includes("not found"))
+    ) {
       suggestions.push({
         id: `suggestion_${Date.now()}_flake_parts_template`,
-        type: 'warning',
-        priority: 'high',
-        title: 'Flake-Parts Template Path Error',
-        description: 'Template path not found. Check your flake-parts configuration and template paths.',
+        type: "warning",
+        priority: "high",
+        title: "Flake-Parts Template Path Error",
+        description:
+          "Template path not found. Check your flake-parts configuration and template paths.",
         confidence: 0.85,
         actionableSnippet: `# Verify template paths in your flake.nix:
 # - Check imports.flake-parts.inputs
@@ -60,13 +74,17 @@ export class NixErrorAnalyzer implements Analyzer {
     }
 
     // buildEnv font conflicts
-    if (stderr.includes('font') && (stderr.includes('conflict') || stderr.includes('duplicate'))) {
+    if (
+      stderr.includes("font") &&
+      (stderr.includes("conflict") || stderr.includes("duplicate"))
+    ) {
       suggestions.push({
         id: `suggestion_${Date.now()}_nix_font_conflict`,
-        type: 'warning',
-        priority: 'medium',
-        title: 'Nix buildEnv Font Conflict',
-        description: 'Font conflict detected in buildEnv. Multiple packages may be providing the same font.',
+        type: "warning",
+        priority: "medium",
+        title: "Nix buildEnv Font Conflict",
+        description:
+          "Font conflict detected in buildEnv. Multiple packages may be providing the same font.",
         confidence: 0.8,
         actionableSnippet: `# Resolve font conflicts by:
 # 1. Use buildEnv with ignoreCollisions = true
@@ -82,15 +100,18 @@ export class NixErrorAnalyzer implements Analyzer {
     }
 
     // Nix evaluation errors
-    if (stderr.includes('error:') && (stderr.includes('evaluation') || stderr.includes('nix'))) {
+    if (
+      stderr.includes("error:") &&
+      (stderr.includes("evaluation") || stderr.includes("nix"))
+    ) {
       const errorMatch = context.stderr.match(/error:\s*(.+?)(?:\n|$)/i);
-      const errorMsg = errorMatch ? errorMatch[1].trim() : 'Unknown Nix error';
-      
+      const errorMsg = errorMatch ? errorMatch[1].trim() : "Unknown Nix error";
+
       suggestions.push({
         id: `suggestion_${Date.now()}_nix_eval_error`,
-        type: 'warning',
-        priority: 'high',
-        title: 'Nix Evaluation Error',
+        type: "warning",
+        priority: "high",
+        title: "Nix Evaluation Error",
         description: `Nix evaluation failed: ${errorMsg.substring(0, 100)}`,
         confidence: 0.75,
         actionableSnippet: `# Check your Nix expression for syntax errors
@@ -115,23 +136,30 @@ export class NixErrorAnalyzer implements Analyzer {
  * Heuristic analyzer for Git authentication errors
  */
 export class GitAuthAnalyzer implements Analyzer {
-  name = 'git-auth';
+  name = "git-auth";
   layer = 1;
 
-  async analyze(context: AnalysisContext, _store: EventStore): Promise<AnalysisSuggestion[]> {
+  async analyze(
+    context: AnalysisContext,
+    _store: EventStore,
+  ): Promise<AnalysisSuggestion[]> {
     const suggestions: AnalysisSuggestion[] = [];
     const stderr = context.stderr.toLowerCase();
     const stdout = context.stdout.toLowerCase();
     const combined = stderr + stdout;
 
     // GitHub rate limit
-    if (combined.includes('rate limit') || combined.includes('api rate limit')) {
+    if (
+      combined.includes("rate limit") ||
+      combined.includes("api rate limit")
+    ) {
       suggestions.push({
         id: `suggestion_${Date.now()}_github_rate_limit`,
-        type: 'warning',
-        priority: 'high',
-        title: 'GitHub Rate Limit Exceeded',
-        description: 'GitHub API rate limit exceeded. Wait before retrying or use authentication.',
+        type: "warning",
+        priority: "high",
+        title: "GitHub Rate Limit Exceeded",
+        description:
+          "GitHub API rate limit exceeded. Wait before retrying or use authentication.",
         confidence: 0.95,
         actionableSnippet: `# Set GITHUB_TOKEN environment variable:
 export GITHUB_TOKEN=your_token_here
@@ -148,15 +176,18 @@ gh auth login`,
     }
 
     // Git authentication errors
-    if (combined.includes('authentication failed') || 
-        combined.includes('permission denied') ||
-        (combined.includes('git') && combined.includes('auth'))) {
+    if (
+      combined.includes("authentication failed") ||
+      combined.includes("permission denied") ||
+      (combined.includes("git") && combined.includes("auth"))
+    ) {
       suggestions.push({
         id: `suggestion_${Date.now()}_git_auth`,
-        type: 'warning',
-        priority: 'high',
-        title: 'Git Authentication Error',
-        description: 'Git authentication failed. Check your credentials or token.',
+        type: "warning",
+        priority: "high",
+        title: "Git Authentication Error",
+        description:
+          "Git authentication failed. Check your credentials or token.",
         confidence: 0.9,
         actionableSnippet: `# Check git credentials:
 git config --list | grep credential
@@ -175,15 +206,20 @@ git config --list | grep credential
     }
 
     // Token environment variable issues
-    if (combined.includes('token') && (combined.includes('not set') || combined.includes('missing'))) {
-      const tokenMatch = context.stderr.match(/([A-Z_]+TOKEN|GITHUB_TOKEN|GITLAB_TOKEN)/i);
-      const tokenName = tokenMatch ? tokenMatch[1] : 'TOKEN';
-      
+    if (
+      combined.includes("token") &&
+      (combined.includes("not set") || combined.includes("missing"))
+    ) {
+      const tokenMatch = context.stderr.match(
+        /([A-Z_]+TOKEN|GITHUB_TOKEN|GITLAB_TOKEN)/i,
+      );
+      const tokenName = tokenMatch ? tokenMatch[1] : "TOKEN";
+
       suggestions.push({
         id: `suggestion_${Date.now()}_token_env`,
-        type: 'warning',
-        priority: 'high',
-        title: 'Token Environment Variable Missing',
+        type: "warning",
+        priority: "high",
+        title: "Token Environment Variable Missing",
         description: `The ${tokenName} environment variable is not set or is invalid.`,
         confidence: 0.85,
         actionableSnippet: `# Set the token environment variable:
@@ -208,26 +244,29 @@ echo 'export ${tokenName}=your_token_here' >> ~/.bashrc  # or ~/.zshrc`,
  * Heuristic analyzer for syntax errors
  */
 export class SyntaxErrorAnalyzer implements Analyzer {
-  name = 'syntax-error';
+  name = "syntax-error";
   layer = 1;
 
-  async analyze(context: AnalysisContext, _store: EventStore): Promise<AnalysisSuggestion[]> {
+  async analyze(
+    context: AnalysisContext,
+    _store: EventStore,
+  ): Promise<AnalysisSuggestion[]> {
     const suggestions: AnalysisSuggestion[] = [];
     const stderr = context.stderr.toLowerCase();
     const combined = context.stderr + context.stdout;
 
     // Common syntax error patterns
-    if (stderr.includes('syntax error') || stderr.includes('parse error')) {
+    if (stderr.includes("syntax error") || stderr.includes("parse error")) {
       // Try to extract file and line number
       const fileMatch = combined.match(/([^\s:]+):(\d+):/);
-      const file = fileMatch ? fileMatch[1] : 'unknown';
-      const line = fileMatch ? fileMatch[2] : 'unknown';
-      
+      const file = fileMatch ? fileMatch[1] : "unknown";
+      const line = fileMatch ? fileMatch[2] : "unknown";
+
       suggestions.push({
         id: `suggestion_${Date.now()}_syntax_error`,
-        type: 'warning',
-        priority: 'high',
-        title: 'Syntax Error Detected',
+        type: "warning",
+        priority: "high",
+        title: "Syntax Error Detected",
         description: `Syntax error in ${file} at line ${line}. Check the file for syntax issues.`,
         confidence: 0.8,
         actionableSnippet: `# Check ${file} at line ${line}:
@@ -245,15 +284,17 @@ export class SyntaxErrorAnalyzer implements Analyzer {
     }
 
     // Missing command/executable
-    if (stderr.includes('command not found') || stderr.includes('not found')) {
-      const cmdMatch = context.stderr.match(/['"]?([^\s'"]+)['"]?\s+not found/i);
-      const cmd = cmdMatch ? cmdMatch[1] : 'command';
-      
+    if (stderr.includes("command not found") || stderr.includes("not found")) {
+      const cmdMatch = context.stderr.match(
+        /['"]?([^\s'"]+)['"]?\s+not found/i,
+      );
+      const cmd = cmdMatch ? cmdMatch[1] : "command";
+
       suggestions.push({
         id: `suggestion_${Date.now()}_command_not_found`,
-        type: 'warning',
-        priority: 'medium',
-        title: 'Command Not Found',
+        type: "warning",
+        priority: "medium",
+        title: "Command Not Found",
         description: `The command "${cmd}" is not found in your PATH.`,
         confidence: 0.9,
         actionableSnippet: `# Install the missing command or check your PATH:
@@ -286,4 +327,3 @@ export function createHeuristicAnalyzers(): Analyzer[] {
     new SyntaxErrorAnalyzer(),
   ];
 }
-

@@ -1,18 +1,18 @@
 // Mock Provider for Testing
 // Returns deterministic responses for testing
 
-import { BaseLLMProvider } from './base';
-import type { LLMProviderConfig, MCPToolInput, MCPToolOutput } from '../types';
+import { BaseLLMProvider } from "./base";
+import type { LLMProviderConfig, MCPToolInput, MCPToolOutput } from "../types";
 
 export class MockProvider extends BaseLLMProvider {
-  name = 'mock';
+  name = "mock";
   private responses: Map<string, MCPToolOutput> = new Map();
 
   constructor(config: LLMProviderConfig) {
     super(
       config.safety?.requireUserReview ?? false, // Mock doesn't need review
       config.safety?.cacheEnabled ?? false,
-      config.safety?.cacheTtl ?? 3600
+      config.safety?.cacheTtl ?? 3600,
     );
   }
 
@@ -37,24 +37,26 @@ export class MockProvider extends BaseLLMProvider {
 
   async callLLM(input: MCPToolInput, _sanitized: any): Promise<MCPToolOutput> {
     const key = this.getInputKey(input);
-    
+
     // Check if we have a preset response
     if (this.responses.has(key)) {
       return this.responses.get(key)!;
     }
-    
+
     // Default mock response
     return {
-      suggestions: [{
-        title: 'Mock Suggestion',
-        description: `This is a mock suggestion for command: ${input.contextWindow.command}`,
-        actionableSnippet: `# Mock fix for ${input.contextWindow.command}`,
-        confidence: 0.7,
-        type: 'tip',
-        priority: 'medium',
-      }],
+      suggestions: [
+        {
+          title: "Mock Suggestion",
+          description: `This is a mock suggestion for command: ${input.contextWindow.command}`,
+          actionableSnippet: `# Mock fix for ${input.contextWindow.command}`,
+          confidence: 0.7,
+          type: "tip",
+          priority: "medium",
+        },
+      ],
       provenance: {
-        provider: 'mock',
+        provider: "mock",
         timestamp: Date.now(),
       },
     };
@@ -64,4 +66,3 @@ export class MockProvider extends BaseLLMProvider {
     return `${input.contextWindow.command}_${input.contextWindow.exitCode}_${input.contextWindow.stderr.substring(0, 100)}`;
   }
 }
-

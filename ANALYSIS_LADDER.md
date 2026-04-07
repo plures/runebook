@@ -11,6 +11,7 @@ The analysis pipeline consists of three layers, executed in order:
 **Purpose**: Fast, deterministic pattern matching for common errors.
 
 **Analyzers**:
+
 - **NixErrorAnalyzer**: Detects Nix-specific errors
   - Missing attributes (e.g., `attribute "cursor" missing`)
   - Flake-parts template path errors
@@ -27,6 +28,7 @@ The analysis pipeline consists of three layers, executed in order:
   - Command not found errors
 
 **Characteristics**:
+
 - High confidence (0.7-0.95)
 - Fast execution (< 100ms)
 - No external dependencies
@@ -37,13 +39,15 @@ The analysis pipeline consists of three layers, executed in order:
 **Purpose**: Search repository and configuration files for context.
 
 **Analyzer**:
+
 - **LocalSearchAnalyzer**: Uses ripgrep (or grep fallback) to search:
-  - Repository files (flake.nix, *.nix, *.sh, etc.)
+  - Repository files (flake.nix, _.nix, _.sh, etc.)
   - Configuration files
   - Environment variable references
   - Related error patterns
 
 **Characteristics**:
+
 - Medium confidence (0.6-0.8)
 - Moderate execution time (100-500ms)
 - Requires repository context
@@ -54,12 +58,14 @@ The analysis pipeline consists of three layers, executed in order:
 **Purpose**: Intelligent analysis using language models or MCP.
 
 **Analyzer**:
+
 - **LLMAnalyzer**: Placeholder for future LLM/MCP integration
   - Currently disabled by default
   - Can be enabled via configuration
   - Would provide intelligent, context-aware suggestions
 
 **Characteristics**:
+
 - Variable confidence (depends on model)
 - Slower execution (1-5s)
 - Requires API access
@@ -70,6 +76,7 @@ The analysis pipeline consists of three layers, executed in order:
 ### Failure Detection
 
 Failures are detected when:
+
 1. An `exit_status` event has `success: false` (non-zero exit code)
 2. Known stderr patterns match error signatures
 3. Command context is available (command, args, cwd, env)
@@ -99,8 +106,8 @@ Each suggestion includes:
 ```typescript
 interface AnalysisSuggestion {
   id: string;
-  type: 'command' | 'optimization' | 'shortcut' | 'warning' | 'tip';
-  priority: 'low' | 'medium' | 'high';
+  type: "command" | "optimization" | "shortcut" | "warning" | "tip";
+  priority: "low" | "medium" | "high";
   title: string;
   description: string;
   confidence: number; // 0.0 to 1.0
@@ -133,8 +140,8 @@ runebook analyze last
 ### Programmatic API
 
 ```typescript
-import { getAnalysisService } from './lib/agent/analysis-service';
-import { createObserver } from './lib/core';
+import { getAnalysisService } from "./lib/agent/analysis-service";
+import { createObserver } from "./lib/core";
 
 const observer = createObserver({ enabled: true });
 await observer.initialize();
@@ -159,7 +166,10 @@ You can create custom analyzers by implementing the `Analyzer` interface:
 interface Analyzer {
   name: string;
   layer: number; // 1, 2, or 3
-  analyze(context: AnalysisContext, store: EventStore): Promise<AnalysisSuggestion[]>;
+  analyze(
+    context: AnalysisContext,
+    store: EventStore,
+  ): Promise<AnalysisSuggestion[]>;
 }
 ```
 
@@ -167,22 +177,25 @@ Example:
 
 ```typescript
 class CustomAnalyzer implements Analyzer {
-  name = 'custom-analyzer';
+  name = "custom-analyzer";
   layer = 1;
 
-  async analyze(context: AnalysisContext, store: EventStore): Promise<AnalysisSuggestion[]> {
+  async analyze(
+    context: AnalysisContext,
+    store: EventStore,
+  ): Promise<AnalysisSuggestion[]> {
     const suggestions: AnalysisSuggestion[] = [];
-    
+
     // Your analysis logic here
-    if (context.stderr.includes('your-pattern')) {
+    if (context.stderr.includes("your-pattern")) {
       suggestions.push({
         id: `suggestion_${Date.now()}`,
-        type: 'warning',
-        priority: 'high',
-        title: 'Your Title',
-        description: 'Your description',
+        type: "warning",
+        priority: "high",
+        title: "Your Title",
+        description: "Your description",
         confidence: 0.8,
-        actionableSnippet: '# Your fix here',
+        actionableSnippet: "# Your fix here",
         provenance: {
           analyzer: this.name,
           layer: this.layer,
@@ -191,7 +204,7 @@ class CustomAnalyzer implements Analyzer {
         timestamp: Date.now(),
       });
     }
-    
+
     return suggestions;
   }
 }
@@ -228,4 +241,3 @@ See `src/lib/agent/__tests__/analysis-pipeline.test.ts` for examples.
 - [ ] Cross-session pattern learning
 - [ ] Suggestion ranking and deduplication
 - [ ] Integration with IDE/editor plugins
-

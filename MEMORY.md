@@ -71,6 +71,7 @@ runebook memory inspect
 ### Sessions
 
 A session represents a terminal session with:
+
 - Unique session ID
 - Start/end timestamps
 - Shell type (bash, zsh, nushell, etc.)
@@ -80,6 +81,7 @@ A session represents a terminal session with:
 ### Commands
 
 Commands are normalized and stored with:
+
 - Command name (normalized, e.g., "git" not "/usr/bin/git")
 - Arguments array
 - Environment summary (sanitized)
@@ -92,6 +94,7 @@ Commands are normalized and stored with:
 ### Outputs
 
 Output chunks are stored separately to enable:
+
 - Streaming output handling
 - Optional compression (gzip)
 - Efficient retrieval of large outputs
@@ -100,6 +103,7 @@ Output chunks are stored separately to enable:
 ### Errors
 
 Errors are classified by:
+
 - Type (exit_code, stderr, timeout, permission, etc.)
 - Severity (low, medium, high, critical)
 - Message and context
@@ -108,6 +112,7 @@ Errors are classified by:
 ### Insights
 
 Insights are AI/heuristic annotations with:
+
 - Type (pattern, optimization, warning, tip, correlation)
 - Confidence score (0.0 to 1.0)
 - Source (heuristic, ai, rule, etc.)
@@ -116,6 +121,7 @@ Insights are AI/heuristic annotations with:
 ### Suggestions
 
 Suggestions are ranked recommendations with:
+
 - Type (command, optimization, shortcut, warning, tip)
 - Priority (low, medium, high)
 - Rank score (higher = more relevant)
@@ -124,6 +130,7 @@ Suggestions are ranked recommendations with:
 ### Provenance
 
 Provenance tracks the source of data:
+
 - Entity type and ID
 - Source (terminal, ai, heuristic, user, etc.)
 - Confidence score (if applicable)
@@ -205,6 +212,7 @@ Schema roundtrip tests verify data integrity:
 ### PluresDB Connection
 
 Default configuration:
+
 - Host: `localhost`
 - Port: `34567`
 - Data directory: `./pluresdb-data`
@@ -250,4 +258,3 @@ For large datasets:
 - [ ] Backup and restore
 - [ ] Cross-session pattern analysis
 - [ ] Real-time event streaming
-

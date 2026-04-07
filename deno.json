@@ -9,12 +9,7 @@
       "scripts/**/*.cjs",
       "*.ts"
     ],
-    "exclude": [
-      "node_modules/",
-      ".svelte-kit/",
-      "build/",
-      "dist/"
-    ],
+    "exclude": ["node_modules/", ".svelte-kit/", "build/", "dist/"],
     "useTabs": false,
     "indentWidth": 2,
     "singleQuote": true,
@@ -22,16 +17,8 @@
     "proseWrap": "preserve"
   },
   "lint": {
-    "include": [
-      "src/**/*.ts",
-      "packages/**/*.ts"
-    ],
-    "exclude": [
-      "node_modules/",
-      ".svelte-kit/",
-      "build/",
-      "dist/"
-    ]
+    "include": ["src/**/*.ts", "packages/**/*.ts"],
+    "exclude": ["node_modules/", ".svelte-kit/", "build/", "dist/"]
   },
   "version": "0.13.0"
 }

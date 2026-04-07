@@ -43,7 +43,7 @@ nodes:
       y: 100
     label: Terminal Output
     displayType: text
-    content: ''
+    content: ""
     inputs:
       - id: input
         name: input
@@ -57,7 +57,7 @@ nodes:
       y: 340
     label: Input Display
     displayType: text
-    content: ''
+    content: ""
     inputs:
       - id: input
         name: input
@@ -69,7 +69,7 @@ connections:
     to: display-1
     fromPort: stdout
     toPort: input
-  
+
   - from: input-1
     to: display-2
     fromPort: value

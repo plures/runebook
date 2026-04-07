@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
     inputs:
       tag:
-        description: 'Release tag to build (e.g. v1.2.3)'
+        description: "Release tag to build (e.g. v1.2.3)"
         required: true
         type: string
 
@@ -66,14 +66,14 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - platform: 'macos-latest'
-            args: '--target aarch64-apple-darwin'
-          - platform: 'macos-latest'
-            args: '--target x86_64-apple-darwin'
-          - platform: 'ubuntu-22.04'
-            args: ''
-          - platform: 'windows-latest'
-            args: ''
+          - platform: "macos-latest"
+            args: "--target aarch64-apple-darwin"
+          - platform: "macos-latest"
+            args: "--target x86_64-apple-darwin"
+          - platform: "ubuntu-22.04"
+            args: ""
+          - platform: "windows-latest"
+            args: ""
 
     runs-on: ${{ matrix.platform }}
 
@@ -86,8 +86,8 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
-          cache: 'npm'
+          node-version: "20"
+          cache: "npm"
 
       - name: Install Rust stable
         uses: dtolnay/rust-toolchain@stable
@@ -120,13 +120,13 @@ jobs:
           ref: ${{ needs.setup.outputs.release_tag }}
       - uses: actions/setup-java@v4
         with:
-          distribution: 'temurin'
-          java-version: '17'
+          distribution: "temurin"
+          java-version: "17"
       - uses: android-actions/setup-android@v3
       - uses: actions/setup-node@v4
         with:
-          node-version: '20'
-          cache: 'npm'
+          node-version: "20"
+          cache: "npm"
       - uses: dtolnay/rust-toolchain@stable
         with:
           targets: aarch64-linux-android,armv7-linux-androideabi,x86_64-linux-android
@@ -153,7 +153,7 @@ jobs:
     needs: setup
     if: github.event_name == 'workflow_run' || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
-    
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -163,8 +163,8 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
-          registry-url: 'https://registry.npmjs.org'
+          node-version: "20"
+          registry-url: "https://registry.npmjs.org"
 
       - name: Install dependencies
         run: npm ci
@@ -179,7 +179,7 @@ jobs:
     needs: setup
     if: github.event_name == 'workflow_run' || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
-    
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -189,9 +189,9 @@ jobs:
       - name: Setup Node.js for GitHub Packages
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
-          registry-url: 'https://npm.pkg.github.com'
-          scope: '@plures'
+          node-version: "20"
+          registry-url: "https://npm.pkg.github.com"
+          scope: "@plures"
 
       - name: Install dependencies
         run: npm ci
@@ -206,7 +206,7 @@ jobs:
     needs: setup
     if: github.event_name == 'workflow_run' || github.event_name == 'workflow_dispatch'
     runs-on: windows-latest
-    
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -234,7 +234,7 @@ jobs:
     needs: setup
     if: github.event_name == 'workflow_run' || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
-    
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4

@@ -2,7 +2,16 @@ name: PR Lane Event Relay
 
 on:
   pull_request:
-    types: [opened, reopened, synchronize, ready_for_review, converted_to_draft, labeled, unlabeled]
+    types:
+      [
+        opened,
+        reopened,
+        synchronize,
+        ready_for_review,
+        converted_to_draft,
+        labeled,
+        unlabeled,
+      ]
   pull_request_review:
     types: [submitted, dismissed, edited]
   check_suite:

@@ -1,9 +1,9 @@
 ---
 name: Release Checklist
 about: Checklist for creating a new release
-title: 'Release vX.Y.Z'
+title: "Release vX.Y.Z"
 labels: release
-assignees: ''
+assignees: ""
 ---
 
 ## Pre-Release Checklist

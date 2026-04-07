@@ -4,13 +4,13 @@
 // logic management: typed RuleResult returns, Rules Factory, and Praxis
 // module composition.
 
-export { canvasValidationModule } from './canvas-validation';
+export { canvasValidationModule } from "./canvas-validation";
 export type {
   CanvasValidationContext,
   ConnectionRequest,
   NodeDescriptor,
   PortDescriptor,
-} from './canvas-validation';
+} from "./canvas-validation";
 export {
   ValidateConnectionEvent,
   ValidateCanvasStateEvent,
@@ -18,10 +18,10 @@ export {
   CONNECTION_INVALID_FACT,
   CANVAS_STATE_VALID_FACT,
   CANVAS_STATE_INVALID_FACT,
-} from './canvas-validation';
+} from "./canvas-validation";
 
-export { executionPolicyModule } from './execution-policy';
-export type { ExecutionPolicyContext, ExecutionEdge } from './execution-policy';
+export { executionPolicyModule } from "./execution-policy";
+export type { ExecutionPolicyContext, ExecutionEdge } from "./execution-policy";
 export {
   ScheduleExecutionEvent,
   DetectCyclesEvent,
@@ -30,14 +30,14 @@ export {
   CYCLE_DETECTED_FACT,
   TIMEOUT_EXCEEDED_FACT,
   GRAPH_ACYCLIC_FACT,
-} from './execution-policy';
+} from "./execution-policy";
 
-export { componentRegistryModule } from './component-registry';
+export { componentRegistryModule } from "./component-registry";
 export type {
   ComponentRegistryContext,
   ComponentCapability,
   PortCapability,
-} from './component-registry';
+} from "./component-registry";
 export {
   RegisterComponentEvent,
   UnregisterComponentEvent,
@@ -46,10 +46,10 @@ export {
   COMPONENT_UNREGISTERED_FACT,
   PORT_COMPATIBLE_FACT,
   PORT_INCOMPATIBLE_FACT,
-} from './component-registry';
+} from "./component-registry";
 
-export { resourceManagementModule } from './resource-management';
-export type { ResourceManagementContext } from './resource-management';
+export { resourceManagementModule } from "./resource-management";
+export type { ResourceManagementContext } from "./resource-management";
 export {
   RequestTerminalEvent,
   ReleaseTerminalEvent,
@@ -60,7 +60,7 @@ export {
   TERMINAL_RELEASED_FACT,
   MEMORY_PRESSURE_FACT,
   CLEANUP_REQUIRED_FACT,
-} from './resource-management';
+} from "./resource-management";
 
 // Runtime — singleton engine instances wired to app lifecycle
 export {
@@ -73,5 +73,4 @@ export {
   resourceManagementEngine,
   requestTerminal,
   releaseTerminal,
-} from './runtime';
-
+} from "./runtime";

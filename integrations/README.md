@@ -26,6 +26,7 @@ runebook suggest last
 ### Setup
 
 1. Copy `tmux-status.sh` to your home directory:
+
    ```bash
    mkdir -p ~/.runebook/integrations
    cp integrations/tmux-status.sh ~/.runebook/integrations/
@@ -33,6 +34,7 @@ runebook suggest last
    ```
 
 2. Add to your `~/.tmux.conf`:
+
    ```tmux
    set -g status-right '#(bash ~/.runebook/integrations/tmux-status.sh)'
    ```
@@ -53,12 +55,14 @@ runebook suggest last
 ### Setup
 
 1. Copy the integration file to your WezTerm config directory:
+
    ```bash
    mkdir -p ~/.config/wezterm
    cp integrations/wezterm-status-simple.lua ~/.config/wezterm/
    ```
 
 2. Add to your `~/.config/wezterm/wezterm.lua`:
+
    ```lua
    wezterm.on('update-right-status', function(window, pane)
      local status_file = wezterm.home_dir .. '/.runebook/agent-status.json'
@@ -67,18 +71,18 @@ runebook suggest last
        window:set_right_status('')
        return
      end
-     
+
      local content = file:read('*all')
      file:close()
-     
+
      -- Simple JSON parsing (for status field only)
      local status = content:match('"status"%s*:%s*"([^"]*)"')
      local high_priority = content:match('"highPriorityCount"%s*:%s*([0-9]+)')
-     
+
      local symbol = ''
      local color = ''
      local text = ''
-     
+
      if status == 'idle' then
        symbol = '●'
        color = '#00ff00'
@@ -92,7 +96,7 @@ runebook suggest last
          text = high_priority
        end
      end
-     
+
      if symbol ~= '' then
        window:set_right_status(wezterm.format({
          { Foreground = { Color = color } },
@@ -113,6 +117,7 @@ runebook suggest last
 ### Vim Setup
 
 1. Copy the plugin file:
+
    ```bash
    mkdir -p ~/.vim/plugin
    cp integrations/vim-runebook.vim ~/.vim/plugin/
@@ -126,12 +131,14 @@ runebook suggest last
 ### Neovim Setup (Lua)
 
 1. Copy the plugin file:
+
    ```bash
    mkdir -p ~/.config/nvim/lua
    cp integrations/nvim-runebook.lua ~/.config/nvim/lua/runebook.lua
    ```
 
 2. Or place in plugin directory:
+
    ```bash
    mkdir -p ~/.config/nvim/plugin
    cp integrations/nvim-runebook.lua ~/.config/nvim/plugin/runebook.lua
@@ -203,11 +210,13 @@ Run the demo script to see all features:
 ### Status not updating
 
 1. Check that the agent is enabled:
+
    ```bash
    runebook agent status
    ```
 
 2. Verify the status file exists:
+
    ```bash
    cat ~/.runebook/agent-status.json
    ```
@@ -220,11 +229,13 @@ Run the demo script to see all features:
 ### Tmux status not showing
 
 1. Verify the script is executable:
+
    ```bash
    chmod +x ~/.runebook/integrations/tmux-status.sh
    ```
 
 2. Test the script directly:
+
    ```bash
    ~/.runebook/integrations/tmux-status.sh
    ```
@@ -239,4 +250,3 @@ Run the demo script to see all features:
 1. Check WezTerm logs for errors
 2. Verify the status file exists and is readable
 3. Test JSON parsing manually
-
