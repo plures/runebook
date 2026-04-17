@@ -1,3 +1,14 @@
+## [0.13.2] — 2026-04-17
+
+- fix(lifecycle): label-based retry counter + CI fix priority (d6ef4ef)
+- ci: inline lifecycle workflow — fix schedule failures (9fb9303)
+- docs: add structured ROADMAP.md for automated issue generation (3cdac90)
+- chore: remove redundant workflow — handled by centralized reusable workflows (435f739)
+- chore: remove redundant workflow — handled by centralized reusable workflows (ba0e649)
+- chore: remove redundant workflow — handled by centralized reusable workflows (3bfc409)
+- chore: centralize CI to org-wide reusable workflow (4abebf8)
+- ci: standardize Node version to lts/* — remove hardcoded versions (e37d789)
+
 ## [0.13.1] — 2026-04-04
 
 - fix: render canvas connections at actual port positions (#154) (9153ff6)
