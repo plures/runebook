@@ -1,3 +1,7 @@
+## [0.16.0] — 2026-04-23
+
+- feat(lifecycle): milestone-close triggers roadmap-aware release (26eb633)
+
 ## [0.15.0] — 2026-04-18
 
 - feat(lifecycle v12): auto-release when milestone completes (0a2013a)
