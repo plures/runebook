@@ -1,40 +1,29 @@
 # RuneBook Roadmap
 
-## Current: v0.3.x (pre-release)
+## Role in OASIS
+RuneBook is the canvas-native reactive computing surface for OASIS. It is the flagship demo environment that wires PluresDB data flows, agents, and local-first UI into a single programmable canvas. RuneBook proves that OASIS primitives (agents + data + rules) can be composed by end users as live workflows.
 
-## Phase 1: Canvas Core (v0.4)
-- [ ] Node snapping — align nodes to grid and to each other
-- [ ] Wire routing — bezier curves with collision avoidance
-- [ ] Undo/redo — command pattern with full state history via Chronos
-- [ ] Canvas minimap — overview navigation for large canvases
-- [ ] Copy/paste — duplicate node groups with connections preserved
+## Current State (v0.3.x)
+- Svelte 5 + Tauri app with reactive canvas
+- Terminal nodes, input widgets, transform nodes, and display components
+- YAML import/export for canvas definitions (in progress)
+- Headless CLI and ambient agent mode (early)
+- Open issues focus on PTY-backed terminal nodes and terminal wiring
 
-## Phase 2: Node Types (v0.5)
-- [ ] HTTP request node — make API calls with headers, auth, body
-- [ ] File watcher node — trigger on file system changes
-- [ ] Timer node — periodic execution with configurable interval
-- [ ] Database node — PluresDB query/write operations
-- [ ] LLM node — model calls with streaming output
-- [ ] Conditional node — if/else branching based on data
+## Near Term (v0.4.x)
+- Finish terminal node stack end-to-end (xterm.js frontend + PTY backend + stdin/stdout graph wiring)
+- Complete YAML import/export actions in GUI
+- Storage selector: LocalStorage vs PluresDB (default to PluresDB for OASIS)
+- Stabilize Windows/macOS/Linux builds + release automation
 
-## Phase 3: Collaboration (v0.6)
-- [ ] Canvas sharing — P2P sync of canvas state via PluresDB
-- [ ] Presence — show collaborator cursors on shared canvases
-- [ ] Canvas versioning — save/restore canvas snapshots
-- [ ] Canvas templates — pre-built workflow templates
-- [ ] Export — generate standalone scripts from canvas definitions
+## Mid Term (v0.5.x–0.6.x)
+- Agent node types (invoke pares-agens workflows, tool calls, and OASIS policy checks)
+- PluresDB-backed project state (multi-canvas workspaces, history, versioning)
+- Collaboration hooks (local-first sync, conflict resolution primitives)
+- Performance pass on large canvases and long-running terminal streams
 
-## Phase 4: Agent Integration (v0.7)
-- [ ] Ambient agent — AI assistant that observes canvas and suggests improvements
-- [ ] Natural language canvas creation — describe workflow, generate nodes
-- [ ] Debug mode — step through node execution with state inspection
-- [ ] Performance profiling — identify bottleneck nodes
-- [ ] Headless execution — run canvases from CLI without GUI
-
-## Phase 5: Production (v1.0)
-- [ ] Auto-update via Tauri
-- [ ] Plugin system — custom node types via pares-modulus
-- [ ] Canvas marketplace — share and discover community canvases
-- [ ] Documentation — interactive tutorials on canvas
-- [ ] Cross-platform installers
-
+## Long Term (v1.0+)
+- OASIS native workflow builder: commerce flows, privacy policy nodes, ZK proof verification nodes
+- Marketplace for community node packs and templates
+- Cross-device continuity (PluresDB + OASIS identity)
+- Production-grade automation surface for OASIS user workflows
