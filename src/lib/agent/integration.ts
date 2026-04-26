@@ -1,8 +1,8 @@
 // Integration layer for Ambient Agent Mode
 // Connects agent to terminal execution
 
-import { createAgent, defaultAgentConfig, type AmbientAgent } from './index';
-import type { AgentConfig, TerminalEvent } from '../types/agent';
+import { createAgent, defaultAgentConfig, type AmbientAgent } from "./index";
+import type { AgentConfig, TerminalEvent } from "../types/agent";
 
 let agentInstance: AmbientAgent | null = null;
 let agentConfig: AgentConfig = { ...defaultAgentConfig };
@@ -37,14 +37,20 @@ export async function captureCommandStart(
   command: string,
   args: string[],
   env: Record<string, string>,
-  cwd: string
+  cwd: string,
 ): Promise<TerminalEvent | null> {
   if (!isAgentEnabled()) {
     return null;
   }
 
   const startTime = Date.now();
-  return await agentInstance!.captureAndAnalyze(command, args, env, cwd, startTime);
+  return await agentInstance!.captureAndAnalyze(
+    command,
+    args,
+    env,
+    cwd,
+    startTime,
+  );
 }
 
 /**
@@ -54,18 +60,24 @@ export async function captureCommandResult(
   event: TerminalEvent | null,
   stdout: string,
   stderr: string,
-  exitCode: number
+  exitCode: number,
 ): Promise<void> {
   if (!isAgentEnabled() || !event) {
     return;
   }
 
   const endTime = Date.now();
-  const suggestions = await agentInstance!.recordResult(event, stdout, stderr, exitCode, endTime);
-  
+  const suggestions = await agentInstance!.recordResult(
+    event,
+    stdout,
+    stderr,
+    exitCode,
+    endTime,
+  );
+
   // Log suggestions if any (can be enhanced to show in UI)
   if (suggestions.length > 0 && agentConfig.suggestImprovements) {
-    console.log('Agent suggestions:', suggestions);
+    console.log("Agent suggestions:", suggestions);
   }
 }
 
@@ -78,4 +90,3 @@ export function stopAgent(): void {
     agentInstance = null;
   }
 }
-

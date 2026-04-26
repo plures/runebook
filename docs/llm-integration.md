@@ -5,6 +5,7 @@ RuneBook supports optional model-backed reasoning via LLM providers or MCP (Mode
 ## Overview
 
 The LLM integration provides intelligent suggestions for command failures by analyzing:
+
 - Command context (command, args, working directory)
 - Error output (stderr, stdout)
 - Previous commands
@@ -15,7 +16,9 @@ All LLM analysis is **suggestion-only** - it never executes commands automatical
 ## Safety Features
 
 ### Context Sanitization
+
 Before sending context to an LLM, RuneBook automatically redacts:
+
 - API keys and tokens (GitHub tokens, OpenAI keys, AWS keys, etc.)
 - Environment variables containing secrets
 - Private keys
@@ -23,12 +26,15 @@ Before sending context to an LLM, RuneBook automatically redacts:
 - Long alphanumeric strings that look like tokens
 
 ### User Review
+
 By default, the sanitized context is shown to the user before sending to the LLM. This can be disabled in configuration, but is recommended for privacy.
 
 ### Caching (Optional)
+
 Responses can be cached to reduce API calls and costs. Cache TTL is configurable.
 
 ### Never Auto-Execute
+
 LLM suggestions are **never executed automatically**. They are only displayed as suggestions that the user can review and apply manually.
 
 ## Configuration
@@ -60,6 +66,7 @@ Add LLM configuration to your observer config file (`~/.runebook/observer-config
 ### Provider Types
 
 #### Ollama (Local)
+
 Runs models locally via Ollama. No API keys required.
 
 ```json
@@ -76,10 +83,12 @@ Runs models locally via Ollama. No API keys required.
 ```
 
 **Requirements:**
+
 - Ollama installed and running (`ollama serve`)
 - Model pulled (`ollama pull llama3.2`)
 
 #### OpenAI
+
 Uses OpenAI API. Requires API key.
 
 ```json
@@ -96,10 +105,12 @@ Uses OpenAI API. Requires API key.
 ```
 
 **Requirements:**
+
 - `OPENAI_API_KEY` environment variable set
 - Or provide `apiKey` in config (less secure)
 
 #### Mock (Testing)
+
 Returns deterministic responses for testing.
 
 ```json
@@ -112,6 +123,7 @@ Returns deterministic responses for testing.
 ```
 
 #### MCP (Future)
+
 MCP provider support is planned but not yet implemented.
 
 ### Safety Configuration
@@ -119,10 +131,10 @@ MCP provider support is planned but not yet implemented.
 ```json
 {
   "safety": {
-    "requireUserReview": true,    // Show context before sending (default: true)
-    "maxContextLength": 8000,      // Truncate if too long (default: 8000 tokens)
-    "cacheEnabled": false,        // Cache responses (default: false)
-    "cacheTtl": 3600              // Cache TTL in seconds (default: 3600)
+    "requireUserReview": true, // Show context before sending (default: true)
+    "maxContextLength": 8000, // Truncate if too long (default: 8000 tokens)
+    "cacheEnabled": false, // Cache responses (default: false)
+    "cacheTtl": 3600 // Cache TTL in seconds (default: 3600)
   }
 }
 ```
@@ -136,6 +148,7 @@ runebook llm status
 ```
 
 Shows:
+
 - Provider type and availability
 - Configuration settings
 - Safety settings
@@ -146,6 +159,7 @@ Shows:
 ### What Data is Sent
 
 When LLM analysis is enabled, the following data may be sent to the LLM provider:
+
 - Command and arguments (sanitized)
 - Working directory
 - Error output (stderr, sanitized)
@@ -240,6 +254,7 @@ Error: Ollama provider is not available
 ```
 
 **Solution:**
+
 1. Make sure Ollama is running: `ollama serve`
 2. Check if the model is installed: `ollama list`
 3. Pull the model if needed: `ollama pull llama3.2`
@@ -252,12 +267,14 @@ Error: OpenAI API key not found
 ```
 
 **Solution:**
+
 1. Set `OPENAI_API_KEY` environment variable: `export OPENAI_API_KEY=sk-...`
 2. Or provide `apiKey` in config (less secure)
 
 ### Provider Not Responding
 
 If the provider times out or fails:
+
 1. Check network connectivity (for OpenAI)
 2. Check provider logs (for Ollama)
 3. Try disabling and re-enabling LLM analysis
@@ -268,11 +285,13 @@ If the provider times out or fails:
 ### Example: Nix Build Error
 
 When a Nix build fails, the LLM analyzer receives:
+
 - Command: `nix build`
 - Error: Missing attribute "cursor"
 - Repository: Nix flake with `flake.nix`
 
 The LLM might suggest:
+
 - Check if the attribute exists in the flake
 - Verify the input source
 - Check for typos in attribute names
@@ -280,11 +299,13 @@ The LLM might suggest:
 ### Example: Git Authentication Error
 
 When Git authentication fails:
+
 - Command: `git push`
 - Error: Authentication failed
 - Repository: Git repository
 
 The LLM might suggest:
+
 - Check if credentials are configured
 - Verify SSH key or token
 - Check GitHub rate limits
@@ -297,4 +318,3 @@ The LLM might suggest:
 - [ ] Context window optimization
 - [ ] Streaming responses
 - [ ] Multi-model ensemble
-

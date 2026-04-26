@@ -8,6 +8,7 @@
    - Platform-specific dependencies (see main README)
 
 2. **Clone and install:**
+
    ```bash
    git clone https://github.com/plures/runebook.git
    cd runebook
@@ -22,6 +23,7 @@
 ## Your First Canvas
 
 When RuneBook starts, you'll see:
+
 - A **dark canvas** (the main workspace)
 - A **toolbar** on the left with buttons to add nodes
 - An empty workspace ready for nodes
@@ -126,16 +128,19 @@ Display nodes can show data in different formats:
 ## Troubleshooting
 
 **Terminal commands don't execute:**
+
 - Check that the command is in your system PATH
 - Verify command syntax is correct
 - Check terminal output for error messages
 
 **Can't see node output:**
+
 - Ensure the terminal node has run successfully
 - Check for errors in the terminal node
 - Try the "Clear" button and run again
 
 **Load Example doesn't work:**
+
 - Ensure the examples directory exists: `/static/examples/`
 - Check browser console for error messages
 - Verify YAML files are properly formatted
@@ -143,6 +148,7 @@ Display nodes can show data in different formats:
 ## keyboard Shortcuts (Coming Soon)
 
 Future versions will include:
+
 - Ctrl/Cmd + S: Save canvas
 - Ctrl/Cmd + O: Load canvas
 - Delete: Remove selected node

@@ -9,8 +9,8 @@ import {
   defineModule,
   RuleResult,
   fact,
-} from '@plures/praxis';
-import type { PraxisModule } from '@plures/praxis';
+} from "@plures/praxis";
+import type { PraxisModule } from "@plures/praxis";
 
 // ---------------------------------------------------------------------------
 // Context
@@ -43,30 +43,30 @@ export interface ExecutionPolicyContext {
 
 /** Request topological scheduling of the execution graph. */
 export const ScheduleExecutionEvent = defineEvent<
-  'SCHEDULE_EXECUTION',
+  "SCHEDULE_EXECUTION",
   { changedNodeId?: string }
->('SCHEDULE_EXECUTION');
+>("SCHEDULE_EXECUTION");
 
 /** Explicitly request cycle detection on the current graph. */
 export const DetectCyclesEvent = defineEvent<
-  'DETECT_CYCLES',
+  "DETECT_CYCLES",
   Record<string, never>
->('DETECT_CYCLES');
+>("DETECT_CYCLES");
 
 /** Report elapsed time for a node after it finishes execution. */
 export const ReportElapsedEvent = defineEvent<
-  'REPORT_ELAPSED',
+  "REPORT_ELAPSED",
   { nodeId: string; elapsedMs: number }
->('REPORT_ELAPSED');
+>("REPORT_ELAPSED");
 
 // ---------------------------------------------------------------------------
 // Facts (emitted by rules)
 // ---------------------------------------------------------------------------
 
-export const EXECUTION_ORDER_FACT = 'execution.order';
-export const CYCLE_DETECTED_FACT = 'execution.cycle-detected';
-export const TIMEOUT_EXCEEDED_FACT = 'execution.timeout-exceeded';
-export const GRAPH_ACYCLIC_FACT = 'execution.graph-acyclic';
+export const EXECUTION_ORDER_FACT = "execution.order";
+export const CYCLE_DETECTED_FACT = "execution.cycle-detected";
+export const TIMEOUT_EXCEEDED_FACT = "execution.timeout-exceeded";
+export const GRAPH_ACYCLIC_FACT = "execution.graph-acyclic";
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -80,15 +80,15 @@ function topologicalSort(
   nodes: string[],
   edges: ExecutionEdge[],
 ): { order: string[]; hasCycles: boolean } {
-  const inDegree = new Map<string, number>(nodes.map(id => [id, 0]));
-  const adjacency = new Map<string, string[]>(nodes.map(id => [id, []]));
+  const inDegree = new Map<string, number>(nodes.map((id) => [id, 0]));
+  const adjacency = new Map<string, string[]>(nodes.map((id) => [id, []]));
 
   for (const { from, to } of edges) {
     adjacency.get(from)?.push(to);
     inDegree.set(to, (inDegree.get(to) ?? 0) + 1);
   }
 
-  const queue = nodes.filter(id => (inDegree.get(id) ?? 0) === 0);
+  const queue = nodes.filter((id) => (inDegree.get(id) ?? 0) === 0);
   const order: string[] = [];
 
   // Use an index-based queue to keep dequeue operations O(1).
@@ -116,19 +116,25 @@ function topologicalSort(
  * stateRules category — execution lifecycle
  */
 const scheduleExecutionRule = defineRule<ExecutionPolicyContext>({
-  id: 'execution-policy.scheduleExecution',
-  description: 'Compute topological execution order; detect cycles via Kahn\'s algorithm',
-  eventTypes: 'SCHEDULE_EXECUTION',
+  id: "execution-policy.scheduleExecution",
+  description:
+    "Compute topological execution order; detect cycles via Kahn's algorithm",
+  eventTypes: "SCHEDULE_EXECUTION",
   impl: (state, events) => {
     const evt = events.find(ScheduleExecutionEvent.is);
-    if (!evt) return RuleResult.skip('no SCHEDULE_EXECUTION event');
+    if (!evt) return RuleResult.skip("no SCHEDULE_EXECUTION event");
 
-    const { order, hasCycles } = topologicalSort(state.context.nodes, state.context.edges);
+    const { order, hasCycles } = topologicalSort(
+      state.context.nodes,
+      state.context.edges,
+    );
     state.context.executionOrder = order;
     state.context.hasCycles = hasCycles;
 
     if (hasCycles) {
-      return RuleResult.emit([fact(CYCLE_DETECTED_FACT, { triggeredBy: evt.payload.changedNodeId })]);
+      return RuleResult.emit([
+        fact(CYCLE_DETECTED_FACT, { triggeredBy: evt.payload.changedNodeId }),
+      ]);
     }
 
     return RuleResult.emit([fact(EXECUTION_ORDER_FACT, { order })]);
@@ -141,14 +147,18 @@ const scheduleExecutionRule = defineRule<ExecutionPolicyContext>({
  * stateRules category — execution lifecycle
  */
 const detectCyclesRule = defineRule<ExecutionPolicyContext>({
-  id: 'execution-policy.detectCycles',
-  description: 'Detect cycles in the execution graph using topological sort (order discarded)',
-  eventTypes: 'DETECT_CYCLES',
+  id: "execution-policy.detectCycles",
+  description:
+    "Detect cycles in the execution graph using topological sort (order discarded)",
+  eventTypes: "DETECT_CYCLES",
   impl: (state, events) => {
     const evt = events.find(DetectCyclesEvent.is);
-    if (!evt) return RuleResult.skip('no DETECT_CYCLES event');
+    if (!evt) return RuleResult.skip("no DETECT_CYCLES event");
 
-    const { hasCycles } = topologicalSort(state.context.nodes, state.context.edges);
+    const { hasCycles } = topologicalSort(
+      state.context.nodes,
+      state.context.edges,
+    );
     state.context.hasCycles = hasCycles;
 
     if (hasCycles) {
@@ -166,12 +176,12 @@ const detectCyclesRule = defineRule<ExecutionPolicyContext>({
  * stateRules category — execution lifecycle
  */
 const timeoutEnforcementRule = defineRule<ExecutionPolicyContext>({
-  id: 'execution-policy.timeoutEnforcement',
-  description: 'Enforce per-node execution timeout budgets',
-  eventTypes: 'REPORT_ELAPSED',
+  id: "execution-policy.timeoutEnforcement",
+  description: "Enforce per-node execution timeout budgets",
+  eventTypes: "REPORT_ELAPSED",
   impl: (state, events) => {
     const evt = events.find(ReportElapsedEvent.is);
-    if (!evt) return RuleResult.skip('no REPORT_ELAPSED event');
+    if (!evt) return RuleResult.skip("no REPORT_ELAPSED event");
 
     const { nodeId, elapsedMs } = evt.payload;
     state.context.elapsed[nodeId] = elapsedMs;
@@ -183,7 +193,7 @@ const timeoutEnforcementRule = defineRule<ExecutionPolicyContext>({
       ]);
     }
 
-    return RuleResult.noop('within timeout budget');
+    return RuleResult.noop("within timeout budget");
   },
 });
 
@@ -192,17 +202,19 @@ const timeoutEnforcementRule = defineRule<ExecutionPolicyContext>({
 // ---------------------------------------------------------------------------
 
 const acyclicGraphConstraint = defineConstraint<ExecutionPolicyContext>({
-  id: 'execution-policy.acyclicGraph',
-  description: 'The execution graph must be acyclic before scheduling',
-  impl: state => !state.context.hasCycles || 'Execution graph contains a cycle',
+  id: "execution-policy.acyclicGraph",
+  description: "The execution graph must be acyclic before scheduling",
+  impl: (state) =>
+    !state.context.hasCycles || "Execution graph contains a cycle",
 });
 
 // ---------------------------------------------------------------------------
 // Module
 // ---------------------------------------------------------------------------
 
-export const executionPolicyModule: PraxisModule<ExecutionPolicyContext> = defineModule({
-  rules: [scheduleExecutionRule, detectCyclesRule, timeoutEnforcementRule],
-  constraints: [acyclicGraphConstraint],
-  meta: { name: 'execution-policy', version: '1.0.0' },
-});
+export const executionPolicyModule: PraxisModule<ExecutionPolicyContext> =
+  defineModule({
+    rules: [scheduleExecutionRule, detectCyclesRule, timeoutEnforcementRule],
+    constraints: [acyclicGraphConstraint],
+    meta: { name: "execution-policy", version: "1.0.0" },
+  });

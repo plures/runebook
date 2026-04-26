@@ -1,11 +1,15 @@
 // Analysis Service - Integrates analysis pipeline with observer
 // Monitors observer events and triggers analysis jobs
 
-import { AnalysisJobQueue } from './analysis-pipeline';
-import { createHeuristicAnalyzers, createLocalSearchAnalyzer, createLLMAnalyzer } from './analyzers';
-import type { TerminalObserverEvent, EventStore } from '../core/types';
-import type { ObserverConfig } from '../core/types';
-import type { LLMProviderConfig } from './llm/types';
+import { AnalysisJobQueue } from "./analysis-pipeline";
+import {
+  createHeuristicAnalyzers,
+  createLocalSearchAnalyzer,
+  createLLMAnalyzer,
+} from "./analyzers";
+import type { TerminalObserverEvent, EventStore } from "../core/types";
+import type { ObserverConfig } from "../core/types";
+import type { LLMProviderConfig } from "./llm/types";
 
 // Extended config that includes optional LLM support
 interface AnalysisServiceConfig extends ObserverConfig {
@@ -34,7 +38,7 @@ export class AnalysisService {
     this.config = config as AnalysisServiceConfig;
     this.queue = new AnalysisJobQueue(store);
     this.setupAnalyzers();
-    
+
     // Enable LLM if configured
     const llmConfig = this.config.llm;
     if (llmConfig && llmConfig.enabled) {
@@ -62,7 +66,7 @@ export class AnalysisService {
   private setupAnalyzers(): void {
     // Clear existing
     this.queue = new AnalysisJobQueue(this.store);
-    
+
     // Register Layer 1: Heuristic analyzers
     const heuristicAnalyzers = createHeuristicAnalyzers();
     for (const analyzer of heuristicAnalyzers) {
@@ -76,7 +80,7 @@ export class AnalysisService {
     const llmConfig = this.config?.llm;
     const llmEnabled = llmConfig?.enabled || false;
     this.queue.registerAnalyzer(createLLMAnalyzer(llmEnabled, llmConfig));
-    
+
     // Set LLM enabled state
     this.queue.setLLMEnabled(llmEnabled);
   }
@@ -84,12 +88,14 @@ export class AnalysisService {
   /**
    * Process exit status event and trigger analysis if failure
    */
-  async processExitStatus(event: TerminalObserverEvent): Promise<string | null> {
+  async processExitStatus(
+    event: TerminalObserverEvent,
+  ): Promise<string | null> {
     if (!this.isEnabled() || !this.store) {
       return null;
     }
 
-    if (event.type !== 'exit_status') {
+    if (event.type !== "exit_status") {
       return null;
     }
 
@@ -100,9 +106,13 @@ export class AnalysisService {
 
     // Get all events for this command
     const commandEvents = await this.store.getEventsByCommand(event.commandId);
-    
+
     // Enqueue analysis job
-    return await this.queue.enqueueFailure(event.commandId, commandEvents, this.store);
+    return await this.queue.enqueueFailure(
+      event.commandId,
+      commandEvents,
+      this.store,
+    );
   }
 
   /**
@@ -168,4 +178,3 @@ export function getAnalysisService(): AnalysisService {
   }
   return globalAnalysisService;
 }
-

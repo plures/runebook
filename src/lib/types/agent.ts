@@ -37,8 +37,8 @@ export interface CommandPattern {
 
 export interface Suggestion {
   id: string;
-  type: 'command' | 'optimization' | 'shortcut' | 'warning' | 'tip';
-  priority: 'low' | 'medium' | 'high';
+  type: "command" | "optimization" | "shortcut" | "warning" | "tip";
+  priority: "low" | "medium" | "high";
   title: string;
   description: string;
   command?: string;
@@ -47,7 +47,7 @@ export interface Suggestion {
   timestamp: number;
 }
 
-import type { LLMProviderConfig } from '../agent/llm/types';
+import type { LLMProviderConfig } from "../agent/llm/types";
 
 export interface EventStorage {
   saveEvent(event: TerminalEvent): Promise<void>;
@@ -75,4 +75,3 @@ export interface AgentConfig {
   retentionDays?: number;
   llm?: LLMProviderConfig; // LLM/MCP integration config (disabled by default)
 }
-

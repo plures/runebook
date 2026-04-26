@@ -13,6 +13,7 @@ nix develop
 ```
 
 This provides:
+
 - Node.js 20
 - Rust toolchain (stable, with rustfmt and clippy)
 - Tauri CLI
@@ -291,6 +292,7 @@ nix build .#runebook-frontend 2>&1 | grep "got:" | head -1
 ```
 
 Or manually calculate:
+
 ```bash
 nix-prefetch-url --unpack --type sha256 $(nix eval --raw .#runebook-frontend.src 2>/dev/null || echo "file://$(pwd)")
 ```
@@ -354,4 +356,3 @@ pre-commit install
 - [NixOS Modules](https://nixos.wiki/wiki/NixOS_modules)
 - [Tauri Prerequisites](https://tauri.app/guides/prerequisites/)
 - [RuneBook Architecture](./ARCHITECTURE.md)
-

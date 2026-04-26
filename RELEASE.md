@@ -33,6 +33,7 @@ npm run version:check
 5. Click "Run workflow" button
 
 The workflow will:
+
 - Update version in all files
 - Commit changes
 - Create git tag
@@ -47,6 +48,7 @@ The workflow will:
 5. Click "Publish release"
 
 This will trigger the Build and Publish workflow that:
+
 - Builds for all platforms (macOS Intel/Apple Silicon, Linux, Windows)
 - Uploads binaries to GitHub Release automatically
 - Publishes to npm registry
@@ -155,22 +157,26 @@ Or use the Version Bump workflow to re-sync.
 After release, users can install RuneBook via:
 
 **npm**:
+
 ```bash
 npm install -g @plures/runebook
 ```
 
 **GitHub Packages**:
+
 ```bash
 npm config set @plures:registry https://npm.pkg.github.com
 npm install -g @plures/runebook
 ```
 
 **winget** (Windows):
+
 ```powershell
 winget install Plures.RuneBook
 ```
 
 **NixOS / Nix Flakes**:
+
 ```bash
 # Direct flake usage
 nix run github:plures/runebook
@@ -179,7 +185,8 @@ nix run github:plures/runebook
 # runebook.url = "github:plures/runebook";
 ```
 
-**Direct Download**: 
+**Direct Download**:
+
 - Visit [GitHub Releases](https://github.com/plures/runebook/releases)
 - Download platform-specific installers (.dmg, .AppImage, .msi, .exe)
 

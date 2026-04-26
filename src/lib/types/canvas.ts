@@ -1,5 +1,11 @@
 // Canvas node types for RuneBook
-export type NodeType = 'text' | 'terminal' | 'input' | 'display' | 'transform' | 'sub-canvas';
+export type NodeType =
+  | "text"
+  | "terminal"
+  | "input"
+  | "display"
+  | "transform"
+  | "sub-canvas";
 
 export interface Position {
   x: number;
@@ -22,7 +28,7 @@ export interface Connection {
 export interface Port {
   id: string;
   name: string;
-  type: 'input' | 'output';
+  type: "input" | "output";
   dataType?: string;
 }
 
@@ -38,12 +44,12 @@ export interface BaseNode {
 
 /** Phase 1: plain text/markdown card */
 export interface TextNode extends BaseNode {
-  type: 'text';
+  type: "text";
   content: string;
 }
 
 export interface TerminalNode extends BaseNode {
-  type: 'terminal';
+  type: "terminal";
   command: string;
   args?: string[];
   env?: Record<string, string>;
@@ -52,8 +58,8 @@ export interface TerminalNode extends BaseNode {
 }
 
 export interface InputNode extends BaseNode {
-  type: 'input';
-  inputType: 'text' | 'number' | 'checkbox' | 'slider';
+  type: "input";
+  inputType: "text" | "number" | "checkbox" | "slider";
   value: any;
   min?: number;
   max?: number;
@@ -61,23 +67,29 @@ export interface InputNode extends BaseNode {
 }
 
 export interface DisplayNode extends BaseNode {
-  type: 'display';
-  displayType: 'text' | 'json' | 'table' | 'chart';
+  type: "display";
+  displayType: "text" | "json" | "table" | "chart";
   content: any;
 }
 
 export interface TransformNode extends BaseNode {
-  type: 'transform';
-  transformType: 'map' | 'filter' | 'reduce' | 'sudolang';
+  type: "transform";
+  transformType: "map" | "filter" | "reduce" | "sudolang";
   code: string;
 }
 
 export interface SubCanvasNode extends BaseNode {
-  type: 'sub-canvas';
+  type: "sub-canvas";
   children: Canvas;
 }
 
-export type CanvasNode = TextNode | TerminalNode | InputNode | DisplayNode | TransformNode | SubCanvasNode;
+export type CanvasNode =
+  | TextNode
+  | TerminalNode
+  | InputNode
+  | DisplayNode
+  | TransformNode
+  | SubCanvasNode;
 
 export interface Canvas {
   id: string;

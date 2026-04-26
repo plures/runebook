@@ -9,8 +9,10 @@ The parallel execution plan coordinates multiple agents working on different par
 ## Execution Order
 
 ### Phase 1: Orchestrator
+
 **Agent**: Orchestrator  
 **Tasks**:
+
 - Create roadmap and task breakdown
 - Stub all interfaces
 - Assign file ownership boundaries
@@ -19,50 +21,60 @@ The parallel execution plan coordinates multiple agents working on different par
 **Output**: Execution plan with roadmap, tasks, interfaces, and ownership boundaries
 
 ### Phase 2: Parallel Agents (Agent 1 + Agent 2)
+
 **Agents**: Agent 1 (Event Capture) + Agent 2 (Storage APIs)  
 **Execution**: Run in parallel  
 **Dependencies**: Phase 1 (Orchestrator)
 
 **Agent 1 Tasks**:
+
 - Implement event capture system
 - Owns: `src/lib/agent/capture.ts`, `src/lib/core/observer.ts`
 
 **Agent 2 Tasks**:
+
 - Implement storage APIs
 - Publish storage API interface (triggers Phase 3)
 - Owns: `src-tauri/src/memory/`
 
 ### Phase 3: Analysis Pipeline
+
 **Agent**: Agent 3 (Analysis Pipeline)  
 **Execution**: Starts after Agent 2 publishes APIs  
 **Dependencies**: Phase 2 (Agent 2 APIs published)
 
 **Tasks**:
+
 - Implement analysis pipeline
 - Write suggestions to store (triggers Phase 4)
 - Owns: `src/lib/agent/analysis-pipeline.ts`, `analysis-service.ts`, `analyzers/`
 
 ### Phase 4: Surfaces
+
 **Agent**: Agent 4 (Surfaces)  
 **Execution**: Starts after Agent 3 writes suggestions to store  
 **Dependencies**: Phase 3 (Agent 3 suggestions written)
 
 **Tasks**:
+
 - Implement suggestion surfaces
 - Integrate with tmux, wezterm, vim, neovim
 - Owns: `src/lib/agent/surfaces.ts`, `integrations/`
 
 ### Phase 5: Continuous Agents
+
 **Agents**: Agent 5 (Nix + CI) + Agent 6 (Finalization)  
 **Execution**: Run continuously (start early, Agent 6 finalizes at end)  
 **Dependencies**: Phase 1 (Orchestrator)
 
 **Agent 5 Tasks**:
+
 - Set up Nix scaffolding (`flake.nix`, `shell.nix`)
 - Set up CI scaffolding (`.github/workflows/`)
 - Runs continuously (can be updated throughout)
 
 **Agent 6 Tasks**:
+
 - Finalize integration and testing
 - Update `ValidationChecklist.md`
 - Runs continuously but finalizes at the end
@@ -157,4 +169,3 @@ The parallel execution plan integrates with existing RuneBook components:
 6. Implement Agent 6: Complete finalization tasks
 
 Each agent should follow the ownership boundaries and coordinate via the orchestrator when needed.
-

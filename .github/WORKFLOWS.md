@@ -5,6 +5,7 @@ This document describes the automated CI/CD workflows for RuneBook, including ve
 ## Overview
 
 RuneBook uses GitHub Actions to automate:
+
 - **Version bumping** following semantic versioning
 - **Building** desktop applications for Windows, macOS, and Linux
 - **Publishing** to multiple package registries:
@@ -23,9 +24,11 @@ RuneBook uses GitHub Actions to automate:
 **Trigger**: Manual workflow dispatch
 
 **Inputs**:
+
 - `version_type`: The type of version bump (patch, minor, or major)
 
 **What it does**:
+
 1. Bumps version in `package.json` using npm version
 2. Updates version in `src-tauri/Cargo.toml`
 3. Updates version in `src-tauri/tauri.conf.json`
@@ -36,6 +39,7 @@ RuneBook uses GitHub Actions to automate:
 8. Creates a draft GitHub Release
 
 **How to use**:
+
 1. Go to Actions tab in GitHub
 2. Select "Version Bump" workflow
 3. Click "Run workflow"
@@ -43,6 +47,7 @@ RuneBook uses GitHub Actions to automate:
 5. Click "Run workflow" button
 
 **Example**:
+
 - Current version: `0.3.0`
 - Choose `patch` → New version: `0.3.1`
 - Choose `minor` → New version: `0.4.0`
@@ -52,43 +57,51 @@ RuneBook uses GitHub Actions to automate:
 
 **Purpose**: Build platform-specific binaries and publish to all supported registries.
 
-**Trigger**: 
+**Trigger**:
+
 - Automatically when a GitHub Release is published
 - Manual workflow dispatch
 
 **What it does**:
 
 #### Build Job (`build-tauri`)
+
 Builds RuneBook for multiple platforms in parallel:
+
 - **macOS**: Both Apple Silicon (aarch64) and Intel (x86_64)
 - **Linux**: Ubuntu 22.04 (amd64)
 - **Windows**: Windows latest (x64)
 
 Each build:
+
 1. Installs platform-specific dependencies
 2. Builds the Tauri application
 3. Creates installers (.dmg, .AppImage, .msi, etc.)
 4. Uploads artifacts to the GitHub Release automatically via tauri-action
 
 #### Publish to npm (`publish-npm`)
+
 - Publishes `@plures/runebook` to npm registry
 - Requires: `NPM_TOKEN` secret configured in repository settings
 - Runs after successful build
 - Only on published releases
 
 #### Publish to GitHub Packages (`publish-github-packages`)
+
 - Publishes `@plures/runebook` to GitHub Packages npm registry
 - Uses `GITHUB_TOKEN` (automatically provided)
 - Runs after successful build
 - Only on published releases
 
 #### Publish to winget (`winget-publish`)
+
 - Submits package to Windows Package Manager (winget)
 - Requires: `WINGET_GITHUB_TOKEN` secret configured
 - Automatically detects `.msi` installer from release
 - Only on published releases
 
 #### Build Nix packages (`nixos-publish`)
+
 - Builds Nix packages for `runebook` and `runebook-agent`
 - Creates build artifacts for NixOS distribution
 - Note: NixOS package submission to nixpkgs requires manual PR submission
@@ -98,6 +111,7 @@ Each build:
 **How to use**:
 
 **Option 1: Publish via Version Bump (Recommended)**
+
 1. Run the Version Bump workflow (see above)
 2. This creates a draft release
 3. Go to Releases in GitHub
@@ -107,6 +121,7 @@ Each build:
 7. The Build and Publish workflow will automatically trigger
 
 **Option 2: Manual Trigger**
+
 1. Go to Actions tab in GitHub
 2. Select "Build and Publish Release" workflow
 3. Click "Run workflow"
@@ -205,11 +220,13 @@ All files are kept in sync by the version bump workflow.
 **Package**: `@plures/runebook`
 
 **Install**:
+
 ```bash
 npm install @plures/runebook
 ```
 
 **View**:
+
 ```bash
 npm view @plures/runebook
 ```
@@ -219,6 +236,7 @@ npm view @plures/runebook
 **Package**: `@plures/runebook`
 
 **Install**:
+
 ```bash
 # Configure npm to use GitHub Packages
 npm config set @plures:registry https://npm.pkg.github.com
@@ -232,6 +250,7 @@ npm install @plures/runebook
 **Download**: Visit [Releases](https://github.com/plures/runebook/releases)
 
 **Available formats**:
+
 - **macOS**: `.dmg` (Intel and Apple Silicon)
 - **Linux**: `.AppImage`, `.deb`
 - **Windows**: `.msi`, `.exe`
@@ -241,11 +260,13 @@ npm install @plures/runebook
 **Package**: `Plures.RuneBook`
 
 **Install**:
+
 ```powershell
 winget install Plures.RuneBook
 ```
 
 **Upgrade**:
+
 ```powershell
 winget upgrade Plures.RuneBook
 ```
@@ -253,6 +274,7 @@ winget upgrade Plures.RuneBook
 ### NixOS / Nix Flakes
 
 **Using the flake directly**:
+
 ```bash
 # Run the application
 nix run github:plures/runebook
@@ -266,6 +288,7 @@ nix build github:plures/runebook#runebook-agent
 ```
 
 **Adding to your flake**:
+
 ```nix
 {
   inputs = {
@@ -279,10 +302,11 @@ nix build github:plures/runebook#runebook-agent
 ```
 
 **NixOS Module**:
+
 ```nix
 {
   imports = [ runebook.nixosModules.default ];
-  
+
   services.runebook-agent = {
     enable = true;
     captureEvents = true;
@@ -291,6 +315,7 @@ nix build github:plures/runebook#runebook-agent
 ```
 
 **Note**: A PR to add RuneBook to nixpkgs is in progress. Once merged, you'll be able to install via:
+
 ```bash
 nix-env -iA nixpkgs.runebook
 # or in configuration.nix:
@@ -304,6 +329,7 @@ environment.systemPackages = [ pkgs.runebook ];
 **Issue**: All build jobs fail with "invalid action version" or similar error
 
 **Solution**:
+
 1. Verify the tauri-action version is valid (should be `@v0.5` or specific version like `@v0.5.12`)
 2. Check [tauri-action releases](https://github.com/tauri-apps/tauri-action/releases) for latest versions
 3. Avoid using generic version tags like `@v0` without a minor version
@@ -311,6 +337,7 @@ environment.systemPackages = [ pkgs.runebook ];
 **Issue**: Tauri build fails on specific platform
 
 **Solution**:
+
 1. Check the Actions logs for detailed error messages
 2. Ensure all dependencies are properly installed
 3. Verify Tauri configuration in `src-tauri/tauri.conf.json`
@@ -321,6 +348,7 @@ environment.systemPackages = [ pkgs.runebook ];
 **Issue**: npm publish fails with authentication error
 
 **Solution**:
+
 1. Verify `NPM_TOKEN` secret is configured
 2. Ensure token has publish permissions
 3. Check token hasn't expired
@@ -329,6 +357,7 @@ environment.systemPackages = [ pkgs.runebook ];
 **Issue**: GitHub Packages publish fails
 
 **Solution**:
+
 1. Check workflow permissions (write access needed)
 2. Ensure `package.json` has correct `publishConfig`
 3. Verify repository name matches package scope
@@ -336,6 +365,7 @@ environment.systemPackages = [ pkgs.runebook ];
 **Issue**: winget publish fails
 
 **Solution**:
+
 1. Verify `WINGET_GITHUB_TOKEN` is configured
 2. Ensure `.msi` installer is built
 3. Check winget-releaser action logs
@@ -349,6 +379,7 @@ environment.systemPackages = [ pkgs.runebook ];
 Always use the Version Bump workflow to update versions. Manual version changes can cause inconsistencies.
 
 To fix manually:
+
 1. Update `package.json` version
 2. Run: `npm install` to update `package-lock.json`
 3. Update `src-tauri/Cargo.toml` version
@@ -360,6 +391,7 @@ To fix manually:
 If you need to publish manually without GitHub Actions:
 
 ### npm
+
 ```bash
 # Login to npm
 npm login
@@ -369,6 +401,7 @@ npm publish
 ```
 
 ### GitHub Packages
+
 ```bash
 # Login to GitHub Packages
 npm login --registry=https://npm.pkg.github.com

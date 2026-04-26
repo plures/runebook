@@ -17,9 +17,9 @@ import {
   NavigateIntoSubCanvasEvent,
   NavigateUpEvent,
   makeConnectionId,
-} from './canvas-praxis';
-import { createPraxisStore } from '@plures/praxis/svelte';
-import type { Canvas, CanvasNode, Connection } from '../types/canvas';
+} from "./canvas-praxis";
+import { createPraxisStore } from "@plures/praxis/svelte";
+import type { Canvas, CanvasNode, Connection } from "../types/canvas";
 
 export { makeConnectionId };
 export type { CanvasNavEntry };
@@ -36,17 +36,34 @@ export const canvasStore = {
       fn(state.context.canvas);
     });
   },
-  set: (canvas: Canvas) => praxisStore.dispatch([LoadCanvasEvent.create({ canvas })]),
-  addNode: (node: CanvasNode) => praxisStore.dispatch([AddNodeEvent.create({ node })]),
-  removeNode: (nodeId: string) => praxisStore.dispatch([RemoveNodeEvent.create({ nodeId })]),
-  updateNode: (nodeId: string, updates: Partial<CanvasNode>) => praxisStore.dispatch([UpdateNodeEvent.create({ nodeId, updates })]),
-  updateNodePosition: (nodeId: string, x: number, y: number) => praxisStore.dispatch([UpdateNodePositionEvent.create({ nodeId, x, y })]),
-  addConnection: (connection: Connection) => praxisStore.dispatch([AddConnectionEvent.create({ connection })]),
-  removeConnection: (from: string, to: string, fromPort: string, toPort: string) => praxisStore.dispatch([RemoveConnectionEvent.create({ from, to, fromPort, toPort })]),
-  loadCanvas: (canvas: Canvas) => praxisStore.dispatch([LoadCanvasEvent.create({ canvas })]),
+  set: (canvas: Canvas) =>
+    praxisStore.dispatch([LoadCanvasEvent.create({ canvas })]),
+  addNode: (node: CanvasNode) =>
+    praxisStore.dispatch([AddNodeEvent.create({ node })]),
+  removeNode: (nodeId: string) =>
+    praxisStore.dispatch([RemoveNodeEvent.create({ nodeId })]),
+  updateNode: (nodeId: string, updates: Partial<CanvasNode>) =>
+    praxisStore.dispatch([UpdateNodeEvent.create({ nodeId, updates })]),
+  updateNodePosition: (nodeId: string, x: number, y: number) =>
+    praxisStore.dispatch([UpdateNodePositionEvent.create({ nodeId, x, y })]),
+  addConnection: (connection: Connection) =>
+    praxisStore.dispatch([AddConnectionEvent.create({ connection })]),
+  removeConnection: (
+    from: string,
+    to: string,
+    fromPort: string,
+    toPort: string,
+  ) =>
+    praxisStore.dispatch([
+      RemoveConnectionEvent.create({ from, to, fromPort, toPort }),
+    ]),
+  loadCanvas: (canvas: Canvas) =>
+    praxisStore.dispatch([LoadCanvasEvent.create({ canvas })]),
   clear: () => praxisStore.dispatch([ClearCanvasEvent.create({})]),
   navigateInto: (nodeId: string, label: string) =>
-    praxisStore.dispatch([NavigateIntoSubCanvasEvent.create({ nodeId, label })]),
+    praxisStore.dispatch([
+      NavigateIntoSubCanvasEvent.create({ nodeId, label }),
+    ]),
   navigateUp: () => praxisStore.dispatch([NavigateUpEvent.create({})]),
 };
 
@@ -72,7 +89,7 @@ export const nodeDataStore = {
   update: (fn: (value: Record<string, any>) => Record<string, any>) => {
     const context = canvasEngine.getContext();
     context.nodeData = fn(context.nodeData);
-  }
+  },
 };
 
 // Helper to update node output data
@@ -81,8 +98,15 @@ export function updateNodeData(nodeId: string, portId: string, data: any) {
 }
 
 // Helper to get node input data from connections
-export function getNodeInputData(nodeId: string, portId: string, connections: Connection[], nodeData: Record<string, any>) {
-  const connection = connections.find(c => c.to === nodeId && c.toPort === portId);
+export function getNodeInputData(
+  nodeId: string,
+  portId: string,
+  connections: Connection[],
+  nodeData: Record<string, any>,
+) {
+  const connection = connections.find(
+    (c) => c.to === nodeId && c.toPort === portId,
+  );
   if (connection) {
     return nodeData[`${connection.from}:${connection.fromPort}`];
   }
