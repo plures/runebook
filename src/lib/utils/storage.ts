@@ -1,7 +1,7 @@
 // Storage utility for RuneBook canvases
 // Integrated with PluresDB for persistent storage
 
-import type { Canvas } from "../types/canvas";
+import type { Canvas } from '../types/canvas';
 
 export interface StorageAdapter {
   save(canvas: Canvas): Promise<void>;
@@ -15,22 +15,22 @@ export interface StorageAdapter {
  * Fallback option when PluresDB is not available
  */
 export class LocalStorageAdapter implements StorageAdapter {
-  private readonly prefix = "runebook_canvas_";
+  private readonly prefix = 'runebook_canvas_';
 
   private validateCanvas(
     data: any,
   ): data is { canvas: Canvas; timestamp: number } {
     return (
       data &&
-      typeof data === "object" &&
-      "canvas" in data &&
-      "timestamp" in data &&
-      typeof data.timestamp === "number" &&
+      typeof data === 'object' &&
+      'canvas' in data &&
+      'timestamp' in data &&
+      typeof data.timestamp === 'number' &&
       data.canvas &&
-      typeof data.canvas === "object" &&
-      "id" in data.canvas &&
-      "name" in data.canvas &&
-      "nodes" in data.canvas &&
+      typeof data.canvas === 'object' &&
+      'id' in data.canvas &&
+      'name' in data.canvas &&
+      'nodes' in data.canvas &&
       Array.isArray(data.canvas.nodes)
     );
   }
@@ -52,12 +52,12 @@ export class LocalStorageAdapter implements StorageAdapter {
     try {
       const data = JSON.parse(item);
       if (!this.validateCanvas(data)) {
-        console.error("Invalid canvas data structure");
+        console.error('Invalid canvas data structure');
         return null;
       }
       return data.canvas;
     } catch (e) {
-      console.error("Failed to parse canvas data:", e);
+      console.error('Failed to parse canvas data:', e);
       return null;
     }
   }
@@ -81,7 +81,7 @@ export class LocalStorageAdapter implements StorageAdapter {
             }
           }
         } catch (e) {
-          console.error("Failed to parse canvas metadata:", e);
+          console.error('Failed to parse canvas metadata:', e);
         }
       }
     }
@@ -101,8 +101,8 @@ export class LocalStorageAdapter implements StorageAdapter {
  */
 export class PluresDBAdapter implements StorageAdapter {
   private db: any = null;
-  private readonly prefix = "runebook:canvas:";
-  private readonly metaPrefix = "runebook:meta:";
+  private readonly prefix = 'runebook:canvas:';
+  private readonly metaPrefix = 'runebook:meta:';
   private initialized = false;
   private config: {
     port?: number;
@@ -114,8 +114,8 @@ export class PluresDBAdapter implements StorageAdapter {
     // Configuration can be provided or will use defaults
     this.config = {
       port: config?.port ?? 34567,
-      host: config?.host ?? "localhost",
-      dataDir: config?.dataDir ?? "./pluresdb-data",
+      host: config?.host ?? 'localhost',
+      dataDir: config?.dataDir ?? './pluresdb-data',
     };
   }
 
@@ -126,7 +126,7 @@ export class PluresDBAdapter implements StorageAdapter {
 
     try {
       // Dynamic import to avoid bundling issues
-      const { SQLiteCompatibleAPI } = await import("pluresdb");
+      const { SQLiteCompatibleAPI } = await import('pluresdb');
 
       this.db = new SQLiteCompatibleAPI({
         config: this.config,
@@ -137,13 +137,13 @@ export class PluresDBAdapter implements StorageAdapter {
       await this.db.start();
       this.initialized = true;
       console.log(
-        "PluresDB initialized successfully with config:",
+        'PluresDB initialized successfully with config:',
         this.config,
       );
     } catch (error) {
-      console.error("Failed to initialize PluresDB:", error);
+      console.error('Failed to initialize PluresDB:', error);
       throw new Error(
-        "PluresDB initialization failed. Make sure PluresDB server is running or use LocalStorageAdapter as fallback.",
+        'PluresDB initialization failed. Make sure PluresDB server is running or use LocalStorageAdapter as fallback.',
       );
     }
   }
@@ -153,15 +153,15 @@ export class PluresDBAdapter implements StorageAdapter {
   ): data is { canvas: Canvas; timestamp: number } {
     return (
       data &&
-      typeof data === "object" &&
-      "canvas" in data &&
-      "timestamp" in data &&
-      typeof data.timestamp === "number" &&
+      typeof data === 'object' &&
+      'canvas' in data &&
+      'timestamp' in data &&
+      typeof data.timestamp === 'number' &&
       data.canvas &&
-      typeof data.canvas === "object" &&
-      "id" in data.canvas &&
-      "name" in data.canvas &&
-      "nodes" in data.canvas &&
+      typeof data.canvas === 'object' &&
+      'id' in data.canvas &&
+      'name' in data.canvas &&
+      'nodes' in data.canvas &&
       Array.isArray(data.canvas.nodes)
     );
   }
@@ -202,13 +202,13 @@ export class PluresDBAdapter implements StorageAdapter {
       }
 
       if (!this.validateCanvas(data)) {
-        console.error("Invalid canvas data structure in PluresDB");
+        console.error('Invalid canvas data structure in PluresDB');
         return null;
       }
 
       return data.canvas;
     } catch (error) {
-      console.error("Failed to load canvas from PluresDB:", error);
+      console.error('Failed to load canvas from PluresDB:', error);
       return null;
     }
   }
@@ -229,7 +229,7 @@ export class PluresDBAdapter implements StorageAdapter {
             meta &&
             meta.id &&
             meta.name &&
-            typeof meta.timestamp === "number"
+            typeof meta.timestamp === 'number'
           ) {
             canvases.push({
               id: meta.id,
@@ -238,14 +238,14 @@ export class PluresDBAdapter implements StorageAdapter {
             });
           }
         } catch (error) {
-          console.error("Failed to load canvas metadata:", error);
+          console.error('Failed to load canvas metadata:', error);
         }
       }
 
       // Sort by timestamp, newest first
       return canvases.sort((a, b) => b.timestamp - a.timestamp);
     } catch (error) {
-      console.error("Failed to list canvases from PluresDB:", error);
+      console.error('Failed to list canvases from PluresDB:', error);
       return [];
     }
   }
@@ -261,7 +261,7 @@ export class PluresDBAdapter implements StorageAdapter {
       await this.db.delete(key);
       await this.db.delete(metaKey);
     } catch (error) {
-      console.error("Failed to delete canvas from PluresDB:", error);
+      console.error('Failed to delete canvas from PluresDB:', error);
       throw error;
     }
   }
@@ -274,9 +274,9 @@ export class PluresDBAdapter implements StorageAdapter {
       try {
         await this.db.stop();
         this.initialized = false;
-        console.log("PluresDB stopped");
+        console.log('PluresDB stopped');
       } catch (error) {
-        console.error("Failed to stop PluresDB:", error);
+        console.error('Failed to stop PluresDB:', error);
       }
     }
   }

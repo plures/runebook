@@ -1,6 +1,6 @@
 // Agent status tracking for UX surfaces
 
-export type AgentStatus = "idle" | "analyzing" | "issues_found";
+export type AgentStatus = 'idle' | 'analyzing' | 'issues_found';
 
 export interface AgentStatusData {
   status: AgentStatus;
@@ -13,14 +13,14 @@ export interface AgentStatusData {
 
 // In-memory status for browser environment
 let inMemoryStatus: AgentStatusData = {
-  status: "idle",
+  status: 'idle',
   suggestionCount: 0,
   highPriorityCount: 0,
   lastUpdated: Date.now(),
 };
 
 // Check if we're in Node.js environment
-const isNode = typeof process !== "undefined" && process.versions?.node;
+const isNode = typeof process !== 'undefined' && process.versions?.node;
 
 /**
  * Get current agent status
@@ -32,7 +32,7 @@ export function getAgentStatus(): AgentStatusData {
       // Use dynamic import to avoid bundling Node.js modules
       return inMemoryStatus; // Return in-memory for now, will be updated async
     } catch (error) {
-      console.error("Failed to load agent status:", error);
+      console.error('Failed to load agent status:', error);
     }
   }
 
@@ -51,12 +51,12 @@ export function updateAgentStatus(updates: Partial<AgentStatusData>): void {
 
   // In Node.js, also persist to file
   if (isNode) {
-    import("./node-status")
+    import('./node-status')
       .then(({ updateAgentStatusToFile }) => {
         updateAgentStatusToFile(inMemoryStatus, updates);
       })
       .catch((err) => {
-        console.error("Failed to persist status to file:", err);
+        console.error('Failed to persist status to file:', err);
       });
   }
 }
@@ -66,15 +66,15 @@ export function updateAgentStatus(updates: Partial<AgentStatusData>): void {
  */
 export function formatStatus(status: AgentStatusData): string {
   const statusSymbol = {
-    idle: "●",
-    analyzing: "⟳",
-    issues_found: "⚠",
+    idle: '●',
+    analyzing: '⟳',
+    issues_found: '⚠',
   };
 
   const statusText = {
-    idle: "idle",
-    analyzing: "analyzing",
-    issues_found: `${status.highPriorityCount} issue${status.highPriorityCount !== 1 ? "s" : ""}`,
+    idle: 'idle',
+    analyzing: 'analyzing',
+    issues_found: `${status.highPriorityCount} issue${status.highPriorityCount !== 1 ? 's' : ''}`,
   };
 
   return `${statusSymbol[status.status]} ${statusText[status.status]}`;

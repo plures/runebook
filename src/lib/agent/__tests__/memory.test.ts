@@ -1,8 +1,8 @@
 // Tests for memory/storage layer
 
-import { describe, it, expect, beforeEach } from "vitest";
-import { MemoryStorage } from "../memory";
-import type { TerminalEvent, AgentConfig } from "../../types/agent";
+import { beforeEach, describe, expect, it } from 'vitest';
+import { MemoryStorage } from '../memory';
+import type { AgentConfig, TerminalEvent } from '../../types/agent';
 
 const testConfig: AgentConfig = {
   enabled: true,
@@ -12,22 +12,22 @@ const testConfig: AgentConfig = {
   maxEvents: 100,
 };
 
-describe("Memory Storage", () => {
+describe('Memory Storage', () => {
   let storage: MemoryStorage;
 
   beforeEach(() => {
     storage = new MemoryStorage(testConfig);
   });
 
-  it("should save and retrieve events", async () => {
+  it('should save and retrieve events', async () => {
     const event: TerminalEvent = {
-      id: "test-1",
+      id: 'test-1',
       timestamp: Date.now(),
-      command: "echo",
-      args: ["hello"],
+      command: 'echo',
+      args: ['hello'],
       env: {},
-      cwd: "/test",
-      stdout: "hello\n",
+      cwd: '/test',
+      stdout: 'hello\n',
       exitCode: 0,
       duration: 10,
       success: true,
@@ -37,10 +37,10 @@ describe("Memory Storage", () => {
     const events = await storage.getEvents();
 
     expect(events).toHaveLength(1);
-    expect(events[0].id).toBe("test-1");
+    expect(events[0].id).toBe('test-1');
   });
 
-  it("should limit events by maxEvents", async () => {
+  it('should limit events by maxEvents', async () => {
     const config = { ...testConfig, maxEvents: 5 };
     const limitedStorage = new MemoryStorage(config);
 
@@ -48,10 +48,10 @@ describe("Memory Storage", () => {
       const event: TerminalEvent = {
         id: `test-${i}`,
         timestamp: Date.now() + i,
-        command: "echo",
+        command: 'echo',
         args: [],
         env: {},
-        cwd: "/test",
+        cwd: '/test',
         success: true,
       };
       await limitedStorage.saveEvent(event);
@@ -61,33 +61,33 @@ describe("Memory Storage", () => {
     expect(events.length).toBeLessThanOrEqual(5);
   });
 
-  it("should get events by command", async () => {
+  it('should get events by command', async () => {
     const events: TerminalEvent[] = [
       {
-        id: "1",
+        id: '1',
         timestamp: Date.now(),
-        command: "echo",
+        command: 'echo',
         args: [],
         env: {},
-        cwd: "/test",
+        cwd: '/test',
         success: true,
       },
       {
-        id: "2",
+        id: '2',
         timestamp: Date.now() + 1,
-        command: "ls",
+        command: 'ls',
         args: [],
         env: {},
-        cwd: "/test",
+        cwd: '/test',
         success: true,
       },
       {
-        id: "3",
+        id: '3',
         timestamp: Date.now() + 2,
-        command: "echo",
-        args: ["hello"],
+        command: 'echo',
+        args: ['hello'],
         env: {},
-        cwd: "/test",
+        cwd: '/test',
         success: true,
       },
     ];
@@ -96,40 +96,40 @@ describe("Memory Storage", () => {
       await storage.saveEvent(event);
     }
 
-    const echoEvents = await storage.getEventsByCommand("echo");
+    const echoEvents = await storage.getEventsByCommand('echo');
     expect(echoEvents).toHaveLength(2);
-    expect(echoEvents.every((e) => e.command === "echo")).toBe(true);
+    expect(echoEvents.every((e) => e.command === 'echo')).toBe(true);
   });
 
-  it("should calculate statistics", async () => {
+  it('should calculate statistics', async () => {
     const events: TerminalEvent[] = [
       {
-        id: "1",
+        id: '1',
         timestamp: Date.now(),
-        command: "echo",
+        command: 'echo',
         args: [],
         env: {},
-        cwd: "/test",
+        cwd: '/test',
         success: true,
         duration: 10,
       },
       {
-        id: "2",
+        id: '2',
         timestamp: Date.now() + 1,
-        command: "ls",
+        command: 'ls',
         args: [],
         env: {},
-        cwd: "/test",
+        cwd: '/test',
         success: false,
         duration: 20,
       },
       {
-        id: "3",
+        id: '3',
         timestamp: Date.now() + 2,
-        command: "echo",
+        command: 'echo',
         args: [],
         env: {},
-        cwd: "/test",
+        cwd: '/test',
         success: true,
         duration: 15,
       },
@@ -146,25 +146,25 @@ describe("Memory Storage", () => {
     expect(stats.totalDuration).toBe(45);
   });
 
-  it("should clear old events", async () => {
+  it('should clear old events', async () => {
     const now = Date.now();
     const oldEvent: TerminalEvent = {
-      id: "old",
+      id: 'old',
       timestamp: now - 100000,
-      command: "echo",
+      command: 'echo',
       args: [],
       env: {},
-      cwd: "/test",
+      cwd: '/test',
       success: true,
     };
 
     const newEvent: TerminalEvent = {
-      id: "new",
+      id: 'new',
       timestamp: now,
-      command: "ls",
+      command: 'ls',
       args: [],
       env: {},
-      cwd: "/test",
+      cwd: '/test',
       success: true,
     };
 
@@ -175,6 +175,6 @@ describe("Memory Storage", () => {
     const events = await storage.getEvents();
 
     expect(events).toHaveLength(1);
-    expect(events[0].id).toBe("new");
+    expect(events[0].id).toBe('new');
   });
 });

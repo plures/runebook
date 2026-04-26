@@ -1,30 +1,30 @@
 // Shell adapter factory and utilities
 
-import { BashAdapter } from "./bash";
-import { ZshAdapter } from "./zsh";
-import type { ShellAdapter } from "./base";
-import type { ShellType, ObserverConfig } from "../types";
-import type { EventStore } from "../storage";
+import { BashAdapter } from './bash';
+import { ZshAdapter } from './zsh';
+import type { ShellAdapter } from './base';
+import type { ObserverConfig, ShellType } from '../types';
+import type { EventStore } from '../storage';
 
 /**
  * Detect the current shell type
  */
 export function detectShellType(): ShellType {
-  const shell = process.env.SHELL || "";
+  const shell = process.env.SHELL || '';
 
-  if (shell.includes("bash")) {
-    return "bash";
+  if (shell.includes('bash')) {
+    return 'bash';
   }
 
-  if (shell.includes("zsh")) {
-    return "zsh";
+  if (shell.includes('zsh')) {
+    return 'zsh';
   }
 
-  if (shell.includes("nu")) {
-    return "nushell";
+  if (shell.includes('nu')) {
+    return 'nushell';
   }
 
-  return "unknown";
+  return 'unknown';
 }
 
 /**
@@ -34,13 +34,13 @@ export function createShellAdapter(shellType?: ShellType): ShellAdapter {
   const type = shellType || detectShellType();
 
   switch (type) {
-    case "bash":
+    case 'bash':
       return new BashAdapter();
-    case "zsh":
+    case 'zsh':
       return new ZshAdapter();
-    case "nushell":
+    case 'nushell':
       // TODO: Implement nushell adapter
-      throw new Error("Nushell adapter not yet implemented");
+      throw new Error('Nushell adapter not yet implemented');
     default:
       throw new Error(`Unsupported shell type: ${type}`);
   }
@@ -58,4 +58,4 @@ export function getAvailableAdapters(): ShellAdapter[] {
 }
 
 export { BashAdapter, ZshAdapter };
-export type { ShellAdapter } from "./base";
+export type { ShellAdapter } from './base';

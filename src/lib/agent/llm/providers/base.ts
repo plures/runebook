@@ -1,13 +1,8 @@
 // Base LLM Provider
 // Abstract base class for all LLM providers
 
-import type {
-  LLMProvider,
-  MCPToolInput,
-  MCPToolOutput,
-  SanitizedContext,
-} from "../types";
-import { sanitizeContext, formatContextForReview } from "../sanitizer";
+import type { LLMProvider, MCPToolInput, MCPToolOutput, SanitizedContext } from '../types';
+import { formatContextForReview, sanitizeContext } from '../sanitizer';
 
 /**
  * Base provider implementation
@@ -16,8 +11,7 @@ export abstract class BaseLLMProvider implements LLMProvider {
   abstract name: string;
   protected requireUserReview: boolean = true;
   protected cacheEnabled: boolean = false;
-  protected cache: Map<string, { output: MCPToolOutput; timestamp: number }> =
-    new Map();
+  protected cache: Map<string, { output: MCPToolOutput; timestamp: number }> = new Map();
   protected cacheTtl: number = 3600; // 1 hour default
 
   constructor(
@@ -40,7 +34,7 @@ export abstract class BaseLLMProvider implements LLMProvider {
    * Sanitize context before sending
    */
   async sanitizeContext(
-    context: MCPToolInput["contextWindow"],
+    context: MCPToolInput['contextWindow'],
   ): Promise<SanitizedContext> {
     return sanitizeContext(context);
   }
@@ -68,7 +62,7 @@ export abstract class BaseLLMProvider implements LLMProvider {
       // In GUI mode, this would show a dialog
       console.log(reviewText);
       console.log(
-        "\n⚠️  Context will be sent to LLM. Review above and confirm.",
+        '\n⚠️  Context will be sent to LLM. Review above and confirm.',
       );
       // For now, we'll proceed (in real implementation, this would wait for user input)
     }
@@ -106,7 +100,7 @@ export abstract class BaseLLMProvider implements LLMProvider {
       exitCode: sanitized.sanitized.exitCode,
       stderr: sanitized.sanitized.stderr.substring(0, 500), // First 500 chars
     });
-    return Buffer.from(key).toString("base64");
+    return Buffer.from(key).toString('base64');
   }
 
   /**

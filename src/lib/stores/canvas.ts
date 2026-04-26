@@ -2,24 +2,24 @@
 // This maintains the same API while using Praxis reactive engine underneath
 
 import {
-  canvasEngine,
-  type CanvasContext,
-  type CanvasNavEntry,
-  AddNodeEvent,
-  RemoveNodeEvent,
-  UpdateNodeEvent,
-  UpdateNodePositionEvent,
   AddConnectionEvent,
-  RemoveConnectionEvent,
-  LoadCanvasEvent,
+  AddNodeEvent,
+  type CanvasContext,
+  canvasEngine,
+  type CanvasNavEntry,
   ClearCanvasEvent,
-  UpdateNodeDataEvent,
+  LoadCanvasEvent,
+  makeConnectionId,
   NavigateIntoSubCanvasEvent,
   NavigateUpEvent,
-  makeConnectionId,
-} from "./canvas-praxis";
-import { createPraxisStore } from "@plures/praxis/svelte";
-import type { Canvas, CanvasNode, Connection } from "../types/canvas";
+  RemoveConnectionEvent,
+  RemoveNodeEvent,
+  UpdateNodeDataEvent,
+  UpdateNodeEvent,
+  UpdateNodePositionEvent,
+} from './canvas-praxis';
+import { createPraxisStore } from '@plures/praxis/svelte';
+import type { Canvas, CanvasNode, Connection } from '../types/canvas';
 
 export { makeConnectionId };
 export type { CanvasNavEntry };
@@ -36,12 +36,9 @@ export const canvasStore = {
       fn(state.context.canvas);
     });
   },
-  set: (canvas: Canvas) =>
-    praxisStore.dispatch([LoadCanvasEvent.create({ canvas })]),
-  addNode: (node: CanvasNode) =>
-    praxisStore.dispatch([AddNodeEvent.create({ node })]),
-  removeNode: (nodeId: string) =>
-    praxisStore.dispatch([RemoveNodeEvent.create({ nodeId })]),
+  set: (canvas: Canvas) => praxisStore.dispatch([LoadCanvasEvent.create({ canvas })]),
+  addNode: (node: CanvasNode) => praxisStore.dispatch([AddNodeEvent.create({ node })]),
+  removeNode: (nodeId: string) => praxisStore.dispatch([RemoveNodeEvent.create({ nodeId })]),
   updateNode: (nodeId: string, updates: Partial<CanvasNode>) =>
     praxisStore.dispatch([UpdateNodeEvent.create({ nodeId, updates })]),
   updateNodePosition: (nodeId: string, x: number, y: number) =>
@@ -57,8 +54,7 @@ export const canvasStore = {
     praxisStore.dispatch([
       RemoveConnectionEvent.create({ from, to, fromPort, toPort }),
     ]),
-  loadCanvas: (canvas: Canvas) =>
-    praxisStore.dispatch([LoadCanvasEvent.create({ canvas })]),
+  loadCanvas: (canvas: Canvas) => praxisStore.dispatch([LoadCanvasEvent.create({ canvas })]),
   clear: () => praxisStore.dispatch([ClearCanvasEvent.create({})]),
   navigateInto: (nodeId: string, label: string) =>
     praxisStore.dispatch([

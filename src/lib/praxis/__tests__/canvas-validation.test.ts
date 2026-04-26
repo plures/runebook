@@ -1,17 +1,17 @@
 // Tests for canvas-validation PraxisModule
 
-import { describe, it, expect } from "vitest";
-import { createPraxisEngine, PraxisRegistry } from "@plures/praxis";
+import { describe, expect, it } from 'vitest';
+import { createPraxisEngine, PraxisRegistry } from '@plures/praxis';
 import {
-  canvasValidationModule,
-  ValidateConnectionEvent,
-  ValidateCanvasStateEvent,
-  CONNECTION_VALID_FACT,
-  CONNECTION_INVALID_FACT,
-  CANVAS_STATE_VALID_FACT,
   CANVAS_STATE_INVALID_FACT,
-} from "../canvas-validation";
-import type { CanvasValidationContext } from "../canvas-validation";
+  CANVAS_STATE_VALID_FACT,
+  canvasValidationModule,
+  CONNECTION_INVALID_FACT,
+  CONNECTION_VALID_FACT,
+  ValidateCanvasStateEvent,
+  ValidateConnectionEvent,
+} from '../canvas-validation';
+import type { CanvasValidationContext } from '../canvas-validation';
 
 function makeEngine(nodes = makeNodes()) {
   const registry = new PraxisRegistry<CanvasValidationContext>();
@@ -29,33 +29,33 @@ function makeEngine(nodes = makeNodes()) {
 function makeNodes() {
   return [
     {
-      id: "n1",
-      inputs: [{ id: "in", dataType: "string" }],
-      outputs: [{ id: "out", dataType: "string" }],
+      id: 'n1',
+      inputs: [{ id: 'in', dataType: 'string' }],
+      outputs: [{ id: 'out', dataType: 'string' }],
     },
     {
-      id: "n2",
-      inputs: [{ id: "in", dataType: "string" }],
-      outputs: [{ id: "out", dataType: "number" }],
+      id: 'n2',
+      inputs: [{ id: 'in', dataType: 'string' }],
+      outputs: [{ id: 'out', dataType: 'number' }],
     },
     {
-      id: "n3",
-      inputs: [{ id: "in" }],
-      outputs: [{ id: "out" }],
+      id: 'n3',
+      inputs: [{ id: 'in' }],
+      outputs: [{ id: 'out' }],
     },
   ];
 }
 
-describe("canvas-validation module", () => {
-  describe("self-loop detection", () => {
-    it("rejects a connection from a node to itself", () => {
+describe('canvas-validation module', () => {
+  describe('self-loop detection', () => {
+    it('rejects a connection from a node to itself', () => {
       const engine = makeEngine();
       const result = engine.step([
         ValidateConnectionEvent.create({
-          from: "n1",
-          fromPort: "out",
-          to: "n1",
-          toPort: "in",
+          from: 'n1',
+          fromPort: 'out',
+          to: 'n1',
+          toPort: 'in',
         }),
       ]);
       const facts = result.state.facts;
@@ -64,17 +64,17 @@ describe("canvas-validation module", () => {
       expect(ctx.validationResult?.reason).toMatch(/self-loop/i);
       const invalidFact = facts.find((f) => f.tag === CONNECTION_INVALID_FACT);
       expect(invalidFact).toBeDefined();
-      expect((invalidFact?.payload as any).reason).toBe("self-loop");
+      expect((invalidFact?.payload as any).reason).toBe('self-loop');
     });
 
-    it("does not reject a connection between different nodes", () => {
+    it('does not reject a connection between different nodes', () => {
       const engine = makeEngine();
       engine.step([
         ValidateConnectionEvent.create({
-          from: "n1",
-          fromPort: "out",
-          to: "n2",
-          toPort: "in",
+          from: 'n1',
+          fromPort: 'out',
+          to: 'n2',
+          toPort: 'in',
         }),
       ]);
       const ctx = engine.getContext();
@@ -82,15 +82,15 @@ describe("canvas-validation module", () => {
     });
   });
 
-  describe("port type compatibility", () => {
-    it("accepts connections with matching data types", () => {
+  describe('port type compatibility', () => {
+    it('accepts connections with matching data types', () => {
       const engine = makeEngine();
       const result = engine.step([
         ValidateConnectionEvent.create({
-          from: "n1",
-          fromPort: "out",
-          to: "n2",
-          toPort: "in",
+          from: 'n1',
+          fromPort: 'out',
+          to: 'n2',
+          toPort: 'in',
         }),
       ]);
       const validFact = result.state.facts.find(
@@ -99,53 +99,53 @@ describe("canvas-validation module", () => {
       expect(validFact).toBeDefined();
     });
 
-    it("rejects connections with mismatched data types", () => {
+    it('rejects connections with mismatched data types', () => {
       const engine = makeEngine([
         {
-          id: "src",
+          id: 'src',
           inputs: [],
-          outputs: [{ id: "out", dataType: "number" }],
+          outputs: [{ id: 'out', dataType: 'number' }],
         },
         {
-          id: "dst",
-          inputs: [{ id: "in", dataType: "string" }],
+          id: 'dst',
+          inputs: [{ id: 'in', dataType: 'string' }],
           outputs: [],
         },
       ]);
       const result = engine.step([
         ValidateConnectionEvent.create({
-          from: "src",
-          fromPort: "out",
-          to: "dst",
-          toPort: "in",
+          from: 'src',
+          fromPort: 'out',
+          to: 'dst',
+          toPort: 'in',
         }),
       ]);
       const invalidFact = result.state.facts.find(
         (f) => f.tag === CONNECTION_INVALID_FACT,
       );
       expect(invalidFact).toBeDefined();
-      expect((invalidFact?.payload as any).reason).toBe("type-mismatch");
+      expect((invalidFact?.payload as any).reason).toBe('type-mismatch');
     });
 
-    it("accepts connections when ports are untyped (any)", () => {
+    it('accepts connections when ports are untyped (any)', () => {
       const engine = makeEngine([
         {
-          id: "a",
-          inputs: [{ id: "in" }],
-          outputs: [{ id: "out" }],
+          id: 'a',
+          inputs: [{ id: 'in' }],
+          outputs: [{ id: 'out' }],
         },
         {
-          id: "b",
-          inputs: [{ id: "in" }],
-          outputs: [{ id: "out" }],
+          id: 'b',
+          inputs: [{ id: 'in' }],
+          outputs: [{ id: 'out' }],
         },
       ]);
       const result = engine.step([
         ValidateConnectionEvent.create({
-          from: "a",
-          fromPort: "out",
-          to: "b",
-          toPort: "in",
+          from: 'a',
+          fromPort: 'out',
+          to: 'b',
+          toPort: 'in',
         }),
       ]);
       const validFact = result.state.facts.find(
@@ -154,33 +154,33 @@ describe("canvas-validation module", () => {
       expect(validFact).toBeDefined();
     });
 
-    it("rejects when source node does not exist", () => {
+    it('rejects when source node does not exist', () => {
       const engine = makeEngine();
       const result = engine.step([
         ValidateConnectionEvent.create({
-          from: "ghost",
-          fromPort: "out",
-          to: "n2",
-          toPort: "in",
+          from: 'ghost',
+          fromPort: 'out',
+          to: 'n2',
+          toPort: 'in',
         }),
       ]);
       const invalidFact = result.state.facts.find(
         (f) => f.tag === CONNECTION_INVALID_FACT,
       );
       expect(invalidFact).toBeDefined();
-      expect((invalidFact?.payload as any).reason).toBe("unknown-node");
+      expect((invalidFact?.payload as any).reason).toBe('unknown-node');
     });
   });
 
-  describe("regressions", () => {
-    it("allows a valid connection after a failed validation on the same engine instance", () => {
+  describe('regressions', () => {
+    it('allows a valid connection after a failed validation on the same engine instance', () => {
       const engine = makeEngine();
       const firstResult = engine.step([
         ValidateConnectionEvent.create({
-          from: "ghost",
-          fromPort: "out",
-          to: "n2",
-          toPort: "in",
+          from: 'ghost',
+          fromPort: 'out',
+          to: 'n2',
+          toPort: 'in',
         }),
       ]);
       const firstInvalidFact = firstResult.state.facts.find(
@@ -192,10 +192,10 @@ describe("canvas-validation module", () => {
 
       const secondResult = engine.step([
         ValidateConnectionEvent.create({
-          from: "n1",
-          fromPort: "out",
-          to: "n2",
-          toPort: "in",
+          from: 'n1',
+          fromPort: 'out',
+          to: 'n2',
+          toPort: 'in',
         }),
       ]);
       const secondValidFact = secondResult.state.facts.find(
@@ -206,24 +206,24 @@ describe("canvas-validation module", () => {
       expect(afterSecond.validationResult?.valid).toBe(true);
     });
 
-    it("sets pendingConnection to the current request even when validation fails", () => {
+    it('sets pendingConnection to the current request even when validation fails', () => {
       const engine = makeEngine();
       engine.step([
         ValidateConnectionEvent.create({
-          from: "ghost",
-          fromPort: "out",
-          to: "n2",
-          toPort: "in",
+          from: 'ghost',
+          fromPort: 'out',
+          to: 'n2',
+          toPort: 'in',
         }),
       ]);
       const ctx = engine.getContext();
       // pendingConnection must reflect the most-recent request, not stale data
-      expect(ctx.pendingConnection?.from).toBe("ghost");
-      expect(ctx.pendingConnection?.to).toBe("n2");
+      expect(ctx.pendingConnection?.from).toBe('ghost');
+      expect(ctx.pendingConnection?.to).toBe('n2');
     });
   });
-  describe("canvas state consistency", () => {
-    it("emits a valid fact for a consistent canvas", () => {
+  describe('canvas state consistency', () => {
+    it('emits a valid fact for a consistent canvas', () => {
       const engine = makeEngine();
       const result = engine.step([ValidateCanvasStateEvent.create({})]);
       const validFact = result.state.facts.find(
@@ -232,10 +232,10 @@ describe("canvas-validation module", () => {
       expect(validFact).toBeDefined();
     });
 
-    it("emits an invalid fact when duplicate node IDs exist", () => {
+    it('emits an invalid fact when duplicate node IDs exist', () => {
       const engine = makeEngine([
-        { id: "dup", inputs: [], outputs: [] },
-        { id: "dup", inputs: [], outputs: [] },
+        { id: 'dup', inputs: [], outputs: [] },
+        { id: 'dup', inputs: [], outputs: [] },
       ]);
       const result = engine.step([ValidateCanvasStateEvent.create({})]);
       const invalidFact = result.state.facts.find(

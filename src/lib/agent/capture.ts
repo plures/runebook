@@ -1,7 +1,7 @@
 // Event capture system for Ambient Agent Mode
 // Captures terminal commands, outputs, and context
 
-import type { TerminalEvent, EventContext } from "../types/agent";
+import type { EventContext, TerminalEvent } from '../types/agent';
 
 let sessionId: string | null = null;
 let currentContext: EventContext | null = null;
@@ -17,7 +17,7 @@ export function initCapture(
   sessionId = sessionIdParam;
   currentContext = {
     sessionId: sessionIdParam,
-    workingDirectory: context?.workingDirectory || "",
+    workingDirectory: context?.workingDirectory || '',
     environment: context?.environment || {},
     ...context,
   };
@@ -60,7 +60,7 @@ export function captureCommand(
   startTime: number,
 ): TerminalEvent {
   if (!isCaptureEnabled()) {
-    throw new Error("Capture not initialized. Call initCapture() first.");
+    throw new Error('Capture not initialized. Call initCapture() first.');
   }
 
   return {

@@ -1,19 +1,14 @@
 // Terminal Observer - Main coordinator for event capture
 // Orchestrates shell adapters, event storage, and configuration
 
-import { createShellAdapter, detectShellType } from "./shell-adapters";
-import { createEventStore } from "./storage";
-import type {
-  ObserverConfig,
-  TerminalObserverEvent,
-  EventType,
-  ShellType,
-} from "./types";
-import type { ShellAdapter } from "./shell-adapters";
-import type { EventStore } from "./storage";
+import { createShellAdapter, detectShellType } from './shell-adapters';
+import { createEventStore } from './storage';
+import type { EventType, ObserverConfig, ShellType, TerminalObserverEvent } from './types';
+import type { ShellAdapter } from './shell-adapters';
+import type { EventStore } from './storage';
 
 // Re-export ObserverConfig for convenience
-export type { ObserverConfig } from "./types";
+export type { ObserverConfig } from './types';
 
 export class TerminalObserver {
   private config: ObserverConfig;
@@ -22,8 +17,7 @@ export class TerminalObserver {
   private sessionId: string;
 
   constructor(config: Partial<ObserverConfig> = {}) {
-    this.sessionId =
-      config.sessionId ||
+    this.sessionId = config.sessionId ||
       `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
     this.config = {
@@ -62,7 +56,7 @@ export class TerminalObserver {
    */
   async start(): Promise<void> {
     if (!this.config.enabled) {
-      throw new Error("Observer is not enabled. Set enabled: true in config.");
+      throw new Error('Observer is not enabled. Set enabled: true in config.');
     }
 
     if (!this.adapter || !this.store) {
@@ -111,12 +105,12 @@ export class TerminalObserver {
     env: Record<string, string>,
   ): Promise<string> {
     if (!this.config.enabled || !this.adapter || !this.store) {
-      throw new Error("Observer not initialized or not enabled");
+      throw new Error('Observer not initialized or not enabled');
     }
 
     // Use adapter's programmatic capture
-    const { BashAdapter } = await import("./shell-adapters/bash.js");
-    const { ZshAdapter } = await import("./shell-adapters/zsh.js");
+    const { BashAdapter } = await import('./shell-adapters/bash.js');
+    const { ZshAdapter } = await import('./shell-adapters/zsh.js');
 
     if (this.adapter instanceof BashAdapter) {
       return await (this.adapter as any).captureCommand(
@@ -137,7 +131,7 @@ export class TerminalObserver {
     }
 
     throw new Error(
-      "Programmatic capture not supported for this shell adapter",
+      'Programmatic capture not supported for this shell adapter',
     );
   }
 
@@ -154,8 +148,8 @@ export class TerminalObserver {
       return;
     }
 
-    const { BashAdapter } = await import("./shell-adapters/bash.js");
-    const { ZshAdapter } = await import("./shell-adapters/zsh.js");
+    const { BashAdapter } = await import('./shell-adapters/bash.js');
+    const { ZshAdapter } = await import('./shell-adapters/zsh.js');
 
     if (this.adapter instanceof BashAdapter) {
       await (this.adapter as any).captureCommandResult(
@@ -260,9 +254,7 @@ export class TerminalObserver {
       return;
     }
 
-    const olderThan = days
-      ? Date.now() - days * 24 * 60 * 60 * 1000
-      : undefined;
+    const olderThan = days ? Date.now() - days * 24 * 60 * 60 * 1000 : undefined;
 
     await this.store.clearEvents(olderThan);
   }

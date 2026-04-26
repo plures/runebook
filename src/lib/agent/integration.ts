@@ -1,8 +1,8 @@
 // Integration layer for Ambient Agent Mode
 // Connects agent to terminal execution
 
-import { createAgent, defaultAgentConfig, type AmbientAgent } from "./index";
-import type { AgentConfig, TerminalEvent } from "../types/agent";
+import { type AmbientAgent, createAgent, defaultAgentConfig } from './index';
+import type { AgentConfig, TerminalEvent } from '../types/agent';
 
 let agentInstance: AmbientAgent | null = null;
 let agentConfig: AgentConfig = { ...defaultAgentConfig };
@@ -77,7 +77,7 @@ export async function captureCommandResult(
 
   // Log suggestions if any (can be enhanced to show in UI)
   if (suggestions.length > 0 && agentConfig.suggestImprovements) {
-    console.log("Agent suggestions:", suggestions);
+    console.log('Agent suggestions:', suggestions);
   }
 }
 

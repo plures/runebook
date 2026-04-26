@@ -1,15 +1,15 @@
 // Analysis Service - Integrates analysis pipeline with observer
 // Monitors observer events and triggers analysis jobs
 
-import { AnalysisJobQueue } from "./analysis-pipeline";
+import { AnalysisJobQueue } from './analysis-pipeline';
 import {
   createHeuristicAnalyzers,
-  createLocalSearchAnalyzer,
   createLLMAnalyzer,
-} from "./analyzers";
-import type { TerminalObserverEvent, EventStore } from "../core/types";
-import type { ObserverConfig } from "../core/types";
-import type { LLMProviderConfig } from "./llm/types";
+  createLocalSearchAnalyzer,
+} from './analyzers';
+import type { EventStore, TerminalObserverEvent } from '../core/types';
+import type { ObserverConfig } from '../core/types';
+import type { LLMProviderConfig } from './llm/types';
 
 // Extended config that includes optional LLM support
 interface AnalysisServiceConfig extends ObserverConfig {
@@ -95,7 +95,7 @@ export class AnalysisService {
       return null;
     }
 
-    if (event.type !== "exit_status") {
+    if (event.type !== 'exit_status') {
       return null;
     }
 

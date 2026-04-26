@@ -1,19 +1,14 @@
 // Event storage layer for terminal observer
 // Supports both PluresDB and local file-based storage
 
-import type {
-  TerminalObserverEvent,
-  EventStore,
-  EventType,
-  ObserverConfig,
-} from "./types";
-import { mkdir, readFile, writeFile } from "fs/promises";
-import { join } from "path";
-import { homedir } from "os";
-import { existsSync } from "fs";
+import type { EventStore, EventType, ObserverConfig, TerminalObserverEvent } from './types';
+import { mkdir, readFile, writeFile } from 'fs/promises';
+import { join } from 'path';
+import { homedir } from 'os';
+import { existsSync } from 'fs';
 
 // Re-export EventStore from types for convenience
-export type { EventStore } from "./types";
+export type { EventStore } from './types';
 
 /**
  * Local file-based storage adapter
@@ -29,9 +24,8 @@ export class LocalFileStore implements EventStore {
 
   constructor(config: ObserverConfig) {
     this.config = config;
-    this.storagePath =
-      config.storagePath || join(homedir(), ".runebook", "observer");
-    this.eventsFile = join(this.storagePath, "events.json");
+    this.storagePath = config.storagePath || join(homedir(), '.runebook', 'observer');
+    this.eventsFile = join(this.storagePath, 'events.json');
   }
 
   private async ensureInitialized(): Promise<void> {
@@ -44,24 +38,24 @@ export class LocalFileStore implements EventStore {
       await mkdir(this.storagePath, { recursive: true });
     } catch (error) {
       // Directory already exists or can't be created
-      console.error("Failed to create storage directory:", error);
+      console.error('Failed to create storage directory:', error);
     }
 
     // Load existing events from file (handle ENOENT directly)
     try {
-      const data = await readFile(this.eventsFile, "utf-8");
+      const data = await readFile(this.eventsFile, 'utf-8');
       this.events = JSON.parse(data);
     } catch (error: unknown) {
       if (
         error &&
-        typeof error === "object" &&
-        "code" in error &&
-        error.code === "ENOENT"
+        typeof error === 'object' &&
+        'code' in error &&
+        error.code === 'ENOENT'
       ) {
         // File doesn't exist yet, start with empty array
         this.events = [];
       } else {
-        console.error("Failed to load events from file:", error);
+        console.error('Failed to load events from file:', error);
         this.events = [];
       }
     }
@@ -82,10 +76,10 @@ export class LocalFileStore implements EventStore {
         await writeFile(
           this.eventsFile,
           JSON.stringify(this.events, null, 2),
-          "utf-8",
+          'utf-8',
         );
       } catch (error) {
-        console.error("Failed to persist events to file:", error);
+        console.error('Failed to persist events to file:', error);
       }
     })();
 
@@ -150,11 +144,11 @@ export class LocalFileStore implements EventStore {
     return this.events
       .filter((e) => {
         // command_start events use their id as the command identifier
-        if (e.type === "command_start" && e.id === commandId) {
+        if (e.type === 'command_start' && e.id === commandId) {
           return true;
         }
         // Other events reference the command via commandId field
-        if ("commandId" in e && e.commandId === commandId) {
+        if ('commandId' in e && e.commandId === commandId) {
           return true;
         }
         return false;
@@ -220,7 +214,7 @@ export class LocalFileStore implements EventStore {
  */
 export class PluresDBEventStore implements EventStore {
   private db: any = null;
-  private readonly eventPrefix = "observer:event:";
+  private readonly eventPrefix = 'observer:event:';
   private initialized = false;
   private config: ObserverConfig;
 
@@ -234,13 +228,13 @@ export class PluresDBEventStore implements EventStore {
     }
 
     try {
-      const { SQLiteCompatibleAPI } = await import("pluresdb");
+      const { SQLiteCompatibleAPI } = await import('pluresdb');
 
       this.db = new SQLiteCompatibleAPI({
         config: {
           port: 34567,
-          host: "localhost",
-          dataDir: this.config.storagePath || "./pluresdb-data",
+          host: 'localhost',
+          dataDir: this.config.storagePath || './pluresdb-data',
         },
         autoStart: true,
       });
@@ -249,10 +243,10 @@ export class PluresDBEventStore implements EventStore {
       this.initialized = true;
     } catch (error) {
       console.error(
-        "Failed to initialize PluresDB for observer storage:",
+        'Failed to initialize PluresDB for observer storage:',
         error,
       );
-      throw new Error("PluresDB initialization failed for observer storage");
+      throw new Error('PluresDB initialization failed for observer storage');
     }
   }
 
@@ -284,7 +278,7 @@ export class PluresDBEventStore implements EventStore {
           events.push(event as TerminalObserverEvent);
         }
       } catch (error) {
-        console.error("Failed to load event:", error);
+        console.error('Failed to load event:', error);
       }
     }
 
@@ -299,11 +293,11 @@ export class PluresDBEventStore implements EventStore {
     return allEvents
       .filter((e) => {
         // command_start events use their id as the command identifier
-        if (e.type === "command_start" && e.id === commandId) {
+        if (e.type === 'command_start' && e.id === commandId) {
           return true;
         }
         // Other events reference the command via commandId field
-        if ("commandId" in e && e.commandId === commandId) {
+        if ('commandId' in e && e.commandId === commandId) {
           return true;
         }
         return false;
@@ -338,7 +332,7 @@ export class PluresDBEventStore implements EventStore {
           await this.db.delete(key);
         }
       } catch (error) {
-        console.error("Failed to delete event:", error);
+        console.error('Failed to delete event:', error);
       }
     }
   }

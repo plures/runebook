@@ -1,34 +1,30 @@
 // RuneBook Core - Terminal Observer Module
 // Main entry point for event capture and observability
 
+export { createObserver, defaultObserverConfig, TerminalObserver } from './observer';
+export type { ObserverConfig } from './types';
+export type { EventType, ShellType, TerminalObserverEvent } from './types';
+export { createEventStore } from './storage';
+export type { EventStore } from './storage';
+export { createShellAdapter, detectShellType } from './shell-adapters';
+export type { ShellAdapter } from './shell-adapters';
 export {
-  TerminalObserver,
-  createObserver,
-  defaultObserverConfig,
-} from "./observer";
-export type { ObserverConfig } from "./types";
-export type { TerminalObserverEvent, EventType, ShellType } from "./types";
-export { createEventStore } from "./storage";
-export type { EventStore } from "./storage";
-export { createShellAdapter, detectShellType } from "./shell-adapters";
-export type { ShellAdapter } from "./shell-adapters";
-export {
-  sanitizeEnv,
-  redactSecretsFromText,
   isSecretKey,
+  redactSecretsFromText,
   redactValue,
+  sanitizeEnv,
   validateRedaction,
-} from "./redaction";
+} from './redaction';
 
 // Re-export types for convenience
 export type {
-  CommandStartEvent,
   CommandEndEvent,
-  StdoutChunkEvent,
-  StderrChunkEvent,
-  ExitStatusEvent,
+  CommandStartEvent,
   CwdChangeEvent,
   EnvChangeEvent,
-  SessionStartEvent,
+  ExitStatusEvent,
   SessionEndEvent,
-} from "./types";
+  SessionStartEvent,
+  StderrChunkEvent,
+  StdoutChunkEvent,
+} from './types';

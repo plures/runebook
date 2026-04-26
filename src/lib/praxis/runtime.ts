@@ -5,34 +5,34 @@
 // reactive (subscriber-based) so Svelte components can $subscribe or use
 // $derived to read their context.
 
-import { createPraxisEngine, PraxisRegistry } from "@plures/praxis";
+import { createPraxisEngine, PraxisRegistry } from '@plures/praxis';
 import {
-  canvasValidationModule,
-  ValidateConnectionEvent,
   type CanvasValidationContext,
+  canvasValidationModule,
   type NodeDescriptor,
-} from "./canvas-validation";
+  ValidateConnectionEvent,
+} from './canvas-validation';
 import {
-  executionPolicyModule,
-  ScheduleExecutionEvent,
   CYCLE_DETECTED_FACT,
   EXECUTION_ORDER_FACT,
-  type ExecutionPolicyContext,
   type ExecutionEdge,
-} from "./execution-policy";
+  type ExecutionPolicyContext,
+  executionPolicyModule,
+  ScheduleExecutionEvent,
+} from './execution-policy';
 import {
+  type ComponentCapability,
+  type ComponentRegistryContext,
   componentRegistryModule,
   RegisterComponentEvent,
-  type ComponentRegistryContext,
-  type ComponentCapability,
-} from "./component-registry";
+} from './component-registry';
 import {
-  resourceManagementModule,
-  RequestTerminalEvent,
   ReleaseTerminalEvent,
+  RequestTerminalEvent,
   type ResourceManagementContext,
-} from "./resource-management";
-import type { CanvasNode, Connection } from "../types/canvas";
+  resourceManagementModule,
+} from './resource-management';
+import type { CanvasNode, Connection } from '../types/canvas';
 
 // ---------------------------------------------------------------------------
 // canvas-validation engine
@@ -42,15 +42,14 @@ const canvasValidationRegistry = new PraxisRegistry<CanvasValidationContext>();
 canvasValidationRegistry.registerModule(canvasValidationModule);
 
 /** Singleton engine driving connection-validation rules. */
-export const canvasValidationEngine =
-  createPraxisEngine<CanvasValidationContext>({
-    initialContext: {
-      nodes: [],
-      pendingConnection: null,
-      validationResult: null,
-    },
-    registry: canvasValidationRegistry,
-  });
+export const canvasValidationEngine = createPraxisEngine<CanvasValidationContext>({
+  initialContext: {
+    nodes: [],
+    pendingConnection: null,
+    validationResult: null,
+  },
+  registry: canvasValidationRegistry,
+});
 
 /**
  * Sync the validation engine's node descriptors to the current canvas state so
@@ -135,61 +134,57 @@ export function scheduleExecution(
   const orderFact = result.state.facts.find(
     (f) => f.tag === EXECUTION_ORDER_FACT,
   );
-  return hasCycles
-    ? []
-    : ((orderFact?.payload as { order?: string[] })?.order ?? []);
+  return hasCycles ? [] : ((orderFact?.payload as { order?: string[] })?.order ?? []);
 }
 
 // ---------------------------------------------------------------------------
 // component-registry engine
 // ---------------------------------------------------------------------------
 
-const componentRegistryRegistry =
-  new PraxisRegistry<ComponentRegistryContext>();
+const componentRegistryRegistry = new PraxisRegistry<ComponentRegistryContext>();
 componentRegistryRegistry.registerModule(componentRegistryModule);
 
 /** Singleton engine driving component-capability and port-compatibility rules. */
-export const componentRegistryEngine =
-  createPraxisEngine<ComponentRegistryContext>({
-    initialContext: { components: {}, portCompatibilityResult: null },
-    registry: componentRegistryRegistry,
-  });
+export const componentRegistryEngine = createPraxisEngine<ComponentRegistryContext>({
+  initialContext: { components: {}, portCompatibilityResult: null },
+  registry: componentRegistryRegistry,
+});
 
 // Register the five built-in RuneBook component types at module load time.
 // Port declarations use `undefined` dataType (any) since each node instance
 // may carry typed ports at runtime; type-checking is done per-instance via
 // the canvas-validation engine.
-const BUILTIN_COMPONENTS: Array<Omit<ComponentCapability, "lifecycle">> = [
-  { type: "text", label: "Text", ports: [] },
+const BUILTIN_COMPONENTS: Array<Omit<ComponentCapability, 'lifecycle'>> = [
+  { type: 'text', label: 'Text', ports: [] },
   {
-    type: "terminal",
-    label: "Terminal",
-    ports: [{ id: "stdout", direction: "output" }],
+    type: 'terminal',
+    label: 'Terminal',
+    ports: [{ id: 'stdout', direction: 'output' }],
   },
   {
-    type: "input",
-    label: "Input",
-    ports: [{ id: "value", direction: "output" }],
+    type: 'input',
+    label: 'Input',
+    ports: [{ id: 'value', direction: 'output' }],
   },
   {
-    type: "display",
-    label: "Display",
-    ports: [{ id: "content", direction: "input" }],
+    type: 'display',
+    label: 'Display',
+    ports: [{ id: 'content', direction: 'input' }],
   },
   {
-    type: "transform",
-    label: "Transform",
+    type: 'transform',
+    label: 'Transform',
     ports: [
-      { id: "input", direction: "input" },
-      { id: "output", direction: "output" },
+      { id: 'input', direction: 'input' },
+      { id: 'output', direction: 'output' },
     ],
   },
   {
-    type: "sub-canvas",
-    label: "Sub-Canvas",
+    type: 'sub-canvas',
+    label: 'Sub-Canvas',
     ports: [
-      { id: "in", direction: "input" },
-      { id: "out", direction: "output" },
+      { id: 'in', direction: 'input' },
+      { id: 'out', direction: 'output' },
     ],
   },
 ];
@@ -202,23 +197,21 @@ for (const cap of BUILTIN_COMPONENTS) {
 // resource-management engine
 // ---------------------------------------------------------------------------
 
-const resourceManagementRegistry =
-  new PraxisRegistry<ResourceManagementContext>();
+const resourceManagementRegistry = new PraxisRegistry<ResourceManagementContext>();
 resourceManagementRegistry.registerModule(resourceManagementModule);
 
 /** Singleton engine driving terminal process limits and memory budget rules. */
-export const resourceManagementEngine =
-  createPraxisEngine<ResourceManagementContext>({
-    initialContext: {
-      terminalCount: 0,
-      maxTerminals: 5,
-      memoryUsage: 0,
-      memoryBudget: 0,
-      timeouts: {},
-      timedOutNodes: [],
-    },
-    registry: resourceManagementRegistry,
-  });
+export const resourceManagementEngine = createPraxisEngine<ResourceManagementContext>({
+  initialContext: {
+    terminalCount: 0,
+    maxTerminals: 5,
+    memoryUsage: 0,
+    memoryBudget: 0,
+    timeouts: {},
+    timedOutNodes: [],
+  },
+  registry: resourceManagementRegistry,
+});
 
 /**
  * Request a terminal process slot for a node.

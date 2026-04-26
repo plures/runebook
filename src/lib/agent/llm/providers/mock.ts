@@ -1,11 +1,11 @@
 // Mock Provider for Testing
 // Returns deterministic responses for testing
 
-import { BaseLLMProvider } from "./base";
-import type { LLMProviderConfig, MCPToolInput, MCPToolOutput } from "../types";
+import { BaseLLMProvider } from './base';
+import type { LLMProviderConfig, MCPToolInput, MCPToolOutput } from '../types';
 
 export class MockProvider extends BaseLLMProvider {
-  name = "mock";
+  name = 'mock';
   private responses: Map<string, MCPToolOutput> = new Map();
 
   constructor(config: LLMProviderConfig) {
@@ -47,22 +47,24 @@ export class MockProvider extends BaseLLMProvider {
     return {
       suggestions: [
         {
-          title: "Mock Suggestion",
+          title: 'Mock Suggestion',
           description: `This is a mock suggestion for command: ${input.contextWindow.command}`,
           actionableSnippet: `# Mock fix for ${input.contextWindow.command}`,
           confidence: 0.7,
-          type: "tip",
-          priority: "medium",
+          type: 'tip',
+          priority: 'medium',
         },
       ],
       provenance: {
-        provider: "mock",
+        provider: 'mock',
         timestamp: Date.now(),
       },
     };
   }
 
   private getInputKey(input: MCPToolInput): string {
-    return `${input.contextWindow.command}_${input.contextWindow.exitCode}_${input.contextWindow.stderr.substring(0, 100)}`;
+    return `${input.contextWindow.command}_${input.contextWindow.exitCode}_${
+      input.contextWindow.stderr.substring(0, 100)
+    }`;
   }
 }

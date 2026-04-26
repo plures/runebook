@@ -4,17 +4,11 @@
 import {
   createPraxisEngine,
   defineEvent,
-  defineRule,
   defineModule,
+  defineRule,
   PraxisRegistry,
-  RuleResult,
-} from "@plures/praxis";
-import type {
-  Canvas,
-  CanvasNode,
-  Connection,
-  SubCanvasNode,
-} from "../types/canvas";
+} from '@plures/praxis';
+import type { Canvas, CanvasNode, Connection, SubCanvasNode } from '../types/canvas';
 
 /** One entry in the canvas navigation breadcrumb stack. */
 export interface CanvasNavEntry {
@@ -35,41 +29,41 @@ export interface CanvasContext {
 }
 
 // Define events for canvas operations
-export const AddNodeEvent = defineEvent<"ADD_NODE", { node: CanvasNode }>(
-  "ADD_NODE",
+export const AddNodeEvent = defineEvent<'ADD_NODE', { node: CanvasNode }>(
+  'ADD_NODE',
 );
-export const RemoveNodeEvent = defineEvent<"REMOVE_NODE", { nodeId: string }>(
-  "REMOVE_NODE",
+export const RemoveNodeEvent = defineEvent<'REMOVE_NODE', { nodeId: string }>(
+  'REMOVE_NODE',
 );
 export const UpdateNodeEvent = defineEvent<
-  "UPDATE_NODE",
+  'UPDATE_NODE',
   { nodeId: string; updates: Partial<CanvasNode> }
->("UPDATE_NODE");
+>('UPDATE_NODE');
 export const UpdateNodePositionEvent = defineEvent<
-  "UPDATE_NODE_POSITION",
+  'UPDATE_NODE_POSITION',
   { nodeId: string; x: number; y: number }
->("UPDATE_NODE_POSITION");
+>('UPDATE_NODE_POSITION');
 export const AddConnectionEvent = defineEvent<
-  "ADD_CONNECTION",
+  'ADD_CONNECTION',
   { connection: Connection }
->("ADD_CONNECTION");
+>('ADD_CONNECTION');
 export const RemoveConnectionEvent = defineEvent<
-  "REMOVE_CONNECTION",
+  'REMOVE_CONNECTION',
   { from: string; to: string; fromPort: string; toPort: string }
->("REMOVE_CONNECTION");
-export const LoadCanvasEvent = defineEvent<"LOAD_CANVAS", { canvas: Canvas }>(
-  "LOAD_CANVAS",
+>('REMOVE_CONNECTION');
+export const LoadCanvasEvent = defineEvent<'LOAD_CANVAS', { canvas: Canvas }>(
+  'LOAD_CANVAS',
 );
-export const ClearCanvasEvent = defineEvent<"CLEAR_CANVAS", {}>("CLEAR_CANVAS");
+export const ClearCanvasEvent = defineEvent<'CLEAR_CANVAS', {}>('CLEAR_CANVAS');
 export const UpdateNodeDataEvent = defineEvent<
-  "UPDATE_NODE_DATA",
+  'UPDATE_NODE_DATA',
   { nodeId: string; portId: string; data: any }
->("UPDATE_NODE_DATA");
+>('UPDATE_NODE_DATA');
 export const NavigateIntoSubCanvasEvent = defineEvent<
-  "NAVIGATE_INTO_SUB_CANVAS",
+  'NAVIGATE_INTO_SUB_CANVAS',
   { nodeId: string; label: string }
->("NAVIGATE_INTO_SUB_CANVAS");
-export const NavigateUpEvent = defineEvent<"NAVIGATE_UP", {}>("NAVIGATE_UP");
+>('NAVIGATE_INTO_SUB_CANVAS');
+export const NavigateUpEvent = defineEvent<'NAVIGATE_UP', {}>('NAVIGATE_UP');
 
 /**
  * Generate a deterministic, handle-based edge ID that prevents ID collisions
@@ -87,26 +81,26 @@ export function makeConnectionId(
   return `e-${from}-${fromPort}-${to}-${toPort}`;
 }
 
-// Define rules for canvas operations using RuleResult typed returns
+// Define rules for canvas operations
 const addNodeRule = defineRule<CanvasContext>({
-  id: "canvas.addNode",
-  description: "Add a new node to the canvas",
-  eventTypes: "ADD_NODE",
+  id: 'canvas.addNode',
+  description: 'Add a new node to the canvas',
+  eventTypes: 'ADD_NODE',
   impl: (state, events) => {
     const evt = events.find(AddNodeEvent.is);
-    if (!evt) return RuleResult.skip("no ADD_NODE event");
+    if (!evt) return [];
     state.context.canvas.nodes.push(evt.payload.node);
-    return RuleResult.noop("node added");
+    return [];
   },
 });
 
 const removeNodeRule = defineRule<CanvasContext>({
-  id: "canvas.removeNode",
-  description: "Remove a node from the canvas",
-  eventTypes: "REMOVE_NODE",
+  id: 'canvas.removeNode',
+  description: 'Remove a node from the canvas',
+  eventTypes: 'REMOVE_NODE',
   impl: (state, events) => {
     const evt = events.find(RemoveNodeEvent.is);
-    if (!evt) return RuleResult.skip("no REMOVE_NODE event");
+    if (!evt) return [];
 
     const { nodeId } = evt.payload;
     state.context.canvas.nodes = state.context.canvas.nodes.filter(
@@ -124,17 +118,17 @@ const removeNodeRule = defineRule<CanvasContext>({
       ),
     );
 
-    return RuleResult.noop("node removed");
+    return [];
   },
 });
 
 const updateNodeRule = defineRule<CanvasContext>({
-  id: "canvas.updateNode",
+  id: 'canvas.updateNode',
   description: "Update a node's properties",
-  eventTypes: "UPDATE_NODE",
+  eventTypes: 'UPDATE_NODE',
   impl: (state, events) => {
     const evt = events.find(UpdateNodeEvent.is);
-    if (!evt) return RuleResult.skip("no UPDATE_NODE event");
+    if (!evt) return [];
 
     const { nodeId, updates } = evt.payload;
     const nodeIndex = state.context.canvas.nodes.findIndex(
@@ -147,17 +141,17 @@ const updateNodeRule = defineRule<CanvasContext>({
       } as CanvasNode;
     }
 
-    return RuleResult.noop("node updated");
+    return [];
   },
 });
 
 const updateNodePositionRule = defineRule<CanvasContext>({
-  id: "canvas.updateNodePosition",
+  id: 'canvas.updateNodePosition',
   description: "Update a node's position",
-  eventTypes: "UPDATE_NODE_POSITION",
+  eventTypes: 'UPDATE_NODE_POSITION',
   impl: (state, events) => {
     const evt = events.find(UpdateNodePositionEvent.is);
-    if (!evt) return RuleResult.skip("no UPDATE_NODE_POSITION event");
+    if (!evt) return [];
 
     const { nodeId, x, y } = evt.payload;
     const nodeIndex = state.context.canvas.nodes.findIndex(
@@ -167,22 +161,21 @@ const updateNodePositionRule = defineRule<CanvasContext>({
       state.context.canvas.nodes[nodeIndex].position = { x, y };
     }
 
-    return RuleResult.noop("node position updated");
+    return [];
   },
 });
 
 const addConnectionRule = defineRule<CanvasContext>({
-  id: "canvas.addConnection",
-  description: "Add a connection between nodes",
-  eventTypes: "ADD_CONNECTION",
+  id: 'canvas.addConnection',
+  description: 'Add a connection between nodes',
+  eventTypes: 'ADD_CONNECTION',
   impl: (state, events) => {
     const evt = events.find(AddConnectionEvent.is);
-    if (!evt) return RuleResult.skip("no ADD_CONNECTION event");
+    if (!evt) return [];
 
     const conn = evt.payload.connection;
     // Auto-generate a handle-based ID when not provided
-    const id =
-      conn.id ??
+    const id = conn.id ??
       makeConnectionId(conn.from, conn.fromPort, conn.to, conn.toPort);
     const connection = { ...conn, id };
 
@@ -198,17 +191,17 @@ const addConnectionRule = defineRule<CanvasContext>({
       state.context.canvas.connections.push(connection);
     }
 
-    return RuleResult.noop("connection added");
+    return [];
   },
 });
 
 const removeConnectionRule = defineRule<CanvasContext>({
-  id: "canvas.removeConnection",
-  description: "Remove a connection",
-  eventTypes: "REMOVE_CONNECTION",
+  id: 'canvas.removeConnection',
+  description: 'Remove a connection',
+  eventTypes: 'REMOVE_CONNECTION',
   impl: (state, events) => {
     const evt = events.find(RemoveConnectionEvent.is);
-    if (!evt) return RuleResult.skip("no REMOVE_CONNECTION event");
+    if (!evt) return [];
 
     const { from, to, fromPort, toPort } = evt.payload;
     state.context.canvas.connections = state.context.canvas.connections.filter(
@@ -221,75 +214,75 @@ const removeConnectionRule = defineRule<CanvasContext>({
         ),
     );
 
-    return RuleResult.noop("connection removed");
+    return [];
   },
 });
 
 const loadCanvasRule = defineRule<CanvasContext>({
-  id: "canvas.loadCanvas",
-  description: "Load a canvas from data",
-  eventTypes: "LOAD_CANVAS",
+  id: 'canvas.loadCanvas',
+  description: 'Load a canvas from data',
+  eventTypes: 'LOAD_CANVAS',
   impl: (state, events) => {
     const evt = events.find(LoadCanvasEvent.is);
-    if (!evt) return RuleResult.skip("no LOAD_CANVAS event");
+    if (!evt) return [];
 
     state.context.canvas = evt.payload.canvas;
     state.context.navStack = [];
-    return RuleResult.noop("canvas loaded");
+    return [];
   },
 });
 
 const clearCanvasRule = defineRule<CanvasContext>({
-  id: "canvas.clearCanvas",
-  description: "Clear the canvas",
-  eventTypes: "CLEAR_CANVAS",
+  id: 'canvas.clearCanvas',
+  description: 'Clear the canvas',
+  eventTypes: 'CLEAR_CANVAS',
   impl: (state, events) => {
     const evt = events.find(ClearCanvasEvent.is);
-    if (!evt) return RuleResult.skip("no CLEAR_CANVAS event");
+    if (!evt) return [];
 
     state.context.canvas = {
-      id: "default",
-      name: "Untitled Canvas",
-      description: "",
+      id: 'default',
+      name: 'Untitled Canvas',
+      description: '',
       nodes: [],
       connections: [],
-      version: "1.0.0",
+      version: '1.0.0',
     };
     state.context.nodeData = {};
     state.context.navStack = [];
 
-    return RuleResult.noop("canvas cleared");
+    return [];
   },
 });
 
 const updateNodeDataRule = defineRule<CanvasContext>({
-  id: "canvas.updateNodeData",
-  description: "Update node output data",
-  eventTypes: "UPDATE_NODE_DATA",
+  id: 'canvas.updateNodeData',
+  description: 'Update node output data',
+  eventTypes: 'UPDATE_NODE_DATA',
   impl: (state, events) => {
     const evt = events.find(UpdateNodeDataEvent.is);
-    if (!evt) return RuleResult.skip("no UPDATE_NODE_DATA event");
+    if (!evt) return [];
 
     const { nodeId, portId, data } = evt.payload;
     state.context.nodeData[`${nodeId}:${portId}`] = data;
 
-    return RuleResult.noop("node data updated");
+    return [];
   },
 });
 
 const navigateIntoSubCanvasRule = defineRule<CanvasContext>({
-  id: "canvas.navigateIntoSubCanvas",
-  description:
-    "Navigate into a sub-canvas node, pushing the current canvas to the nav stack",
-  eventTypes: "NAVIGATE_INTO_SUB_CANVAS",
+  id: 'canvas.navigateIntoSubCanvas',
+  description: 'Navigate into a sub-canvas node, pushing the current canvas to the nav stack',
+  eventTypes: 'NAVIGATE_INTO_SUB_CANVAS',
   impl: (state, events) => {
     const evt = events.find(NavigateIntoSubCanvasEvent.is);
-    if (!evt) return RuleResult.skip("no NAVIGATE_INTO_SUB_CANVAS event");
+    if (!evt) return [];
 
     const { nodeId, label } = evt.payload;
     const node = state.context.canvas.nodes.find((n) => n.id === nodeId);
-    if (!node || node.type !== "sub-canvas")
-      return RuleResult.skip("not a sub-canvas node");
+    if (!node || node.type !== 'sub-canvas') {
+      return [];
+    }
 
     // Push current canvas onto the stack and descend into the children canvas.
     state.context.navStack.push({
@@ -300,20 +293,21 @@ const navigateIntoSubCanvasRule = defineRule<CanvasContext>({
     state.context.canvas = (node as SubCanvasNode).children;
     state.context.nodeData = {};
 
-    return RuleResult.noop("navigated into sub-canvas");
+    return [];
   },
 });
 
 const navigateUpRule = defineRule<CanvasContext>({
-  id: "canvas.navigateUp",
+  id: 'canvas.navigateUp',
   description:
-    "Navigate back up to the parent canvas, saving any changes back into the sub-canvas node",
-  eventTypes: "NAVIGATE_UP",
+    'Navigate back up to the parent canvas, saving any changes back into the sub-canvas node',
+  eventTypes: 'NAVIGATE_UP',
   impl: (state, events) => {
     const evt = events.find(NavigateUpEvent.is);
-    if (!evt) return RuleResult.skip("no NAVIGATE_UP event");
-    if (state.context.navStack.length === 0)
-      return RuleResult.skip("already at root");
+    if (!evt) return [];
+    if (state.context.navStack.length === 0) {
+      return [];
+    }
 
     const entry = state.context.navStack.pop()!;
     const modifiedChildren = state.context.canvas;
@@ -324,16 +318,15 @@ const navigateUpRule = defineRule<CanvasContext>({
     );
     if (
       parentNodeIdx !== -1 &&
-      entry.canvas.nodes[parentNodeIdx].type === "sub-canvas"
+      entry.canvas.nodes[parentNodeIdx].type === 'sub-canvas'
     ) {
-      (entry.canvas.nodes[parentNodeIdx] as SubCanvasNode).children =
-        modifiedChildren;
+      (entry.canvas.nodes[parentNodeIdx] as SubCanvasNode).children = modifiedChildren;
     }
 
     state.context.canvas = entry.canvas;
     state.context.nodeData = {};
 
-    return RuleResult.noop("navigated up");
+    return [];
   },
 });
 
@@ -352,7 +345,7 @@ export const canvasModule = defineModule<CanvasContext>({
     navigateIntoSubCanvasRule,
     navigateUpRule,
   ],
-  meta: { name: "canvas", version: "1.0.0" },
+  meta: { name: 'canvas', version: '1.0.0' },
 });
 
 // Create the registry and register the canvas module
@@ -363,12 +356,12 @@ registry.registerModule(canvasModule);
 export const canvasEngine = createPraxisEngine<CanvasContext>({
   initialContext: {
     canvas: {
-      id: "default",
-      name: "Untitled Canvas",
-      description: "",
+      id: 'default',
+      name: 'Untitled Canvas',
+      description: '',
       nodes: [],
       connections: [],
-      version: "1.0.0",
+      version: '1.0.0',
     },
     nodeData: {},
     navStack: [],

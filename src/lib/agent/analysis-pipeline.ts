@@ -1,8 +1,8 @@
 // Analysis Pipeline - Background job system for failure analysis
 // Runs analyzers in layers: heuristic → local search → optional LLM/MCP
 
-import type { TerminalObserverEvent, EventStore } from "../core/types";
-import type { Suggestion } from "../types/agent";
+import type { EventStore, TerminalObserverEvent } from '../core/types';
+import type { Suggestion } from '../types/agent';
 
 /**
  * Extended suggestion with confidence, actionable snippet, and provenance
@@ -32,7 +32,7 @@ export interface AnalysisJob {
   stderr: string;
   events: TerminalObserverEvent[]; // Full event context
   timestamp: number;
-  status: "pending" | "running" | "completed" | "cancelled" | "failed";
+  status: 'pending' | 'running' | 'completed' | 'cancelled' | 'failed';
   suggestions: AnalysisSuggestion[];
   error?: string;
 }
@@ -110,41 +110,41 @@ export class AnalysisJobQueue {
   ): Promise<string | null> {
     // Find command_start, exit_status, and stderr events
     const commandStart = events.find(
-      (e) => e.type === "command_start" && e.id === commandId,
+      (e) => e.type === 'command_start' && e.id === commandId,
     );
     const exitStatus = events.find(
-      (e) => e.type === "exit_status" && e.commandId === commandId,
+      (e) => e.type === 'exit_status' && e.commandId === commandId,
     );
     const stderrChunks = events
       .filter(
         (e) =>
-          e.type === "stderr_chunk" &&
-          "commandId" in e &&
+          e.type === 'stderr_chunk' &&
+          'commandId' in e &&
           e.commandId === commandId,
       )
       .sort((a, b) => {
-        const aIdx = "chunkIndex" in a ? a.chunkIndex : 0;
-        const bIdx = "chunkIndex" in b ? b.chunkIndex : 0;
+        const aIdx = 'chunkIndex' in a ? a.chunkIndex : 0;
+        const bIdx = 'chunkIndex' in b ? b.chunkIndex : 0;
         return aIdx - bIdx;
       });
     const stdoutChunks = events
       .filter(
         (e) =>
-          e.type === "stdout_chunk" &&
-          "commandId" in e &&
+          e.type === 'stdout_chunk' &&
+          'commandId' in e &&
           e.commandId === commandId,
       )
       .sort((a, b) => {
-        const aIdx = "chunkIndex" in a ? a.chunkIndex : 0;
-        const bIdx = "chunkIndex" in b ? b.chunkIndex : 0;
+        const aIdx = 'chunkIndex' in a ? a.chunkIndex : 0;
+        const bIdx = 'chunkIndex' in b ? b.chunkIndex : 0;
         return aIdx - bIdx;
       });
 
     if (
       !commandStart ||
       !exitStatus ||
-      commandStart.type !== "command_start" ||
-      exitStatus.type !== "exit_status"
+      commandStart.type !== 'command_start' ||
+      exitStatus.type !== 'exit_status'
     ) {
       return null;
     }
@@ -156,32 +156,31 @@ export class AnalysisJobQueue {
 
     // Build context
     const stderr = stderrChunks
-      .map((e) => ("chunk" in e ? e.chunk : ""))
-      .join("");
+      .map((e) => ('chunk' in e ? e.chunk : ''))
+      .join('');
     const stdout = stdoutChunks
-      .map((e) => ("chunk" in e ? e.chunk : ""))
-      .join("");
+      .map((e) => ('chunk' in e ? e.chunk : ''))
+      .join('');
 
     // Get previous commands for context
     const allEvents = await store.getEvents(undefined, undefined, 50);
     const previousCommands = allEvents
       .filter(
-        (e) =>
-          e.type === "command_start" && e.timestamp < commandStart.timestamp,
+        (e) => e.type === 'command_start' && e.timestamp < commandStart.timestamp,
       )
       .slice(-5)
       .map((e) => {
-        if (e.type === "command_start") {
+        if (e.type === 'command_start') {
           const exit = allEvents.find(
             (ev) =>
-              ev.type === "exit_status" &&
-              "commandId" in ev &&
+              ev.type === 'exit_status' &&
+              'commandId' in ev &&
               ev.commandId === e.id,
           );
           return {
             command: e.command,
             args: e.args,
-            exitCode: exit && exit.type === "exit_status" ? exit.exitCode : 0,
+            exitCode: exit && exit.type === 'exit_status' ? exit.exitCode : 0,
             timestamp: e.timestamp,
           };
         }
@@ -201,7 +200,7 @@ export class AnalysisJobQueue {
       stderr,
       events,
       timestamp: Date.now(),
-      status: "pending",
+      status: 'pending',
       suggestions: [],
     };
 
@@ -220,18 +219,18 @@ export class AnalysisJobQueue {
     }
 
     const pendingJob = Array.from(this.jobs.values()).find(
-      (j) => j.status === "pending",
+      (j) => j.status === 'pending',
     );
     if (!pendingJob) {
       return;
     }
 
     this.running.add(pendingJob.id);
-    pendingJob.status = "running";
+    pendingJob.status = 'running';
 
     // Process in background (non-blocking)
     this.runAnalysis(pendingJob, store).catch((error) => {
-      pendingJob.status = "failed";
+      pendingJob.status = 'failed';
       pendingJob.error = String(error);
       this.running.delete(pendingJob.id);
     });
@@ -300,9 +299,9 @@ export class AnalysisJobQueue {
       }
 
       job.suggestions = suggestions;
-      job.status = "completed";
+      job.status = 'completed';
     } catch (error) {
-      job.status = "failed";
+      job.status = 'failed';
       job.error = String(error);
     } finally {
       this.running.delete(job.id);
@@ -317,10 +316,10 @@ export class AnalysisJobQueue {
   private async getPreviousCommands(
     job: AnalysisJob,
     store: EventStore,
-  ): Promise<AnalysisContext["previousCommands"]> {
+  ): Promise<AnalysisContext['previousCommands']> {
     const events = await store.getEvents(undefined, undefined, 50);
     const commandStart = job.events.find(
-      (e) => e.type === "command_start" && e.id === job.commandId,
+      (e) => e.type === 'command_start' && e.id === job.commandId,
     );
     if (!commandStart) {
       return [];
@@ -328,22 +327,21 @@ export class AnalysisJobQueue {
 
     return events
       .filter(
-        (e) =>
-          e.type === "command_start" && e.timestamp < commandStart.timestamp,
+        (e) => e.type === 'command_start' && e.timestamp < commandStart.timestamp,
       )
       .slice(-5)
       .map((e) => {
-        if (e.type === "command_start") {
+        if (e.type === 'command_start') {
           const exit = events.find(
             (ev) =>
-              ev.type === "exit_status" &&
-              "commandId" in ev &&
+              ev.type === 'exit_status' &&
+              'commandId' in ev &&
               ev.commandId === e.id,
           );
           return {
             command: e.command,
             args: e.args,
-            exitCode: exit && exit.type === "exit_status" ? exit.exitCode : 0,
+            exitCode: exit && exit.type === 'exit_status' ? exit.exitCode : 0,
             timestamp: e.timestamp,
           };
         }
@@ -364,7 +362,7 @@ export class AnalysisJobQueue {
    */
   getLastJob(): AnalysisJob | undefined {
     const completed = Array.from(this.jobs.values())
-      .filter((j) => j.status === "completed")
+      .filter((j) => j.status === 'completed')
       .sort((a, b) => b.timestamp - a.timestamp);
     return completed[0];
   }
@@ -374,8 +372,8 @@ export class AnalysisJobQueue {
    */
   cancelJob(jobId: string): boolean {
     const job = this.jobs.get(jobId);
-    if (job && job.status === "pending") {
-      job.status = "cancelled";
+    if (job && job.status === 'pending') {
+      job.status = 'cancelled';
       return true;
     }
     return false;

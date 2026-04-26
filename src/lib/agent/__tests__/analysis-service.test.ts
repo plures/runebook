@@ -1,12 +1,12 @@
 // Tests for agent/analysis-service.ts
 
-import { describe, it, expect, beforeEach, afterEach } from "vitest";
-import { AnalysisService, getAnalysisService } from "../analysis-service";
-import { LocalFileStore } from "../../core/storage";
-import { rmSync, existsSync } from "fs";
-import { join } from "path";
-import { tmpdir } from "os";
-import type { ObserverConfig, TerminalObserverEvent } from "../../core/types";
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { AnalysisService, getAnalysisService } from '../analysis-service';
+import { LocalFileStore } from '../../core/storage';
+import { existsSync, rmSync } from 'fs';
+import { join } from 'path';
+import { tmpdir } from 'os';
+import type { ObserverConfig, TerminalObserverEvent } from '../../core/types';
 
 const TEST_DIR = join(tmpdir(), `runebook-analysis-service-test-${Date.now()}`);
 
@@ -23,16 +23,16 @@ const makeExitStatusEvent = (
 ): TerminalObserverEvent =>
   ({
     id: `exit-${commandId}`,
-    type: "exit_status",
+    type: 'exit_status',
     timestamp: Date.now(),
-    sessionId: "sess-1",
+    sessionId: 'sess-1',
     commandId,
     exitCode: success ? 0 : 1,
     success,
-    cwd: "/tmp",
+    cwd: '/tmp',
   }) as any;
 
-describe("AnalysisService", () => {
+describe('AnalysisService', () => {
   let service: AnalysisService;
   let store: LocalFileStore;
 
@@ -47,25 +47,25 @@ describe("AnalysisService", () => {
     }
   });
 
-  it("should create an AnalysisService", () => {
+  it('should create an AnalysisService', () => {
     expect(service).toBeInstanceOf(AnalysisService);
   });
 
-  it("should be disabled by default", () => {
+  it('should be disabled by default', () => {
     expect(service.isEnabled()).toBe(false);
   });
 
-  describe("initialize", () => {
-    it("should initialize with a store and config", () => {
+  describe('initialize', () => {
+    it('should initialize with a store and config', () => {
       service.initialize(store, makeConfig());
       service.setEnabled(true);
       expect(service.isEnabled()).toBe(true);
     });
 
-    it("should enable LLM when LLM config has enabled=true", () => {
+    it('should enable LLM when LLM config has enabled=true', () => {
       const config = {
         ...makeConfig(),
-        llm: { type: "mock" as const, enabled: true },
+        llm: { type: 'mock' as const, enabled: true },
       };
       service.initialize(store, config);
       service.setEnabled(true);
@@ -73,14 +73,14 @@ describe("AnalysisService", () => {
     });
   });
 
-  describe("setEnabled", () => {
-    it("should enable the service when store is set", () => {
+  describe('setEnabled', () => {
+    it('should enable the service when store is set', () => {
       service.initialize(store, makeConfig());
       service.setEnabled(true);
       expect(service.isEnabled()).toBe(true);
     });
 
-    it("should disable the service", () => {
+    it('should disable the service', () => {
       service.initialize(store, makeConfig());
       service.setEnabled(true);
       service.setEnabled(false);
@@ -88,68 +88,68 @@ describe("AnalysisService", () => {
     });
   });
 
-  describe("processExitStatus", () => {
-    it("should return null when service is not enabled", async () => {
-      const event = makeExitStatusEvent("cmd1", false);
+  describe('processExitStatus', () => {
+    it('should return null when service is not enabled', async () => {
+      const event = makeExitStatusEvent('cmd1', false);
       const result = await service.processExitStatus(event);
       expect(result).toBeNull();
     });
 
-    it("should return null for non-exit_status events", async () => {
+    it('should return null for non-exit_status events', async () => {
       service.initialize(store, makeConfig());
       service.setEnabled(true);
       const event: TerminalObserverEvent = {
-        id: "e1",
-        type: "command_start",
+        id: 'e1',
+        type: 'command_start',
         timestamp: Date.now(),
-        sessionId: "sess-1",
-        cwd: "/tmp",
+        sessionId: 'sess-1',
+        cwd: '/tmp',
       } as any;
       const result = await service.processExitStatus(event);
       expect(result).toBeNull();
     });
 
-    it("should return null for successful exit status events", async () => {
+    it('should return null for successful exit status events', async () => {
       service.initialize(store, makeConfig());
       service.setEnabled(true);
-      const event = makeExitStatusEvent("cmd1", true);
+      const event = makeExitStatusEvent('cmd1', true);
       const result = await service.processExitStatus(event);
       expect(result).toBeNull();
     });
 
-    it("should enqueue analysis for failed exit status events", async () => {
+    it('should enqueue analysis for failed exit status events', async () => {
       service.initialize(store, makeConfig());
       service.setEnabled(true);
-      const event = makeExitStatusEvent("cmd1", false);
+      const event = makeExitStatusEvent('cmd1', false);
       // enqueueFailure returns null when no command_start event exists in store
       // The processExitStatus delegates to queue.enqueueFailure which returns string|null
       const result = await service.processExitStatus(event);
       // Result is string or null (null because no command_start event in store)
-      expect(result === null || typeof result === "string").toBe(true);
+      expect(result === null || typeof result === 'string').toBe(true);
     });
   });
 
-  describe("job management", () => {
-    it("should return undefined for last job when no jobs", () => {
+  describe('job management', () => {
+    it('should return undefined for last job when no jobs', () => {
       expect(service.getLastJob()).toBeUndefined();
     });
 
-    it("should return undefined for non-existent job", () => {
-      expect(service.getJob("non-existent")).toBeUndefined();
+    it('should return undefined for non-existent job', () => {
+      expect(service.getJob('non-existent')).toBeUndefined();
     });
 
-    it("should return empty array for getAllJobs when no jobs", () => {
+    it('should return empty array for getAllJobs when no jobs', () => {
       expect(service.getAllJobs()).toEqual([]);
     });
 
-    it("should return false for cancelJob when job does not exist", () => {
-      expect(service.cancelJob("non-existent")).toBe(false);
+    it('should return false for cancelJob when job does not exist', () => {
+      expect(service.cancelJob('non-existent')).toBe(false);
     });
 
-    it("should retrieve a job by ID after enqueueing", async () => {
+    it('should retrieve a job by ID after enqueueing', async () => {
       service.initialize(store, makeConfig());
       service.setEnabled(true);
-      const event = makeExitStatusEvent("cmd2", false);
+      const event = makeExitStatusEvent('cmd2', false);
       const job = await service.processExitStatus(event);
       if (job) {
         const retrieved = service.getJob((job as any).id);
@@ -160,30 +160,26 @@ describe("AnalysisService", () => {
     });
   });
 
-  describe("LLM configuration", () => {
-    it("should call setLLMEnabled without error", () => {
+  describe('LLM configuration', () => {
+    it('should call setLLMEnabled without error', () => {
       service.initialize(store, makeConfig());
       expect(() => service.setLLMEnabled(true)).not.toThrow();
     });
 
-    it("should call setLLMConfig without error", () => {
+    it('should call setLLMConfig without error', () => {
       service.initialize(store, makeConfig());
-      expect(() =>
-        service.setLLMConfig({ type: "mock", enabled: true }),
-      ).not.toThrow();
+      expect(() => service.setLLMConfig({ type: 'mock', enabled: true })).not.toThrow();
     });
 
-    it("should handle setLLMConfig when not initialized", () => {
+    it('should handle setLLMConfig when not initialized', () => {
       // Should not throw when config is null
-      expect(() =>
-        service.setLLMConfig({ type: "mock", enabled: true }),
-      ).not.toThrow();
+      expect(() => service.setLLMConfig({ type: 'mock', enabled: true })).not.toThrow();
     });
   });
 });
 
-describe("getAnalysisService", () => {
-  it("should return an AnalysisService singleton", () => {
+describe('getAnalysisService', () => {
+  it('should return an AnalysisService singleton', () => {
     const s1 = getAnalysisService();
     const s2 = getAnalysisService();
     expect(s1).toBeInstanceOf(AnalysisService);

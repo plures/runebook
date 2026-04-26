@@ -1,13 +1,8 @@
 // Base shell adapter interface
 // All shell adapters must implement this interface
 
-import type {
-  TerminalObserverEvent,
-  ObserverConfig,
-  ShellType,
-  CommandStartEvent,
-} from "../types";
-import type { EventStore } from "../storage";
+import type { CommandStartEvent, ObserverConfig, ShellType, TerminalObserverEvent } from '../types';
+import type { EventStore } from '../storage';
 
 export interface ShellAdapter {
   /**
@@ -65,7 +60,7 @@ export abstract class BaseShellAdapter implements ShellAdapter {
 
   async start(): Promise<void> {
     if (!this.config || !this.store) {
-      throw new Error("Adapter not initialized. Call initialize() first.");
+      throw new Error('Adapter not initialized. Call initialize() first.');
     }
 
     if (!this.config.enabled) {
@@ -125,7 +120,7 @@ export abstract class BaseShellAdapter implements ShellAdapter {
     env: Record<string, string>,
   ): Promise<string> {
     if (!this.config || !this.store) {
-      throw new Error("Adapter not initialized");
+      throw new Error('Adapter not initialized');
     }
 
     const commandId = this.generateCommandId();
@@ -136,16 +131,16 @@ export abstract class BaseShellAdapter implements ShellAdapter {
     this.stdoutChunkIndex = 0;
     this.stderrChunkIndex = 0;
 
-    const { sanitizeEnv } = await import("../redaction.js");
+    const { sanitizeEnv } = await import('../redaction.js');
     const envSummary = this.config.redactSecrets
       ? sanitizeEnv(env, this.config.secretPatterns || [])
       : env;
 
     const event: CommandStartEvent = {
       id: commandId,
-      type: "command_start",
+      type: 'command_start',
       timestamp: this.commandStartTime,
-      sessionId: this.config.sessionId || "unknown",
+      sessionId: this.config.sessionId || 'unknown',
       shellType: this.getShellType(),
       paneId: this.config.paneId,
       tabId: this.config.tabId,
@@ -171,9 +166,9 @@ export abstract class BaseShellAdapter implements ShellAdapter {
 
     await this.emitEvent({
       id: this.generateEventId(),
-      type: "command_end",
+      type: 'command_end',
       timestamp: Date.now(),
-      sessionId: this.config.sessionId || "unknown",
+      sessionId: this.config.sessionId || 'unknown',
       shellType: this.getShellType(),
       paneId: this.config.paneId,
       tabId: this.config.tabId,
@@ -193,16 +188,16 @@ export abstract class BaseShellAdapter implements ShellAdapter {
       return;
     }
 
-    const { redactSecretsFromText } = await import("../redaction.js");
+    const { redactSecretsFromText } = await import('../redaction.js');
     const processedChunk = this.config.redactSecrets
       ? redactSecretsFromText(chunk, this.config.secretPatterns || [])
       : chunk;
 
     await this.emitEvent({
       id: this.generateEventId(),
-      type: "stdout_chunk",
+      type: 'stdout_chunk',
       timestamp: Date.now(),
-      sessionId: this.config.sessionId || "unknown",
+      sessionId: this.config.sessionId || 'unknown',
       shellType: this.getShellType(),
       paneId: this.config.paneId,
       tabId: this.config.tabId,
@@ -223,16 +218,16 @@ export abstract class BaseShellAdapter implements ShellAdapter {
       return;
     }
 
-    const { redactSecretsFromText } = await import("../redaction.js");
+    const { redactSecretsFromText } = await import('../redaction.js');
     const processedChunk = this.config.redactSecrets
       ? redactSecretsFromText(chunk, this.config.secretPatterns || [])
       : chunk;
 
     await this.emitEvent({
       id: this.generateEventId(),
-      type: "stderr_chunk",
+      type: 'stderr_chunk',
       timestamp: Date.now(),
-      sessionId: this.config.sessionId || "unknown",
+      sessionId: this.config.sessionId || 'unknown',
       shellType: this.getShellType(),
       paneId: this.config.paneId,
       tabId: this.config.tabId,
@@ -255,9 +250,9 @@ export abstract class BaseShellAdapter implements ShellAdapter {
 
     await this.emitEvent({
       id: this.generateEventId(),
-      type: "exit_status",
+      type: 'exit_status',
       timestamp: Date.now(),
-      sessionId: this.config.sessionId || "unknown",
+      sessionId: this.config.sessionId || 'unknown',
       shellType: this.getShellType(),
       paneId: this.config.paneId,
       tabId: this.config.tabId,
@@ -275,19 +270,19 @@ export abstract class BaseShellAdapter implements ShellAdapter {
       return;
     }
 
-    const { sanitizeEnv } = await import("../redaction.js");
+    const { sanitizeEnv } = await import('../redaction.js');
     const envSummary = this.config.redactSecrets
       ? sanitizeEnv(
-          process.env as Record<string, string>,
-          this.config.secretPatterns || [],
-        )
+        process.env as Record<string, string>,
+        this.config.secretPatterns || [],
+      )
       : (process.env as Record<string, string>);
 
     await this.emitEvent({
       id: this.generateEventId(),
-      type: "session_start",
+      type: 'session_start',
       timestamp: Date.now(),
-      sessionId: this.config.sessionId || "unknown",
+      sessionId: this.config.sessionId || 'unknown',
       shellType: this.getShellType(),
       paneId: this.config.paneId,
       tabId: this.config.tabId,
@@ -309,15 +304,15 @@ export abstract class BaseShellAdapter implements ShellAdapter {
       : [];
 
     const startEvent = sessionStart.find(
-      (e: TerminalObserverEvent) => e.type === "session_start",
+      (e: TerminalObserverEvent) => e.type === 'session_start',
     );
     const duration = startEvent ? Date.now() - startEvent.timestamp : 0;
 
     await this.emitEvent({
       id: this.generateEventId(),
-      type: "session_end",
+      type: 'session_end',
       timestamp: Date.now(),
-      sessionId: this.config.sessionId || "unknown",
+      sessionId: this.config.sessionId || 'unknown',
       shellType: this.getShellType(),
       paneId: this.config.paneId,
       tabId: this.config.tabId,

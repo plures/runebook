@@ -2,24 +2,21 @@
 // Headless CLI for RuneBook
 // SSH-friendly interface without GUI
 
-import { createAgent, defaultAgentConfig } from "../lib/agent/index";
-import {
-  formatSuggestionsForCLI,
-  formatSuggestionCompact,
-} from "../lib/agent/suggestions";
-import { getAgentStatus, formatStatus } from "../lib/agent/status";
-import type { AgentConfig } from "../lib/types/agent";
-import { createObserver, type ObserverConfig } from "../lib/core";
-import { getAnalysisService } from "../lib/agent/analysis-service";
-import { readFileSync, writeFileSync, existsSync, mkdirSync } from "fs";
-import { join } from "path";
-import { homedir } from "os";
+import { createAgent, defaultAgentConfig } from '../lib/agent/index';
+import { formatSuggestionCompact, formatSuggestionsForCLI } from '../lib/agent/suggestions';
+import { formatStatus, getAgentStatus } from '../lib/agent/status';
+import type { AgentConfig } from '../lib/types/agent';
+import { createObserver, type ObserverConfig } from '../lib/core';
+import { getAnalysisService } from '../lib/agent/analysis-service';
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'fs';
+import { join } from 'path';
+import { homedir } from 'os';
 
-const CONFIG_FILE = join(homedir(), ".runebook", "agent-config.json");
+const CONFIG_FILE = join(homedir(), '.runebook', 'agent-config.json');
 const OBSERVER_CONFIG_FILE = join(
   homedir(),
-  ".runebook",
-  "observer-config.json",
+  '.runebook',
+  'observer-config.json',
 );
 
 interface CLIOptions {
@@ -35,10 +32,10 @@ interface CLIOptions {
 function loadConfig(): AgentConfig {
   if (existsSync(CONFIG_FILE)) {
     try {
-      const content = readFileSync(CONFIG_FILE, "utf-8");
+      const content = readFileSync(CONFIG_FILE, 'utf-8');
       return { ...defaultAgentConfig, ...JSON.parse(content) };
     } catch (error) {
-      console.error("Failed to load config, using defaults:", error);
+      console.error('Failed to load config, using defaults:', error);
     }
   }
   return { ...defaultAgentConfig };
@@ -48,7 +45,7 @@ function loadConfig(): AgentConfig {
  * Save agent configuration to file
  */
 function saveConfig(config: AgentConfig): void {
-  const configDir = join(homedir(), ".runebook");
+  const configDir = join(homedir(), '.runebook');
   if (!existsSync(configDir)) {
     mkdirSync(configDir, { recursive: true });
   }
@@ -69,8 +66,8 @@ function initAgentFromCLI(options: CLIOptions = {}): void {
   };
 
   saveConfig(updatedConfig);
-  console.log("Agent configuration updated.");
-  console.log("Config:", JSON.stringify(updatedConfig, null, 2));
+  console.log('Agent configuration updated.');
+  console.log('Config:', JSON.stringify(updatedConfig, null, 2));
 }
 
 /**
@@ -80,20 +77,20 @@ async function showStatus(): Promise<void> {
   const config = loadConfig();
   const agent = createAgent(config);
 
-  console.log("\n=== Ambient Agent Status ===\n");
-  console.log(`Enabled: ${config.enabled ? "Yes" : "No"}`);
-  console.log(`Capture Events: ${config.captureEvents ? "Yes" : "No"}`);
-  console.log(`Analyze Patterns: ${config.analyzePatterns ? "Yes" : "No"}`);
+  console.log('\n=== Ambient Agent Status ===\n');
+  console.log(`Enabled: ${config.enabled ? 'Yes' : 'No'}`);
+  console.log(`Capture Events: ${config.captureEvents ? 'Yes' : 'No'}`);
+  console.log(`Analyze Patterns: ${config.analyzePatterns ? 'Yes' : 'No'}`);
   console.log(
-    `Suggest Improvements: ${config.suggestImprovements ? "Yes" : "No"}`,
+    `Suggest Improvements: ${config.suggestImprovements ? 'Yes' : 'No'}`,
   );
-  console.log(`Storage Path: ${config.storagePath || "Memory (in-memory)"}`);
-  console.log(`Max Events: ${config.maxEvents || "Unlimited"}`);
-  console.log(`Retention Days: ${config.retentionDays || "Unlimited"}`);
+  console.log(`Storage Path: ${config.storagePath || 'Memory (in-memory)'}`);
+  console.log(`Max Events: ${config.maxEvents || 'Unlimited'}`);
+  console.log(`Retention Days: ${config.retentionDays || 'Unlimited'}`);
 
   if (config.enabled) {
     const stats = await agent.getStats();
-    console.log("\n=== Statistics ===");
+    console.log('\n=== Statistics ===');
     console.log(`Total Events: ${stats.totalEvents}`);
     console.log(`Unique Commands: ${stats.uniqueCommands}`);
     console.log(
@@ -109,12 +106,12 @@ async function showStatus(): Promise<void> {
  * Show suggestions
  */
 async function showSuggestions(
-  priority?: "low" | "medium" | "high",
+  priority?: 'low' | 'medium' | 'high',
 ): Promise<void> {
   const config = loadConfig();
 
   if (!config.enabled) {
-    console.log("Agent is not enabled. Run: runebook agent enable");
+    console.log('Agent is not enabled. Run: runebook agent enable');
     return;
   }
 
@@ -125,8 +122,8 @@ async function showSuggestions(
   // Also analyze patterns for new suggestions
   await agent.analyzeAllPatterns();
   const newSuggestions = agent.getSuggestionsCLI(priority);
-  if (newSuggestions !== "No suggestions available.\n") {
-    console.log("\n=== New Pattern-Based Suggestions ===");
+  if (newSuggestions !== 'No suggestions available.\n') {
+    console.log('\n=== New Pattern-Based Suggestions ===');
     console.log(newSuggestions);
   }
 
@@ -160,7 +157,7 @@ async function showTopSuggestion(): Promise<void> {
   const config = loadConfig();
 
   if (!config.enabled) {
-    console.log("Agent is not enabled. Run: runebook agent enable");
+    console.log('Agent is not enabled. Run: runebook agent enable');
     return;
   }
 
@@ -168,7 +165,7 @@ async function showTopSuggestion(): Promise<void> {
   const topSuggestions = agent.getTopSuggestion(1);
 
   if (topSuggestions.length === 0) {
-    console.log("No suggestions available.");
+    console.log('No suggestions available.');
     return;
   }
 
@@ -176,7 +173,7 @@ async function showTopSuggestion(): Promise<void> {
   console.log(formatSuggestionCompact(suggestion));
   console.log(`\n${suggestion.description}`);
   if (suggestion.command) {
-    const args = suggestion.args ? suggestion.args.join(" ") : "";
+    const args = suggestion.args ? suggestion.args.join(' ') : '';
     console.log(`\nCommand: ${suggestion.command} ${args}`);
   }
 
@@ -190,7 +187,7 @@ async function showLastCommandSuggestions(): Promise<void> {
   const config = loadConfig();
 
   if (!config.enabled) {
-    console.log("Agent is not enabled. Run: runebook agent enable");
+    console.log('Agent is not enabled. Run: runebook agent enable');
     return;
   }
 
@@ -199,14 +196,14 @@ async function showLastCommandSuggestions(): Promise<void> {
   const status = getAgentStatus();
 
   if (!status.lastCommand) {
-    console.log("No command has been executed yet.");
+    console.log('No command has been executed yet.');
     return;
   }
 
   console.log(`\n=== Suggestions for "${status.lastCommand}" ===\n`);
 
   if (suggestions.length === 0) {
-    console.log("No suggestions for this command.");
+    console.log('No suggestions for this command.');
   } else {
     console.log(formatSuggestionsForCLI(suggestions));
   }
@@ -221,7 +218,7 @@ async function showEvents(limit: number = 10): Promise<void> {
   const config = loadConfig();
 
   if (!config.enabled) {
-    console.log("Agent is not enabled. Run: runebook agent enable");
+    console.log('Agent is not enabled. Run: runebook agent enable');
     return;
   }
 
@@ -232,15 +229,13 @@ async function showEvents(limit: number = 10): Promise<void> {
 
   for (const event of events) {
     const date = new Date(event.timestamp).toLocaleString();
-    const status = event.success ? "✓" : "✗";
-    const duration = event.duration
-      ? `${(event.duration / 1000).toFixed(2)}s`
-      : "N/A";
-    const args = event.args.length > 0 ? ` ${event.args.join(" ")}` : "";
+    const status = event.success ? '✓' : '✗';
+    const duration = event.duration ? `${(event.duration / 1000).toFixed(2)}s` : 'N/A';
+    const args = event.args.length > 0 ? ` ${event.args.join(' ')}` : '';
 
     console.log(`${status} [${date}] ${event.command}${args}`);
     console.log(
-      `   Duration: ${duration}, Exit Code: ${event.exitCode || "N/A"}`,
+      `   Duration: ${duration}, Exit Code: ${event.exitCode || 'N/A'}`,
     );
     if (event.cwd) {
       console.log(`   CWD: ${event.cwd}`);
@@ -258,7 +253,7 @@ async function clearEvents(days: number = 30): Promise<void> {
   const config = loadConfig();
 
   if (!config.enabled) {
-    console.log("Agent is not enabled.");
+    console.log('Agent is not enabled.');
     return;
   }
 
@@ -275,10 +270,10 @@ async function clearEvents(days: number = 30): Promise<void> {
 function loadObserverConfig(): ObserverConfig {
   if (existsSync(OBSERVER_CONFIG_FILE)) {
     try {
-      const content = readFileSync(OBSERVER_CONFIG_FILE, "utf-8");
+      const content = readFileSync(OBSERVER_CONFIG_FILE, 'utf-8');
       return JSON.parse(content);
     } catch (error) {
-      console.error("Failed to load observer config, using defaults:", error);
+      console.error('Failed to load observer config, using defaults:', error);
     }
   }
   return {
@@ -295,7 +290,7 @@ function loadObserverConfig(): ObserverConfig {
  * Save observer configuration
  */
 function saveObserverConfig(config: ObserverConfig): void {
-  const configDir = join(homedir(), ".runebook");
+  const configDir = join(homedir(), '.runebook');
   if (!existsSync(configDir)) {
     mkdirSync(configDir, { recursive: true });
   }
@@ -309,14 +304,14 @@ async function tailEvents(follow: boolean = true): Promise<void> {
   const config = loadObserverConfig();
 
   if (!config.enabled) {
-    console.log("Observer is not enabled. Run: runebook observer enable");
+    console.log('Observer is not enabled. Run: runebook observer enable');
     return;
   }
 
   const observer = createObserver(config);
   await observer.initialize();
 
-  console.log("Tailing events (press Ctrl+C to stop)...\n");
+  console.log('Tailing events (press Ctrl+C to stop)...\n');
 
   let lastTimestamp = Date.now();
 
@@ -329,28 +324,32 @@ async function tailEvents(follow: boolean = true): Promise<void> {
         const type = event.type.padEnd(15);
 
         switch (event.type) {
-          case "command_start":
+          case 'command_start':
             console.log(
-              `[${date}] ${type} ${event.command} ${event.args.join(" ")}`,
+              `[${date}] ${type} ${event.command} ${event.args.join(' ')}`,
             );
             console.log(`  CWD: ${event.cwd}`);
             break;
-          case "command_end":
+          case 'command_end':
             console.log(
               `[${date}] ${type} commandId: ${event.commandId}, duration: ${event.duration}ms`,
             );
             break;
-          case "stdout_chunk":
+          case 'stdout_chunk':
             console.log(
-              `[${date}] ${type} [${event.chunkIndex}] ${event.chunk.substring(0, 100)}${event.chunk.length > 100 ? "..." : ""}`,
+              `[${date}] ${type} [${event.chunkIndex}] ${event.chunk.substring(0, 100)}${
+                event.chunk.length > 100 ? '...' : ''
+              }`,
             );
             break;
-          case "stderr_chunk":
+          case 'stderr_chunk':
             console.log(
-              `[${date}] ${type} [${event.chunkIndex}] ${event.chunk.substring(0, 100)}${event.chunk.length > 100 ? "..." : ""}`,
+              `[${date}] ${type} [${event.chunkIndex}] ${event.chunk.substring(0, 100)}${
+                event.chunk.length > 100 ? '...' : ''
+              }`,
             );
             break;
-          case "exit_status":
+          case 'exit_status':
             console.log(
               `[${date}] ${type} exitCode: ${event.exitCode}, success: ${event.success}`,
             );
@@ -364,15 +363,15 @@ async function tailEvents(follow: boolean = true): Promise<void> {
         lastTimestamp = Math.max(lastTimestamp, event.timestamp);
       }
     } catch (error) {
-      console.error("Error tailing events:", error);
+      console.error('Error tailing events:', error);
     }
   }, 1000); // Poll every second
 
   // Handle Ctrl+C
-  process.on("SIGINT", () => {
+  process.on('SIGINT', () => {
     clearInterval(pollInterval);
     observer.stop();
-    console.log("\nStopped tailing events.");
+    console.log('\nStopped tailing events.');
     process.exit(0);
   });
 
@@ -391,40 +390,39 @@ async function tailEvents(follow: boolean = true): Promise<void> {
 async function showLLMStatus(): Promise<void> {
   const obsConfig = loadObserverConfig();
 
-  console.log("\n=== LLM/MCP Integration Status ===\n");
+  console.log('\n=== LLM/MCP Integration Status ===\n');
 
   // Check if llm config exists (extended observer config)
   const llmConfig = (obsConfig as any).llm;
   if (!llmConfig) {
-    console.log("Status: Disabled (no configuration)");
+    console.log('Status: Disabled (no configuration)');
     console.log(
-      "\nTo enable LLM analysis, add LLM configuration to observer config.",
+      '\nTo enable LLM analysis, add LLM configuration to observer config.',
     );
-    console.log("Example:");
-    console.log("  {");
+    console.log('Example:');
+    console.log('  {');
     console.log('    "llm": {');
     console.log('      "type": "ollama",');
     console.log('      "enabled": true,');
     console.log('      "ollama": { "model": "llama3.2" }');
-    console.log("    }");
-    console.log("  }");
+    console.log('    }');
+    console.log('  }');
     return;
   }
 
   console.log(`Provider Type: ${llmConfig.type}`);
-  console.log(`Enabled: ${llmConfig.enabled ? "Yes" : "No"}`);
+  console.log(`Enabled: ${llmConfig.enabled ? 'Yes' : 'No'}`);
 
   if (!llmConfig.enabled) {
-    console.log("\nLLM analysis is configured but disabled.");
+    console.log('\nLLM analysis is configured but disabled.');
     return;
   }
 
   // Check provider availability
   try {
-    const { createLLMProvider, isProviderAvailable } =
-      await import("../lib/agent/llm/providers");
+    const { createLLMProvider, isProviderAvailable } = await import('../lib/agent/llm/providers');
     const available = await isProviderAvailable(llmConfig);
-    console.log(`Available: ${available ? "Yes" : "No"}`);
+    console.log(`Available: ${available ? 'Yes' : 'No'}`);
 
     if (available) {
       const provider = createLLMProvider(llmConfig);
@@ -432,22 +430,22 @@ async function showLLMStatus(): Promise<void> {
         console.log(`Provider: ${provider.name}`);
       }
     } else {
-      console.log("\n⚠️  Provider is not available.");
-      if (llmConfig.type === "ollama") {
-        console.log("Make sure Ollama is running: ollama serve");
-      } else if (llmConfig.type === "openai") {
-        console.log("Make sure OPENAI_API_KEY environment variable is set.");
+      console.log('\n⚠️  Provider is not available.');
+      if (llmConfig.type === 'ollama') {
+        console.log('Make sure Ollama is running: ollama serve');
+      } else if (llmConfig.type === 'openai') {
+        console.log('Make sure OPENAI_API_KEY environment variable is set.');
       }
     }
 
     // Show safety settings
     if (llmConfig.safety) {
-      console.log("\n=== Safety Settings ===");
+      console.log('\n=== Safety Settings ===');
       console.log(
-        `Require User Review: ${llmConfig.safety.requireUserReview !== false ? "Yes" : "No"}`,
+        `Require User Review: ${llmConfig.safety.requireUserReview !== false ? 'Yes' : 'No'}`,
       );
       console.log(
-        `Cache Enabled: ${llmConfig.safety.cacheEnabled ? "Yes" : "No"}`,
+        `Cache Enabled: ${llmConfig.safety.cacheEnabled ? 'Yes' : 'No'}`,
       );
       if (llmConfig.safety.cacheEnabled) {
         console.log(`Cache TTL: ${llmConfig.safety.cacheTtl || 3600} seconds`);
@@ -460,26 +458,26 @@ async function showLLMStatus(): Promise<void> {
     }
 
     // Show provider-specific config
-    console.log("\n=== Provider Configuration ===");
-    if (llmConfig.type === "ollama" && llmConfig.ollama) {
+    console.log('\n=== Provider Configuration ===');
+    if (llmConfig.type === 'ollama' && llmConfig.ollama) {
       console.log(
-        `Base URL: ${llmConfig.ollama.baseUrl || "http://localhost:11434"}`,
+        `Base URL: ${llmConfig.ollama.baseUrl || 'http://localhost:11434'}`,
       );
-      console.log(`Model: ${llmConfig.ollama.model || "llama3.2"}`);
-    } else if (llmConfig.type === "openai" && llmConfig.openai) {
+      console.log(`Model: ${llmConfig.ollama.model || 'llama3.2'}`);
+    } else if (llmConfig.type === 'openai' && llmConfig.openai) {
       const apiKey = llmConfig.openai.apiKey || process.env.OPENAI_API_KEY;
-      console.log(`API Key: ${apiKey ? "***" + apiKey.slice(-4) : "Not set"}`);
-      console.log(`Model: ${llmConfig.openai.model || "gpt-4o-mini"}`);
+      console.log(`API Key: ${apiKey ? '***' + apiKey.slice(-4) : 'Not set'}`);
+      console.log(`Model: ${llmConfig.openai.model || 'gpt-4o-mini'}`);
       console.log(
-        `Base URL: ${llmConfig.openai.baseUrl || "https://api.openai.com/v1"}`,
+        `Base URL: ${llmConfig.openai.baseUrl || 'https://api.openai.com/v1'}`,
       );
-    } else if (llmConfig.type === "mock") {
-      console.log("Mock provider (for testing)");
-    } else if (llmConfig.type === "mcp") {
-      console.log("MCP provider (not yet implemented)");
+    } else if (llmConfig.type === 'mock') {
+      console.log('Mock provider (for testing)');
+    } else if (llmConfig.type === 'mcp') {
+      console.log('MCP provider (not yet implemented)');
     }
   } catch (error: any) {
-    console.error("Error checking LLM status:", error.message);
+    console.error('Error checking LLM status:', error.message);
   }
 
   console.log();
@@ -490,13 +488,13 @@ async function showLLMStatus(): Promise<void> {
  */
 async function inspectMemory(): Promise<void> {
   try {
-    const { SQLiteCompatibleAPI } = await import("pluresdb");
+    const { SQLiteCompatibleAPI } = await import('pluresdb');
 
     const db = new SQLiteCompatibleAPI({
       config: {
         port: 34567,
-        host: "localhost",
-        dataDir: "./pluresdb-data",
+        host: 'localhost',
+        dataDir: './pluresdb-data',
       },
       autoStart: true,
     });
@@ -504,7 +502,7 @@ async function inspectMemory(): Promise<void> {
     await db.start();
 
     // List sessions
-    const sessionKeys = await db.list("memory:session:");
+    const sessionKeys = await db.list('memory:session:');
     const sessions = [];
     for (const key of sessionKeys) {
       try {
@@ -518,7 +516,7 @@ async function inspectMemory(): Promise<void> {
     }
 
     // List errors
-    const errorKeys = await db.list("memory:error:");
+    const errorKeys = await db.list('memory:error:');
     const errors = [];
     for (const key of errorKeys.slice(0, 10)) {
       try {
@@ -532,7 +530,7 @@ async function inspectMemory(): Promise<void> {
     }
 
     // List suggestions
-    const suggestionKeys = await db.list("memory:suggestion:");
+    const suggestionKeys = await db.list('memory:suggestion:');
     const suggestions = [];
     for (const key of suggestionKeys.slice(0, 10)) {
       try {
@@ -548,13 +546,13 @@ async function inspectMemory(): Promise<void> {
     // Sort suggestions by rank
     suggestions.sort((a, b) => (b.rank || 0) - (a.rank || 0));
 
-    console.log("\n=== RuneBook Cognitive Memory ===\n");
+    console.log('\n=== RuneBook Cognitive Memory ===\n');
     console.log(`Sessions: ${sessions.length}`);
     console.log(`Recent Errors: ${errors.length}`);
     console.log(`Active Suggestions: ${suggestions.length}\n`);
 
     if (sessions.length > 0) {
-      console.log("=== Recent Sessions ===");
+      console.log('=== Recent Sessions ===');
       for (const session of sessions.slice(0, 5)) {
         const started = new Date(session.started_at).toLocaleString();
         console.log(
@@ -565,7 +563,7 @@ async function inspectMemory(): Promise<void> {
     }
 
     if (errors.length > 0) {
-      console.log("=== Recent Errors ===");
+      console.log('=== Recent Errors ===');
       for (const error of errors.slice(0, 5)) {
         console.log(
           `  [${error.severity}] ${error.error_type} - ${error.message.substring(0, 60)}`,
@@ -575,22 +573,24 @@ async function inspectMemory(): Promise<void> {
     }
 
     if (suggestions.length > 0) {
-      console.log("=== Top Suggestions ===");
+      console.log('=== Top Suggestions ===');
       for (const suggestion of suggestions.slice(0, 5)) {
         console.log(
-          `  [${suggestion.priority}] ${suggestion.title} - ${suggestion.description.substring(0, 60)}`,
+          `  [${suggestion.priority}] ${suggestion.title} - ${
+            suggestion.description.substring(0, 60)
+          }`,
         );
       }
     }
   } catch (error: any) {
-    if (error.message && error.message.includes("PluresDB")) {
-      console.error("Error: PluresDB server is not available.");
-      console.error("Make sure PluresDB is running on localhost:34567");
+    if (error.message && error.message.includes('PluresDB')) {
+      console.error('Error: PluresDB server is not available.');
+      console.error('Make sure PluresDB is running on localhost:34567');
       console.error(
-        "Or use local storage by setting usePluresDB: false in config",
+        'Or use local storage by setting usePluresDB: false in config',
       );
     } else {
-      console.error("Error inspecting memory:", error);
+      console.error('Error inspecting memory:', error);
     }
   }
 }
@@ -600,13 +600,13 @@ async function inspectMemory(): Promise<void> {
  */
 async function wipeMemory(): Promise<void> {
   try {
-    const { SQLiteCompatibleAPI } = await import("pluresdb");
+    const { SQLiteCompatibleAPI } = await import('pluresdb');
 
     const db = new SQLiteCompatibleAPI({
       config: {
         port: 34567,
-        host: "localhost",
-        dataDir: "./pluresdb-data",
+        host: 'localhost',
+        dataDir: './pluresdb-data',
       },
       autoStart: true,
     });
@@ -615,14 +615,14 @@ async function wipeMemory(): Promise<void> {
 
     // Wipe all memory prefixes (matching Rust API implementation)
     const prefixes = [
-      "memory:session:",
-      "memory:command:",
-      "memory:output:",
-      "memory:error:",
-      "memory:insight:",
-      "memory:suggestion:",
-      "memory:provenance:",
-      "memory:event:",
+      'memory:session:',
+      'memory:command:',
+      'memory:output:',
+      'memory:error:',
+      'memory:insight:',
+      'memory:suggestion:',
+      'memory:provenance:',
+      'memory:event:',
     ];
 
     let totalDeleted = 0;
@@ -640,13 +640,13 @@ async function wipeMemory(): Promise<void> {
     }
 
     console.log(`\n✅ Wiped all memory data (${totalDeleted} items deleted)\n`);
-    console.log("Warning: This permanently deleted all stored data.");
+    console.log('Warning: This permanently deleted all stored data.');
   } catch (error: any) {
-    if (error.message && error.message.includes("PluresDB")) {
-      console.error("Error: PluresDB server is not available.");
-      console.error("Make sure PluresDB is running on localhost:34567");
+    if (error.message && error.message.includes('PluresDB')) {
+      console.error('Error: PluresDB server is not available.');
+      console.error('Make sure PluresDB is running on localhost:34567');
     } else {
-      console.error("Error wiping memory:", error);
+      console.error('Error wiping memory:', error);
     }
     process.exit(1);
   }
@@ -659,7 +659,7 @@ async function showObserverEvents(limit: number = 10): Promise<void> {
   const config = loadObserverConfig();
 
   if (!config.enabled) {
-    console.log("Observer is not enabled. Run: runebook observer enable");
+    console.log('Observer is not enabled. Run: runebook observer enable');
     return;
   }
 
@@ -674,8 +674,8 @@ async function showObserverEvents(limit: number = 10): Promise<void> {
     console.log(`[${date}] ${event.type}`);
     console.log(`  Session: ${event.sessionId}`);
     console.log(`  Shell: ${event.shellType}`);
-    if (event.type === "command_start") {
-      console.log(`  Command: ${event.command} ${event.args.join(" ")}`);
+    if (event.type === 'command_start') {
+      console.log(`  Command: ${event.command} ${event.args.join(' ')}`);
       console.log(`  CWD: ${event.cwd}`);
     }
     console.log();
@@ -691,7 +691,7 @@ async function showLastAnalysis(): Promise<void> {
   const obsConfig = loadObserverConfig();
 
   if (!obsConfig.enabled) {
-    console.log("Observer is not enabled. Run: runebook observer enable");
+    console.log('Observer is not enabled. Run: runebook observer enable');
     return;
   }
 
@@ -701,7 +701,7 @@ async function showLastAnalysis(): Promise<void> {
   // Get the store from observer (it's created during initialize)
   // We need to access it through the observer's internal state
   // For now, we'll create a new store with the same config
-  const { createEventStore } = await import("../lib/core/storage");
+  const { createEventStore } = await import('../lib/core/storage');
   const store = createEventStore(obsConfig);
 
   const analysisService = getAnalysisService();
@@ -709,11 +709,11 @@ async function showLastAnalysis(): Promise<void> {
   analysisService.setEnabled(true);
 
   // Get last exit_status event that failed
-  const events = await observer.getEvents("exit_status", undefined, 50);
-  const failures = events.filter((e) => e.type === "exit_status" && !e.success);
+  const events = await observer.getEvents('exit_status', undefined, 50);
+  const failures = events.filter((e) => e.type === 'exit_status' && !e.success);
 
   if (failures.length === 0) {
-    console.log("No recent failures found.");
+    console.log('No recent failures found.');
     observer.stop();
     return;
   }
@@ -723,7 +723,7 @@ async function showLastAnalysis(): Promise<void> {
   const jobId = await analysisService.processExitStatus(lastFailure);
 
   if (!jobId) {
-    console.log("Failed to create analysis job.");
+    console.log('Failed to create analysis job.');
     observer.stop();
     return;
   }
@@ -731,7 +731,7 @@ async function showLastAnalysis(): Promise<void> {
   // Wait a bit for analysis to complete (non-blocking, but we'll poll)
   let job = analysisService.getJob(jobId);
   let attempts = 0;
-  while (job && job.status === "running" && attempts < 30) {
+  while (job && job.status === 'running' && attempts < 30) {
     await new Promise((resolve) => setTimeout(resolve, 500));
     job = analysisService.getJob(jobId);
     attempts++;
@@ -740,36 +740,38 @@ async function showLastAnalysis(): Promise<void> {
   job = analysisService.getJob(jobId);
 
   if (!job) {
-    console.log("Analysis job not found.");
+    console.log('Analysis job not found.');
     observer.stop();
     return;
   }
 
-  console.log("\n=== Analysis Results ===\n");
-  console.log(`Command: ${job.command} ${job.args.join(" ")}`);
+  console.log('\n=== Analysis Results ===\n');
+  console.log(`Command: ${job.command} ${job.args.join(' ')}`);
   console.log(`Exit Code: ${job.exitCode}`);
   console.log(`Status: ${job.status}`);
   console.log(`CWD: ${job.cwd}`);
 
   if (job.stderr) {
     console.log(
-      `\nStderr:\n${job.stderr.substring(0, 500)}${job.stderr.length > 500 ? "..." : ""}`,
+      `\nStderr:\n${job.stderr.substring(0, 500)}${job.stderr.length > 500 ? '...' : ''}`,
     );
   }
 
   if (job.suggestions.length === 0) {
-    console.log("\nNo suggestions generated.");
+    console.log('\nNo suggestions generated.');
   } else {
     console.log(`\n=== Suggestions (${job.suggestions.length}) ===\n`);
 
     for (const suggestion of job.suggestions) {
       console.log(
-        `[${suggestion.provenance.analyzer}] ${suggestion.title} (confidence: ${(suggestion.confidence * 100).toFixed(0)}%)`,
+        `[${suggestion.provenance.analyzer}] ${suggestion.title} (confidence: ${
+          (suggestion.confidence * 100).toFixed(0)
+        }%)`,
       );
       console.log(`  ${suggestion.description}`);
       if (suggestion.actionableSnippet) {
         console.log(
-          `\n  ${suggestion.actionableSnippet.split("\n").join("\n  ")}`,
+          `\n  ${suggestion.actionableSnippet.split('\n').join('\n  ')}`,
         );
       }
       console.log();
@@ -821,11 +823,11 @@ Examples:
 
   (async () => {
     try {
-      if (command === "--tui") {
-        const { launchTUI } = await import("../lib/tui/index");
+      if (command === '--tui') {
+        const { launchTUI } = await import('../lib/tui/index');
         const filePath = subcommand; // optional canvas YAML path
         await launchTUI(filePath);
-      } else if (command === "agent") {
+      } else if (command === 'agent') {
         // Agent commands
         if (!subcommand) {
           console.log(`
@@ -847,40 +849,40 @@ Commands:
         }
 
         switch (subcommand) {
-          case "enable":
+          case 'enable':
             initAgentFromCLI({ enabled: true });
-            console.log("Agent enabled.");
+            console.log('Agent enabled.');
             break;
 
-          case "disable":
+          case 'disable':
             initAgentFromCLI({ enabled: false });
-            console.log("Agent disabled.");
+            console.log('Agent disabled.');
             break;
 
-          case "status":
+          case 'status':
             await showStatus();
             break;
 
-          case "suggestions":
-            const priority = args[2] as "low" | "medium" | "high" | undefined;
+          case 'suggestions':
+            const priority = args[2] as 'low' | 'medium' | 'high' | undefined;
             await showSuggestions(priority);
             break;
 
-          case "events":
+          case 'events':
             const limit = args[2] ? parseInt(args[2], 10) : 10;
             await showEvents(limit);
             break;
 
-          case "clear":
+          case 'clear':
             const days = args[2] ? parseInt(args[2], 10) : 30;
             await clearEvents(days);
             break;
 
-          case "config":
+          case 'config':
             const key = args[2];
             const value = args[3];
             if (!key || !value) {
-              console.error("Usage: runebook agent config <key> <value>");
+              console.error('Usage: runebook agent config <key> <value>');
               process.exit(1);
             }
             const config = loadConfig();
@@ -893,7 +895,7 @@ Commands:
             console.error(`Unknown agent command: ${subcommand}`);
             process.exit(1);
         }
-      } else if (command === "observer") {
+      } else if (command === 'observer') {
         // Observer commands
         if (!subcommand) {
           console.log(`
@@ -913,43 +915,43 @@ Commands:
         }
 
         switch (subcommand) {
-          case "enable":
+          case 'enable':
             const obsConfig = loadObserverConfig();
             obsConfig.enabled = true;
             saveObserverConfig(obsConfig);
-            console.log("Observer enabled.");
+            console.log('Observer enabled.');
             break;
 
-          case "disable":
+          case 'disable':
             const obsConfig2 = loadObserverConfig();
             obsConfig2.enabled = false;
             saveObserverConfig(obsConfig2);
-            console.log("Observer disabled.");
+            console.log('Observer disabled.');
             break;
 
-          case "status":
+          case 'status':
             const obsConfig3 = loadObserverConfig();
             const observer = createObserver(obsConfig3);
             await observer.initialize();
             const stats = await observer.getStats();
 
-            console.log("\n=== Terminal Observer Status ===\n");
-            console.log(`Enabled: ${obsConfig3.enabled ? "Yes" : "No"}`);
-            console.log(`Shell Type: ${obsConfig3.shellType || "auto-detect"}`);
+            console.log('\n=== Terminal Observer Status ===\n');
+            console.log(`Enabled: ${obsConfig3.enabled ? 'Yes' : 'No'}`);
+            console.log(`Shell Type: ${obsConfig3.shellType || 'auto-detect'}`);
             console.log(
-              `Redact Secrets: ${obsConfig3.redactSecrets ? "Yes" : "No"}`,
+              `Redact Secrets: ${obsConfig3.redactSecrets ? 'Yes' : 'No'}`,
             );
             console.log(
-              `Storage: ${obsConfig3.usePluresDB ? "PluresDB" : "Local"}`,
+              `Storage: ${obsConfig3.usePluresDB ? 'PluresDB' : 'Local'}`,
             );
             console.log(
-              `Storage Path: ${obsConfig3.storagePath || "In-memory"}`,
+              `Storage Path: ${obsConfig3.storagePath || 'In-memory'}`,
             );
-            console.log(`Max Events: ${obsConfig3.maxEvents || "Unlimited"}`);
+            console.log(`Max Events: ${obsConfig3.maxEvents || 'Unlimited'}`);
             console.log(
-              `Retention Days: ${obsConfig3.retentionDays || "Unlimited"}`,
+              `Retention Days: ${obsConfig3.retentionDays || 'Unlimited'}`,
             );
-            console.log("\n=== Statistics ===");
+            console.log('\n=== Statistics ===');
             console.log(`Total Events: ${stats.totalEvents}`);
             console.log(`Sessions: ${stats.sessions}`);
             console.log(`Events by Type:`);
@@ -960,8 +962,8 @@ Commands:
             observer.stop();
             break;
 
-          case "events":
-            if (args[2] === "tail") {
+          case 'events':
+            if (args[2] === 'tail') {
               await tailEvents(true);
             } else {
               const limit = args[2] ? parseInt(args[2], 10) : 10;
@@ -973,7 +975,7 @@ Commands:
             console.error(`Unknown observer command: ${subcommand}`);
             process.exit(1);
         }
-      } else if (command === "suggest") {
+      } else if (command === 'suggest') {
         // Suggestion commands
         if (!subcommand) {
           console.log(`
@@ -996,15 +998,15 @@ Examples:
         }
 
         switch (subcommand) {
-          case "status":
+          case 'status':
             showSuggestStatus();
             break;
 
-          case "top":
+          case 'top':
             await showTopSuggestion();
             break;
 
-          case "last":
+          case 'last':
             await showLastCommandSuggestions();
             break;
 
@@ -1012,7 +1014,7 @@ Examples:
             console.error(`Unknown suggest command: ${subcommand}`);
             process.exit(1);
         }
-      } else if (command === "analyze") {
+      } else if (command === 'analyze') {
         // Analysis commands
         if (!subcommand) {
           console.log(`
@@ -1028,7 +1030,7 @@ Commands:
         }
 
         switch (subcommand) {
-          case "last":
+          case 'last':
             await showLastAnalysis();
             break;
 
@@ -1036,7 +1038,7 @@ Commands:
             console.error(`Unknown analyze command: ${subcommand}`);
             process.exit(1);
         }
-      } else if (command === "memory") {
+      } else if (command === 'memory') {
         // Memory commands
         if (!subcommand) {
           console.log(`
@@ -1053,24 +1055,24 @@ Commands:
         }
 
         switch (subcommand) {
-          case "inspect":
+          case 'inspect':
             await inspectMemory();
             break;
 
-          case "wipe":
+          case 'wipe':
             // Confirm before wiping
             console.log(
-              "⚠️  WARNING: This will permanently delete all memory data.",
+              '⚠️  WARNING: This will permanently delete all memory data.',
             );
             console.log(
-              "This includes sessions, commands, outputs, errors, insights, suggestions, and provenance.",
+              'This includes sessions, commands, outputs, errors, insights, suggestions, and provenance.',
             );
-            console.log("");
-            console.log("To proceed, run: runebook memory wipe --confirm");
-            if (args[2] === "--confirm") {
+            console.log('');
+            console.log('To proceed, run: runebook memory wipe --confirm');
+            if (args[2] === '--confirm') {
               await wipeMemory();
             } else {
-              console.log("\nUse --confirm flag to proceed with deletion.");
+              console.log('\nUse --confirm flag to proceed with deletion.');
             }
             break;
 
@@ -1078,7 +1080,7 @@ Commands:
             console.error(`Unknown memory command: ${subcommand}`);
             process.exit(1);
         }
-      } else if (command === "llm") {
+      } else if (command === 'llm') {
         // LLM commands
         if (!subcommand) {
           console.log(`
@@ -1094,7 +1096,7 @@ Commands:
         }
 
         switch (subcommand) {
-          case "status":
+          case 'status':
             await showLLMStatus();
             break;
 
@@ -1110,7 +1112,7 @@ Commands:
         process.exit(1);
       }
     } catch (error) {
-      console.error("Error:", error);
+      console.error('Error:', error);
       process.exit(1);
     }
   })();
@@ -1121,4 +1123,4 @@ if (import.meta.url === `file://${process.argv[1]}`) {
   main();
 }
 
-export { main, loadConfig, saveConfig };
+export { loadConfig, main, saveConfig };

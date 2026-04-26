@@ -1,12 +1,9 @@
 // Tests for analysis pipeline
 
-import { describe, it, expect, beforeEach } from "vitest";
-import { AnalysisJobQueue } from "../analysis-pipeline";
-import {
-  createHeuristicAnalyzers,
-  createLocalSearchAnalyzer,
-} from "../analyzers";
-import type { TerminalObserverEvent, EventStore } from "../../core/types";
+import { beforeEach, describe, expect, it } from 'vitest';
+import { AnalysisJobQueue } from '../analysis-pipeline';
+import { createHeuristicAnalyzers, createLocalSearchAnalyzer } from '../analyzers';
+import type { EventStore, TerminalObserverEvent } from '../../core/types';
 
 /**
  * Mock event store for testing
@@ -19,7 +16,7 @@ class MockEventStore implements EventStore {
   }
 
   async getEvents(
-    type?: import("../../core/types").EventType,
+    type?: import('../../core/types').EventType,
     since?: number,
     limit?: number,
   ): Promise<TerminalObserverEvent[]> {
@@ -47,10 +44,10 @@ class MockEventStore implements EventStore {
   ): Promise<TerminalObserverEvent[]> {
     return this.events
       .filter((e) => {
-        if ("commandId" in e) {
+        if ('commandId' in e) {
           return e.commandId === commandId;
         }
-        if (e.type === "command_start" && e.id === commandId) {
+        if (e.type === 'command_start' && e.id === commandId) {
           return true;
         }
         return false;
@@ -80,7 +77,7 @@ class MockEventStore implements EventStore {
 
   async getStats(): Promise<{
     totalEvents: number;
-    eventsByType: Record<import("../../core/types").EventType, number>;
+    eventsByType: Record<import('../../core/types').EventType, number>;
     sessions: number;
   }> {
     const eventsByType: Record<string, number> = {};
@@ -94,7 +91,7 @@ class MockEventStore implements EventStore {
     return {
       totalEvents: this.events.length,
       eventsByType: eventsByType as Record<
-        import("../../core/types").EventType,
+        import('../../core/types').EventType,
         number
       >,
       sessions: sessions.size,
@@ -102,7 +99,7 @@ class MockEventStore implements EventStore {
   }
 }
 
-describe("Analysis Pipeline", () => {
+describe('Analysis Pipeline', () => {
   let queue: AnalysisJobQueue;
   let store: EventStore;
 
@@ -118,37 +115,37 @@ describe("Analysis Pipeline", () => {
     queue.registerAnalyzer(createLocalSearchAnalyzer());
   });
 
-  describe("GitHub Rate Limit Error", () => {
-    it("should detect GitHub rate limit and suggest token", async () => {
-      const commandId = "cmd_123";
+  describe('GitHub Rate Limit Error', () => {
+    it('should detect GitHub rate limit and suggest token', async () => {
+      const commandId = 'cmd_123';
       const events: TerminalObserverEvent[] = [
         {
           id: commandId,
-          type: "command_start",
+          type: 'command_start',
           timestamp: Date.now(),
-          sessionId: "session_1",
-          shellType: "bash",
-          command: "nix",
-          args: ["flake", "update"],
-          cwd: "/tmp",
+          sessionId: 'session_1',
+          shellType: 'bash',
+          command: 'nix',
+          args: ['flake', 'update'],
+          cwd: '/tmp',
           envSummary: {},
         },
         {
-          id: "stderr_1",
-          type: "stderr_chunk",
+          id: 'stderr_1',
+          type: 'stderr_chunk',
           timestamp: Date.now() + 100,
-          sessionId: "session_1",
-          shellType: "bash",
+          sessionId: 'session_1',
+          shellType: 'bash',
           commandId,
-          chunk: "error: GitHub API rate limit exceeded",
+          chunk: 'error: GitHub API rate limit exceeded',
           chunkIndex: 0,
         },
         {
-          id: "exit_1",
-          type: "exit_status",
+          id: 'exit_1',
+          type: 'exit_status',
           timestamp: Date.now() + 200,
-          sessionId: "session_1",
-          shellType: "bash",
+          sessionId: 'session_1',
+          shellType: 'bash',
           commandId,
           exitCode: 1,
           success: false,
@@ -168,53 +165,53 @@ describe("Analysis Pipeline", () => {
 
       const job = queue.getJob(jobId!);
       expect(job).toBeTruthy();
-      expect(job!.status).toBe("completed");
+      expect(job!.status).toBe('completed');
 
       // Check for GitHub rate limit suggestion
       const suggestions = job!.suggestions.filter(
         (s) =>
-          s.title.includes("GitHub Rate Limit") ||
-          s.title.includes("rate limit"),
+          s.title.includes('GitHub Rate Limit') ||
+          s.title.includes('rate limit'),
       );
       expect(suggestions.length).toBeGreaterThan(0);
 
       const suggestion = suggestions[0];
       expect(suggestion.confidence).toBeGreaterThan(0.8);
-      expect(suggestion.actionableSnippet).toContain("GITHUB_TOKEN");
+      expect(suggestion.actionableSnippet).toContain('GITHUB_TOKEN');
     });
   });
 
-  describe("Missing Nix Attribute Error", () => {
-    it("should detect missing attribute and suggest fix", async () => {
-      const commandId = "cmd_456";
+  describe('Missing Nix Attribute Error', () => {
+    it('should detect missing attribute and suggest fix', async () => {
+      const commandId = 'cmd_456';
       const events: TerminalObserverEvent[] = [
         {
           id: commandId,
-          type: "command_start",
+          type: 'command_start',
           timestamp: Date.now(),
-          sessionId: "session_1",
-          shellType: "bash",
-          command: "nix",
-          args: ["build"],
-          cwd: "/tmp",
+          sessionId: 'session_1',
+          shellType: 'bash',
+          command: 'nix',
+          args: ['build'],
+          cwd: '/tmp',
           envSummary: {},
         },
         {
-          id: "stderr_1",
-          type: "stderr_chunk",
+          id: 'stderr_1',
+          type: 'stderr_chunk',
           timestamp: Date.now() + 100,
-          sessionId: "session_1",
-          shellType: "bash",
+          sessionId: 'session_1',
+          shellType: 'bash',
           commandId,
           chunk: 'error: attribute "cursor" missing',
           chunkIndex: 0,
         },
         {
-          id: "exit_1",
-          type: "exit_status",
+          id: 'exit_1',
+          type: 'exit_status',
           timestamp: Date.now() + 200,
-          sessionId: "session_1",
-          shellType: "bash",
+          sessionId: 'session_1',
+          shellType: 'bash',
           commandId,
           exitCode: 1,
           success: false,
@@ -232,52 +229,52 @@ describe("Analysis Pipeline", () => {
 
       const job = queue.getJob(jobId!);
       expect(job).toBeTruthy();
-      expect(job!.status).toBe("completed");
+      expect(job!.status).toBe('completed');
 
       const suggestions = job!.suggestions.filter(
         (s) =>
-          s.title.includes("Missing Nix Attribute") ||
-          s.description.includes("cursor"),
+          s.title.includes('Missing Nix Attribute') ||
+          s.description.includes('cursor'),
       );
       expect(suggestions.length).toBeGreaterThan(0);
 
       const suggestion = suggestions[0];
       expect(suggestion.confidence).toBeGreaterThan(0.8);
-      expect(suggestion.description).toContain("cursor");
+      expect(suggestion.description).toContain('cursor');
     });
   });
 
-  describe("Flake-Parts Template Path Error", () => {
-    it("should detect flake-parts template path error", async () => {
-      const commandId = "cmd_789";
+  describe('Flake-Parts Template Path Error', () => {
+    it('should detect flake-parts template path error', async () => {
+      const commandId = 'cmd_789';
       const events: TerminalObserverEvent[] = [
         {
           id: commandId,
-          type: "command_start",
+          type: 'command_start',
           timestamp: Date.now(),
-          sessionId: "session_1",
-          shellType: "bash",
-          command: "nix",
-          args: ["flake", "check"],
-          cwd: "/tmp",
+          sessionId: 'session_1',
+          shellType: 'bash',
+          command: 'nix',
+          args: ['flake', 'check'],
+          cwd: '/tmp',
           envSummary: {},
         },
         {
-          id: "stderr_1",
-          type: "stderr_chunk",
+          id: 'stderr_1',
+          type: 'stderr_chunk',
           timestamp: Date.now() + 100,
-          sessionId: "session_1",
-          shellType: "bash",
+          sessionId: 'session_1',
+          shellType: 'bash',
           commandId,
-          chunk: "error: template path not found",
+          chunk: 'error: template path not found',
           chunkIndex: 0,
         },
         {
-          id: "exit_1",
-          type: "exit_status",
+          id: 'exit_1',
+          type: 'exit_status',
           timestamp: Date.now() + 200,
-          sessionId: "session_1",
-          shellType: "bash",
+          sessionId: 'session_1',
+          shellType: 'bash',
           commandId,
           exitCode: 1,
           success: false,
@@ -295,12 +292,12 @@ describe("Analysis Pipeline", () => {
 
       const job = queue.getJob(jobId!);
       expect(job).toBeTruthy();
-      expect(job!.status).toBe("completed");
+      expect(job!.status).toBe('completed');
 
       const suggestions = job!.suggestions.filter(
         (s) =>
-          s.title.includes("Flake-Parts Template") ||
-          s.title.includes("template"),
+          s.title.includes('Flake-Parts Template') ||
+          s.title.includes('template'),
       );
       expect(suggestions.length).toBeGreaterThan(0);
 
@@ -309,37 +306,37 @@ describe("Analysis Pipeline", () => {
     });
   });
 
-  describe("Nix buildEnv Font Conflict", () => {
-    it("should detect font conflict in buildEnv", async () => {
-      const commandId = "cmd_font";
+  describe('Nix buildEnv Font Conflict', () => {
+    it('should detect font conflict in buildEnv', async () => {
+      const commandId = 'cmd_font';
       const events: TerminalObserverEvent[] = [
         {
           id: commandId,
-          type: "command_start",
+          type: 'command_start',
           timestamp: Date.now(),
-          sessionId: "session_1",
-          shellType: "bash",
-          command: "nix",
-          args: ["build"],
-          cwd: "/tmp",
+          sessionId: 'session_1',
+          shellType: 'bash',
+          command: 'nix',
+          args: ['build'],
+          cwd: '/tmp',
           envSummary: {},
         },
         {
-          id: "stderr_1",
-          type: "stderr_chunk",
+          id: 'stderr_1',
+          type: 'stderr_chunk',
           timestamp: Date.now() + 100,
-          sessionId: "session_1",
-          shellType: "bash",
+          sessionId: 'session_1',
+          shellType: 'bash',
           commandId,
-          chunk: "error: font conflict in buildEnv",
+          chunk: 'error: font conflict in buildEnv',
           chunkIndex: 0,
         },
         {
-          id: "exit_1",
-          type: "exit_status",
+          id: 'exit_1',
+          type: 'exit_status',
           timestamp: Date.now() + 200,
-          sessionId: "session_1",
-          shellType: "bash",
+          sessionId: 'session_1',
+          shellType: 'bash',
           commandId,
           exitCode: 1,
           success: false,
@@ -357,50 +354,50 @@ describe("Analysis Pipeline", () => {
 
       const job = queue.getJob(jobId!);
       expect(job).toBeTruthy();
-      expect(job!.status).toBe("completed");
+      expect(job!.status).toBe('completed');
 
       const suggestions = job!.suggestions.filter(
-        (s) => s.title.includes("Font Conflict") || s.title.includes("font"),
+        (s) => s.title.includes('Font Conflict') || s.title.includes('font'),
       );
       expect(suggestions.length).toBeGreaterThan(0);
 
       const suggestion = suggestions[0];
       expect(suggestion.confidence).toBeGreaterThan(0.7);
-      expect(suggestion.actionableSnippet).toContain("buildEnv");
+      expect(suggestion.actionableSnippet).toContain('buildEnv');
     });
   });
 
-  describe("Token Environment Variable Missing", () => {
-    it("should detect missing token env var", async () => {
-      const commandId = "cmd_token";
+  describe('Token Environment Variable Missing', () => {
+    it('should detect missing token env var', async () => {
+      const commandId = 'cmd_token';
       const events: TerminalObserverEvent[] = [
         {
           id: commandId,
-          type: "command_start",
+          type: 'command_start',
           timestamp: Date.now(),
-          sessionId: "session_1",
-          shellType: "bash",
-          command: "nix",
-          args: ["flake", "update"],
-          cwd: "/tmp",
+          sessionId: 'session_1',
+          shellType: 'bash',
+          command: 'nix',
+          args: ['flake', 'update'],
+          cwd: '/tmp',
           envSummary: {},
         },
         {
-          id: "stderr_1",
-          type: "stderr_chunk",
+          id: 'stderr_1',
+          type: 'stderr_chunk',
           timestamp: Date.now() + 100,
-          sessionId: "session_1",
-          shellType: "bash",
+          sessionId: 'session_1',
+          shellType: 'bash',
           commandId,
-          chunk: "error: GITHUB_TOKEN not set",
+          chunk: 'error: GITHUB_TOKEN not set',
           chunkIndex: 0,
         },
         {
-          id: "exit_1",
-          type: "exit_status",
+          id: 'exit_1',
+          type: 'exit_status',
           timestamp: Date.now() + 200,
-          sessionId: "session_1",
-          shellType: "bash",
+          sessionId: 'session_1',
+          shellType: 'bash',
           commandId,
           exitCode: 1,
           success: false,
@@ -418,17 +415,16 @@ describe("Analysis Pipeline", () => {
 
       const job = queue.getJob(jobId!);
       expect(job).toBeTruthy();
-      expect(job!.status).toBe("completed");
+      expect(job!.status).toBe('completed');
 
       const suggestions = job!.suggestions.filter(
-        (s) =>
-          s.title.includes("Token") || s.description.includes("GITHUB_TOKEN"),
+        (s) => s.title.includes('Token') || s.description.includes('GITHUB_TOKEN'),
       );
       expect(suggestions.length).toBeGreaterThan(0);
 
       const suggestion = suggestions[0];
       expect(suggestion.confidence).toBeGreaterThan(0.7);
-      expect(suggestion.actionableSnippet).toContain("GITHUB_TOKEN");
+      expect(suggestion.actionableSnippet).toContain('GITHUB_TOKEN');
     });
   });
 });

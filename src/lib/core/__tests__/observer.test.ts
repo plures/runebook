@@ -1,15 +1,15 @@
 // Integration test for terminal observer
 // Tests command capture, event persistence, and retrieval
 
-import { describe, it, expect, beforeEach, afterEach } from "vitest";
-import { createObserver, type ObserverConfig } from "../observer";
-import { LocalFileStore } from "../storage";
-import { exec } from "child_process";
-import { promisify } from "util";
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { createObserver, type ObserverConfig } from '../observer';
+import { LocalFileStore } from '../storage';
+import { exec } from 'child_process';
+import { promisify } from 'util';
 
 const execAsync = promisify(exec);
 
-describe("TerminalObserver Integration", () => {
+describe('TerminalObserver Integration', () => {
   let observer: ReturnType<typeof createObserver>;
   let config: ObserverConfig;
 
@@ -31,12 +31,12 @@ describe("TerminalObserver Integration", () => {
     }
   });
 
-  it("should initialize observer", async () => {
+  it('should initialize observer', async () => {
     await observer.initialize();
     expect(observer.isActive()).toBe(false); // Not started yet
   });
 
-  it("should start and stop observer", async () => {
+  it('should start and stop observer', async () => {
     await observer.initialize();
     await observer.start();
     expect(observer.isActive()).toBe(true);
@@ -44,61 +44,61 @@ describe("TerminalObserver Integration", () => {
     expect(observer.isActive()).toBe(false);
   });
 
-  it("should capture command execution programmatically", async () => {
+  it('should capture command execution programmatically', async () => {
     await observer.initialize();
     await observer.start();
 
     const commandId = await observer.captureCommand(
-      "echo",
-      ["hello", "world"],
+      'echo',
+      ['hello', 'world'],
       process.cwd(),
       process.env as Record<string, string>,
     );
 
     expect(commandId).toBeDefined();
-    expect(commandId).toContain("cmd_");
+    expect(commandId).toContain('cmd_');
 
     // Capture result
-    await observer.captureCommandResult(commandId, "hello world\n", "", 0);
+    await observer.captureCommandResult(commandId, 'hello world\n', '', 0);
 
     // Retrieve events
     const events = await observer.getEventsByCommand(commandId);
 
     expect(events.length).toBeGreaterThan(0);
 
-    const startEvent = events.find((e) => e.type === "command_start");
+    const startEvent = events.find((e) => e.type === 'command_start');
     expect(startEvent).toBeDefined();
-    if (startEvent && startEvent.type === "command_start") {
-      expect(startEvent.command).toBe("echo");
-      expect(startEvent.args).toEqual(["hello", "world"]);
+    if (startEvent && startEvent.type === 'command_start') {
+      expect(startEvent.command).toBe('echo');
+      expect(startEvent.args).toEqual(['hello', 'world']);
     }
 
-    const stdoutEvent = events.find((e) => e.type === "stdout_chunk");
+    const stdoutEvent = events.find((e) => e.type === 'stdout_chunk');
     expect(stdoutEvent).toBeDefined();
-    if (stdoutEvent && stdoutEvent.type === "stdout_chunk") {
-      expect(stdoutEvent.chunk).toContain("hello world");
+    if (stdoutEvent && stdoutEvent.type === 'stdout_chunk') {
+      expect(stdoutEvent.chunk).toContain('hello world');
     }
 
-    const exitEvent = events.find((e) => e.type === "exit_status");
+    const exitEvent = events.find((e) => e.type === 'exit_status');
     expect(exitEvent).toBeDefined();
-    if (exitEvent && exitEvent.type === "exit_status") {
+    if (exitEvent && exitEvent.type === 'exit_status') {
       expect(exitEvent.exitCode).toBe(0);
       expect(exitEvent.success).toBe(true);
     }
   });
 
-  it("should persist events to storage", async () => {
+  it('should persist events to storage', async () => {
     await observer.initialize();
     await observer.start();
 
     const commandId = await observer.captureCommand(
-      "echo",
-      ["test"],
+      'echo',
+      ['test'],
       process.cwd(),
       process.env as Record<string, string>,
     );
 
-    await observer.captureCommandResult(commandId, "test\n", "", 0);
+    await observer.captureCommandResult(commandId, 'test\n', '', 0);
 
     // Stop and create new observer instance
     await observer.stop();
@@ -113,51 +113,51 @@ describe("TerminalObserver Integration", () => {
     await newObserver.stop();
   });
 
-  it("should redact secrets in environment variables", async () => {
+  it('should redact secrets in environment variables', async () => {
     const envWithSecrets = {
       ...process.env,
-      API_KEY: "sk-1234567890abcdef",
-      TOKEN: "secret-token-value",
-      PATH: "/usr/bin", // Should not be redacted
+      API_KEY: 'sk-1234567890abcdef',
+      TOKEN: 'secret-token-value',
+      PATH: '/usr/bin', // Should not be redacted
     };
 
     await observer.initialize();
     await observer.start();
 
     const commandId = await observer.captureCommand(
-      "echo",
-      ["test"],
+      'echo',
+      ['test'],
       process.cwd(),
       envWithSecrets as Record<string, string>,
     );
 
     const events = await observer.getEventsByCommand(commandId);
-    const startEvent = events.find((e) => e.type === "command_start");
+    const startEvent = events.find((e) => e.type === 'command_start');
 
     expect(startEvent).toBeDefined();
-    if (startEvent && startEvent.type === "command_start") {
+    if (startEvent && startEvent.type === 'command_start') {
       // Secrets should be redacted
-      expect(startEvent.envSummary.API_KEY).not.toBe("sk-1234567890abcdef");
-      expect(startEvent.envSummary.TOKEN).not.toBe("secret-token-value");
+      expect(startEvent.envSummary.API_KEY).not.toBe('sk-1234567890abcdef');
+      expect(startEvent.envSummary.TOKEN).not.toBe('secret-token-value');
 
       // Non-secrets should be preserved
-      expect(startEvent.envSummary.PATH).toBe("/usr/bin");
+      expect(startEvent.envSummary.PATH).toBe('/usr/bin');
     }
   });
 
-  it("should get statistics", async () => {
+  it('should get statistics', async () => {
     await observer.initialize();
     await observer.start();
 
     // Capture a few commands
     for (let i = 0; i < 3; i++) {
       const commandId = await observer.captureCommand(
-        "echo",
+        'echo',
         [`test${i}`],
         process.cwd(),
         process.env as Record<string, string>,
       );
-      await observer.captureCommandResult(commandId, `test${i}\n`, "", 0);
+      await observer.captureCommandResult(commandId, `test${i}\n`, '', 0);
     }
 
     const stats = await observer.getStats();
@@ -167,60 +167,60 @@ describe("TerminalObserver Integration", () => {
     expect(stats.sessions).toBeGreaterThan(0);
   });
 
-  it("should filter events by type", async () => {
+  it('should filter events by type', async () => {
     await observer.initialize();
     await observer.start();
 
     const commandId = await observer.captureCommand(
-      "echo",
-      ["test"],
+      'echo',
+      ['test'],
       process.cwd(),
       process.env as Record<string, string>,
     );
-    await observer.captureCommandResult(commandId, "test\n", "", 0);
+    await observer.captureCommandResult(commandId, 'test\n', '', 0);
 
-    const commandStartEvents = await observer.getEvents("command_start");
+    const commandStartEvents = await observer.getEvents('command_start');
     expect(commandStartEvents.length).toBeGreaterThan(0);
-    expect(commandStartEvents.every((e) => e.type === "command_start")).toBe(
+    expect(commandStartEvents.every((e) => e.type === 'command_start')).toBe(
       true,
     );
 
-    const stdoutEvents = await observer.getEvents("stdout_chunk");
+    const stdoutEvents = await observer.getEvents('stdout_chunk');
     expect(stdoutEvents.length).toBeGreaterThan(0);
-    expect(stdoutEvents.every((e) => e.type === "stdout_chunk")).toBe(true);
+    expect(stdoutEvents.every((e) => e.type === 'stdout_chunk')).toBe(true);
   });
 
-  it("should limit events when retrieving", async () => {
+  it('should limit events when retrieving', async () => {
     await observer.initialize();
     await observer.start();
 
     // Capture multiple commands
     for (let i = 0; i < 5; i++) {
       const commandId = await observer.captureCommand(
-        "echo",
+        'echo',
         [`test${i}`],
         process.cwd(),
         process.env as Record<string, string>,
       );
-      await observer.captureCommandResult(commandId, `test${i}\n`, "", 0);
+      await observer.captureCommandResult(commandId, `test${i}\n`, '', 0);
     }
 
     const limitedEvents = await observer.getEvents(undefined, undefined, 3);
     expect(limitedEvents.length).toBeLessThanOrEqual(3);
   });
 
-  it("should clear old events", async () => {
+  it('should clear old events', async () => {
     await observer.initialize();
     await observer.start();
 
     // Capture a command
     const commandId = await observer.captureCommand(
-      "echo",
-      ["test"],
+      'echo',
+      ['test'],
       process.cwd(),
       process.env as Record<string, string>,
     );
-    await observer.captureCommandResult(commandId, "test\n", "", 0);
+    await observer.captureCommandResult(commandId, 'test\n', '', 0);
 
     // Verify event exists
     let events = await observer.getEvents();

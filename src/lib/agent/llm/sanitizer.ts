@@ -1,7 +1,7 @@
 // Context Sanitization for LLM Safety
 // Redacts secrets, tokens, and sensitive information before sending to LLM
 
-import type { AnalysisContext, SanitizedContext } from "./types";
+import type { AnalysisContext, SanitizedContext } from './types';
 
 /**
  * Patterns to redact from context
@@ -70,22 +70,21 @@ function sanitizeEnv(env: Record<string, string>): {
     const keyLower = key.toLowerCase();
     // Redact common secret env vars
     if (
-      keyLower.includes("password") ||
-      keyLower.includes("secret") ||
-      keyLower.includes("token") ||
-      keyLower.includes("key") ||
-      keyLower.includes("credential") ||
-      keyLower.includes("api_key")
+      keyLower.includes('password') ||
+      keyLower.includes('secret') ||
+      keyLower.includes('token') ||
+      keyLower.includes('key') ||
+      keyLower.includes('credential') ||
+      keyLower.includes('api_key')
     ) {
-      sanitized[key] = "[REDACTED]";
+      sanitized[key] = '[REDACTED]';
       redactions.push({
         pattern: `${key}=${value}`,
         replaced: `${key}=[REDACTED]`,
       });
     } else {
       // Still check value for secrets
-      const { sanitized: sanitizedValue, redactions: valueRedactions } =
-        redactString(value);
+      const { sanitized: sanitizedValue, redactions: valueRedactions } = redactString(value);
       sanitized[key] = sanitizedValue;
       redactions.push(
         ...valueRedactions.map((r) => ({
@@ -109,10 +108,8 @@ export function sanitizeContext(context: AnalysisContext): SanitizedContext {
   );
 
   // Sanitize stdout and stderr
-  const { sanitized: sanitizedStdout, redactions: stdoutRedactions } =
-    redactString(context.stdout);
-  const { sanitized: sanitizedStderr, redactions: stderrRedactions } =
-    redactString(context.stderr);
+  const { sanitized: sanitizedStdout, redactions: stdoutRedactions } = redactString(context.stdout);
+  const { sanitized: sanitizedStderr, redactions: stderrRedactions } = redactString(context.stderr);
 
   // Sanitize command args (might contain secrets)
   const sanitizedArgs = context.args.map((arg) => {
@@ -129,9 +126,9 @@ export function sanitizeContext(context: AnalysisContext): SanitizedContext {
   };
 
   const redactions = [
-    ...envRedactions.map((r) => ({ ...r, type: "env" as const })),
-    ...stdoutRedactions.map((r) => ({ ...r, type: "stdout" as const })),
-    ...stderrRedactions.map((r) => ({ ...r, type: "stderr" as const })),
+    ...envRedactions.map((r) => ({ ...r, type: 'env' as const })),
+    ...stdoutRedactions.map((r) => ({ ...r, type: 'stdout' as const })),
+    ...stderrRedactions.map((r) => ({ ...r, type: 'stderr' as const })),
   ];
 
   return {
@@ -147,9 +144,9 @@ export function sanitizeContext(context: AnalysisContext): SanitizedContext {
 export function formatContextForReview(sanitized: SanitizedContext): string {
   const lines: string[] = [];
 
-  lines.push("=== Context to be sent to LLM ===\n");
+  lines.push('=== Context to be sent to LLM ===\n');
   lines.push(
-    `Command: ${sanitized.sanitized.command} ${sanitized.sanitized.args.join(" ")}`,
+    `Command: ${sanitized.sanitized.command} ${sanitized.sanitized.args.join(' ')}`,
   );
   lines.push(`CWD: ${sanitized.sanitized.cwd}`);
   lines.push(`Exit Code: ${sanitized.sanitized.exitCode}\n`);
@@ -158,18 +155,18 @@ export function formatContextForReview(sanitized: SanitizedContext): string {
     lines.push(`Stderr (${sanitized.sanitized.stderr.length} chars):`);
     lines.push(sanitized.sanitized.stderr.substring(0, 500));
     if (sanitized.sanitized.stderr.length > 500) {
-      lines.push("... (truncated)");
+      lines.push('... (truncated)');
     }
-    lines.push("");
+    lines.push('');
   }
 
   if (sanitized.sanitized.stdout) {
     lines.push(`Stdout (${sanitized.sanitized.stdout.length} chars):`);
     lines.push(sanitized.sanitized.stdout.substring(0, 500));
     if (sanitized.sanitized.stdout.length > 500) {
-      lines.push("... (truncated)");
+      lines.push('... (truncated)');
     }
-    lines.push("");
+    lines.push('');
   }
 
   if (sanitized.redactions.length > 0) {
@@ -184,5 +181,5 @@ export function formatContextForReview(sanitized: SanitizedContext): string {
     }
   }
 
-  return lines.join("\n");
+  return lines.join('\n');
 }

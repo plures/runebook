@@ -1,12 +1,12 @@
 import type {
-  Port,
-  TextNode,
-  TerminalNode,
-  InputNode,
   DisplayNode,
-  TransformNode,
+  InputNode,
+  Port,
   SubCanvasNode,
-} from "../types/canvas";
+  TerminalNode,
+  TextNode,
+  TransformNode,
+} from '../types/canvas';
 
 /**
  * Resolve the index of a port by its ID within a port array.
@@ -29,17 +29,17 @@ export function createTextNode({
   id,
   x,
   y,
-  label = "Note",
+  label = 'Note',
 }: CreateNodeOptions): TextNode {
   return {
     id,
-    type: "text",
+    type: 'text',
     position: { x, y },
     size: { width: 280, height: 200 },
     label,
-    content: "",
-    inputs: [{ id: "in", name: "in", type: "input" }],
-    outputs: [{ id: "out", name: "out", type: "output" }],
+    content: '',
+    inputs: [{ id: 'in', name: 'in', type: 'input' }],
+    outputs: [{ id: 'out', name: 'out', type: 'output' }],
   };
 }
 
@@ -48,19 +48,19 @@ export function createTerminalNode({
   id,
   x,
   y,
-  label = "Terminal",
+  label = 'Terminal',
 }: CreateNodeOptions): TerminalNode {
   return {
     id,
-    type: "terminal",
+    type: 'terminal',
     position: { x, y },
     size: { width: 320, height: 280 },
     label,
-    command: "echo",
-    args: ["Hello, RuneBook!"],
+    command: 'echo',
+    args: ['Hello, RuneBook!'],
     autoStart: false,
     inputs: [],
-    outputs: [{ id: "stdout", name: "stdout", type: "output" }],
+    outputs: [{ id: 'stdout', name: 'stdout', type: 'output' }],
   };
 }
 
@@ -69,18 +69,18 @@ export function createInputNode({
   id,
   x,
   y,
-  label = "Text Input",
+  label = 'Text Input',
 }: CreateNodeOptions): InputNode {
   return {
     id,
-    type: "input",
+    type: 'input',
     position: { x, y },
     size: { width: 280, height: 160 },
     label,
-    inputType: "text",
-    value: "",
+    inputType: 'text',
+    value: '',
     inputs: [],
-    outputs: [{ id: "value", name: "value", type: "output" }],
+    outputs: [{ id: 'value', name: 'value', type: 'output' }],
   };
 }
 
@@ -89,17 +89,17 @@ export function createDisplayNode({
   id,
   x,
   y,
-  label = "Display",
+  label = 'Display',
 }: CreateNodeOptions): DisplayNode {
   return {
     id,
-    type: "display",
+    type: 'display',
     position: { x, y },
     size: { width: 320, height: 240 },
     label,
-    displayType: "text",
-    content: "",
-    inputs: [{ id: "input", name: "input", type: "input" }],
+    displayType: 'text',
+    content: '',
+    inputs: [{ id: 'input', name: 'input', type: 'input' }],
     outputs: [],
   };
 }
@@ -109,18 +109,18 @@ export function createTransformNode({
   id,
   x,
   y,
-  label = "Transform",
+  label = 'Transform',
 }: CreateNodeOptions): TransformNode {
   return {
     id,
-    type: "transform",
+    type: 'transform',
     position: { x, y },
     size: { width: 320, height: 280 },
     label,
-    transformType: "map",
-    code: "item",
-    inputs: [{ id: "input", name: "input", type: "input" }],
-    outputs: [{ id: "output", name: "output", type: "output" }],
+    transformType: 'map',
+    code: 'item',
+    inputs: [{ id: 'input', name: 'input', type: 'input' }],
+    outputs: [{ id: 'output', name: 'output', type: 'output' }],
   };
 }
 
@@ -136,23 +136,23 @@ export function createSubCanvasNode({
   id,
   x,
   y,
-  label = "Sub-Canvas",
+  label = 'Sub-Canvas',
 }: CreateSubCanvasNodeOptions): SubCanvasNode {
   return {
     id,
-    type: "sub-canvas",
+    type: 'sub-canvas',
     position: { x, y },
     size: { width: 320, height: 200 },
     label,
-    inputs: [{ id: "in", name: "in", type: "input" }],
-    outputs: [{ id: "out", name: "out", type: "output" }],
+    inputs: [{ id: 'in', name: 'in', type: 'input' }],
+    outputs: [{ id: 'out', name: 'out', type: 'output' }],
     children: {
       id: `canvas-${id}`,
       name: label,
-      description: "",
+      description: '',
       nodes: [],
       connections: [],
-      version: "1.0.0",
+      version: '1.0.0',
     },
   };
 }

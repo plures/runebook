@@ -1,22 +1,16 @@
 // Main Ambient Agent Mode coordinator
 // Orchestrates event capture, storage, analysis, and suggestions
 
+import { captureCommand, captureResult, initCapture, stopCapture, updateContext } from './capture';
+import { createStorage, type EventStorage } from './memory';
+import { type Analyzer, createAnalyzer } from './analysis';
 import {
-  initCapture,
-  stopCapture,
-  captureCommand,
-  captureResult,
-  updateContext,
-} from "./capture";
-import { createStorage, type EventStorage } from "./memory";
-import { createAnalyzer, type Analyzer } from "./analysis";
-import {
-  MemorySuggestionStore,
   formatSuggestionsForCLI,
+  MemorySuggestionStore,
   type SuggestionStore,
-} from "./suggestions";
-import { updateAgentStatus, getAgentStatus } from "./status";
-import type { TerminalEvent, AgentConfig, Suggestion } from "../types/agent";
+} from './suggestions';
+import { getAgentStatus, updateAgentStatus } from './status';
+import type { AgentConfig, Suggestion, TerminalEvent } from '../types/agent';
 
 export class AmbientAgent {
   private storage: EventStorage;
@@ -35,31 +29,31 @@ export class AmbientAgent {
     this.suggestionStore = new MemorySuggestionStore();
 
     // In Node.js environment, upgrade to file-based store
-    if (typeof process !== "undefined" && process.versions?.node) {
-      import("./node-suggestions")
+    if (typeof process !== 'undefined' && process.versions?.node) {
+      import('./node-suggestions')
         .then(({ FileSuggestionStore }) => {
           this.suggestionStore = new FileSuggestionStore();
           this.suggestionStore
             .load()
-            .catch((err) => console.error("Failed to load suggestions:", err));
+            .catch((err) => console.error('Failed to load suggestions:', err));
         })
         .catch(() => {
           // Fallback already initialized with MemorySuggestionStore
           console.warn(
-            "FileSuggestionStore not available, using MemorySuggestionStore",
+            'FileSuggestionStore not available, using MemorySuggestionStore',
           );
         });
     }
 
     if (config.enabled && config.captureEvents) {
       initCapture(this.sessionId, {
-        workingDirectory: process.cwd?.() || "",
+        workingDirectory: process.cwd?.() || '',
         environment: process.env as Record<string, string>,
       });
     }
 
     // Initialize status
-    updateAgentStatus({ status: "idle" });
+    updateAgentStatus({ status: 'idle' });
   }
 
   /**
@@ -73,7 +67,7 @@ export class AmbientAgent {
     startTime: number,
   ): Promise<TerminalEvent> {
     if (!this.config.enabled || !this.config.captureEvents) {
-      throw new Error("Agent not enabled or capture disabled");
+      throw new Error('Agent not enabled or capture disabled');
     }
 
     const event = captureCommand(command, args, env, cwd, startTime);
@@ -96,7 +90,7 @@ export class AmbientAgent {
 
     // Update status to analyzing
     updateAgentStatus({
-      status: "analyzing",
+      status: 'analyzing',
       lastCommand: event.command,
       lastCommandTimestamp: event.timestamp,
     });
@@ -134,9 +128,9 @@ export class AmbientAgent {
     // Update status based on suggestions
     const allSuggestions = this.suggestionStore.suggestions;
     const highPriorityCount = allSuggestions.filter(
-      (s) => s.priority === "high",
+      (s) => s.priority === 'high',
     ).length;
-    const status = highPriorityCount > 0 ? "issues_found" : "idle";
+    const status = highPriorityCount > 0 ? 'issues_found' : 'idle';
 
     updateAgentStatus({
       status,
@@ -152,7 +146,7 @@ export class AmbientAgent {
   /**
    * Get current suggestions
    */
-  getSuggestions(priority?: "low" | "medium" | "high"): Suggestion[] {
+  getSuggestions(priority?: 'low' | 'medium' | 'high'): Suggestion[] {
     if (priority) {
       return this.suggestionStore.getByPriority(priority);
     }
@@ -162,7 +156,7 @@ export class AmbientAgent {
   /**
    * Get suggestions formatted for CLI
    */
-  getSuggestionsCLI(priority?: "low" | "medium" | "high"): string {
+  getSuggestionsCLI(priority?: 'low' | 'medium' | 'high'): string {
     const suggestions = this.getSuggestions(priority);
     return formatSuggestionsForCLI(suggestions);
   }
@@ -241,7 +235,7 @@ export class AmbientAgent {
       stopCapture();
     } else if (this.config.captureEvents) {
       initCapture(this.sessionId, {
-        workingDirectory: process.cwd?.() || "",
+        workingDirectory: process.cwd?.() || '',
         environment: process.env as Record<string, string>,
       });
     }

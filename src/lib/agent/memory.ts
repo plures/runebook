@@ -1,12 +1,7 @@
 // Memory/storage layer for Ambient Agent Mode
 // Stores terminal events and patterns for analysis
 
-import type {
-  TerminalEvent,
-  CommandPattern,
-  Suggestion,
-  AgentConfig,
-} from "../types/agent";
+import type { AgentConfig, CommandPattern, Suggestion, TerminalEvent } from '../types/agent';
 
 export interface EventStorage {
   saveEvent(event: TerminalEvent): Promise<void>;
@@ -115,8 +110,7 @@ export class MemoryStorage implements EventStorage {
   }> {
     const uniqueCommands = new Set(this.events.map((e) => e.command)).size;
     const successful = this.events.filter((e) => e.success).length;
-    const avgSuccessRate =
-      this.events.length > 0 ? successful / this.events.length : 0;
+    const avgSuccessRate = this.events.length > 0 ? successful / this.events.length : 0;
     const totalDuration = this.events.reduce(
       (sum, e) => sum + (e.duration || 0),
       0,
@@ -153,21 +147,19 @@ export class MemoryStorage implements EventStorage {
     // Update success rate
     const commandEvents = await this.getEventsByCommand(event.command);
     const successful = commandEvents.filter((e) => e.success).length;
-    pattern.successRate =
-      commandEvents.length > 0 ? successful / commandEvents.length : 0;
+    pattern.successRate = commandEvents.length > 0 ? successful / commandEvents.length : 0;
 
     // Update average duration
     const durations = commandEvents
       .filter((e) => e.duration !== undefined)
       .map((e) => e.duration!);
-    pattern.avgDuration =
-      durations.length > 0
-        ? durations.reduce((sum, d) => sum + d, 0) / durations.length
-        : 0;
+    pattern.avgDuration = durations.length > 0
+      ? durations.reduce((sum, d) => sum + d, 0) / durations.length
+      : 0;
 
     // Track common args
     if (event.args.length > 0) {
-      const argKey = event.args.join(" ");
+      const argKey = event.args.join(' ');
       const existing = pattern.commonArgs.find((a) => a === argKey);
       if (!existing) {
         pattern.commonArgs.push(argKey);
@@ -186,9 +178,9 @@ export class MemoryStorage implements EventStorage {
  */
 export class PluresDBStorage implements EventStorage {
   private db: any = null;
-  private readonly eventPrefix = "agent:event:";
-  private readonly patternPrefix = "agent:pattern:";
-  private readonly suggestionPrefix = "agent:suggestion:";
+  private readonly eventPrefix = 'agent:event:';
+  private readonly patternPrefix = 'agent:pattern:';
+  private readonly suggestionPrefix = 'agent:suggestion:';
   private initialized = false;
   private config: AgentConfig;
 
@@ -202,13 +194,13 @@ export class PluresDBStorage implements EventStorage {
     }
 
     try {
-      const { SQLiteCompatibleAPI } = await import("pluresdb");
+      const { SQLiteCompatibleAPI } = await import('pluresdb');
 
       this.db = new SQLiteCompatibleAPI({
         config: {
           port: 34567,
-          host: "localhost",
-          dataDir: this.config.storagePath || "./pluresdb-data",
+          host: 'localhost',
+          dataDir: this.config.storagePath || './pluresdb-data',
         },
         autoStart: true,
       });
@@ -216,8 +208,8 @@ export class PluresDBStorage implements EventStorage {
       await this.db.start();
       this.initialized = true;
     } catch (error) {
-      console.error("Failed to initialize PluresDB for agent storage:", error);
-      throw new Error("PluresDB initialization failed for agent storage");
+      console.error('Failed to initialize PluresDB for agent storage:', error);
+      throw new Error('PluresDB initialization failed for agent storage');
     }
   }
 
@@ -240,7 +232,7 @@ export class PluresDBStorage implements EventStorage {
           events.push(event as TerminalEvent);
         }
       } catch (error) {
-        console.error("Failed to load event:", error);
+        console.error('Failed to load event:', error);
       }
     }
 
@@ -269,7 +261,7 @@ export class PluresDBStorage implements EventStorage {
           patterns.push(pattern as CommandPattern);
         }
       } catch (error) {
-        console.error("Failed to load pattern:", error);
+        console.error('Failed to load pattern:', error);
       }
     }
 
@@ -300,7 +292,7 @@ export class PluresDBStorage implements EventStorage {
           suggestions.push(suggestion as Suggestion);
         }
       } catch (error) {
-        console.error("Failed to load suggestion:", error);
+        console.error('Failed to load suggestion:', error);
       }
     }
 
@@ -319,7 +311,7 @@ export class PluresDBStorage implements EventStorage {
           await this.db.delete(key);
         }
       } catch (error) {
-        console.error("Failed to delete event:", error);
+        console.error('Failed to delete event:', error);
       }
     }
   }
@@ -349,15 +341,13 @@ export class PluresDBStorage implements EventStorage {
     const existingEvents = await this.getEventsByCommand(event.command);
 
     const successful = existingEvents.filter((e) => e.success).length;
-    const successRate =
-      existingEvents.length > 0 ? successful / existingEvents.length : 0;
+    const successRate = existingEvents.length > 0 ? successful / existingEvents.length : 0;
     const durations = existingEvents
       .filter((e) => e.duration !== undefined)
       .map((e) => e.duration!);
-    const avgDuration =
-      durations.length > 0
-        ? durations.reduce((sum, d) => sum + d, 0) / durations.length
-        : 0;
+    const avgDuration = durations.length > 0
+      ? durations.reduce((sum, d) => sum + d, 0) / durations.length
+      : 0;
 
     const pattern: CommandPattern = {
       id: patternId,
@@ -367,7 +357,7 @@ export class PluresDBStorage implements EventStorage {
       successRate,
       avgDuration,
       commonArgs: [
-        ...new Set(existingEvents.flatMap((e) => e.args.join(" "))),
+        ...new Set(existingEvents.flatMap((e) => e.args.join(' '))),
       ].slice(0, 10),
       commonEnv: {},
     };

@@ -1,14 +1,14 @@
 // Suggestion rendering and management for Ambient Agent Mode
 
-import type { Suggestion } from "../types/agent";
+import type { Suggestion } from '../types/agent';
 
 export interface SuggestionStore {
   suggestions: Suggestion[];
   add(suggestion: Suggestion): void;
   remove(id: string): void;
   clear(): void;
-  getByPriority(priority: "low" | "medium" | "high"): Suggestion[];
-  getByType(type: Suggestion["type"]): Suggestion[];
+  getByPriority(priority: 'low' | 'medium' | 'high'): Suggestion[];
+  getByType(type: Suggestion['type']): Suggestion[];
   getForCommand(command: string): Suggestion[];
   getTop(limit?: number): Suggestion[];
   save(): Promise<void>;
@@ -40,11 +40,11 @@ export class MemorySuggestionStore implements SuggestionStore {
     this.suggestions = [];
   }
 
-  getByPriority(priority: "low" | "medium" | "high"): Suggestion[] {
+  getByPriority(priority: 'low' | 'medium' | 'high'): Suggestion[] {
     return this.suggestions.filter((s) => s.priority === priority);
   }
 
-  getByType(type: Suggestion["type"]): Suggestion[] {
+  getByType(type: Suggestion['type']): Suggestion[] {
     return this.suggestions.filter((s) => s.type === type);
   }
 
@@ -58,8 +58,7 @@ export class MemorySuggestionStore implements SuggestionStore {
     // Sort by priority (high > medium > low) and timestamp (newest first)
     const priorityOrder = { high: 3, medium: 2, low: 1 };
     const sorted = [...this.suggestions].sort((a, b) => {
-      const priorityDiff =
-        priorityOrder[b.priority] - priorityOrder[a.priority];
+      const priorityDiff = priorityOrder[b.priority] - priorityOrder[a.priority];
       if (priorityDiff !== 0) return priorityDiff;
       return b.timestamp - a.timestamp;
     });
@@ -80,17 +79,17 @@ export class MemorySuggestionStore implements SuggestionStore {
  */
 export function formatSuggestion(suggestion: Suggestion): string {
   const priorityEmoji = {
-    low: "💡",
-    medium: "⚡",
-    high: "⚠️",
+    low: '💡',
+    medium: '⚡',
+    high: '⚠️',
   };
 
   const typeEmoji = {
-    command: "▶️",
-    optimization: "⚡",
-    shortcut: "🔗",
-    warning: "⚠️",
-    tip: "💡",
+    command: '▶️',
+    optimization: '⚡',
+    shortcut: '🔗',
+    warning: '⚠️',
+    tip: '💡',
   };
 
   const emoji = `${priorityEmoji[suggestion.priority]} ${typeEmoji[suggestion.type]}`;
@@ -98,7 +97,7 @@ export function formatSuggestion(suggestion: Suggestion): string {
   output += `   ${suggestion.description}\n`;
 
   if (suggestion.command) {
-    const args = suggestion.args ? suggestion.args.join(" ") : "";
+    const args = suggestion.args ? suggestion.args.join(' ') : '';
     output += `   Command: ${suggestion.command} ${args}\n`;
   }
 
@@ -110,34 +109,34 @@ export function formatSuggestion(suggestion: Suggestion): string {
  */
 export function formatSuggestionsForCLI(suggestions: Suggestion[]): string {
   if (suggestions.length === 0) {
-    return "No suggestions available.\n";
+    return 'No suggestions available.\n';
   }
 
   let output = `\n=== Suggestions (${suggestions.length}) ===\n\n`;
 
   // Group by priority
-  const high = suggestions.filter((s) => s.priority === "high");
-  const medium = suggestions.filter((s) => s.priority === "medium");
-  const low = suggestions.filter((s) => s.priority === "low");
+  const high = suggestions.filter((s) => s.priority === 'high');
+  const medium = suggestions.filter((s) => s.priority === 'medium');
+  const low = suggestions.filter((s) => s.priority === 'low');
 
   if (high.length > 0) {
-    output += "HIGH PRIORITY:\n";
+    output += 'HIGH PRIORITY:\n';
     high.forEach((s) => {
-      output += formatSuggestion(s) + "\n";
+      output += formatSuggestion(s) + '\n';
     });
   }
 
   if (medium.length > 0) {
-    output += "MEDIUM PRIORITY:\n";
+    output += 'MEDIUM PRIORITY:\n';
     medium.forEach((s) => {
-      output += formatSuggestion(s) + "\n";
+      output += formatSuggestion(s) + '\n';
     });
   }
 
   if (low.length > 0) {
-    output += "LOW PRIORITY:\n";
+    output += 'LOW PRIORITY:\n';
     low.forEach((s) => {
-      output += formatSuggestion(s) + "\n";
+      output += formatSuggestion(s) + '\n';
     });
   }
 
@@ -149,9 +148,9 @@ export function formatSuggestionsForCLI(suggestions: Suggestion[]): string {
  */
 export function formatSuggestionCompact(suggestion: Suggestion): string {
   const prioritySymbol = {
-    low: "•",
-    medium: "▲",
-    high: "⚠",
+    low: '•',
+    medium: '▲',
+    high: '⚠',
   };
 
   return `${prioritySymbol[suggestion.priority]} ${suggestion.title}`;
@@ -162,7 +161,7 @@ export function formatSuggestionCompact(suggestion: Suggestion): string {
  */
 export function formatTopSuggestion(suggestion: Suggestion | null): string {
   if (!suggestion) {
-    return "";
+    return '';
   }
   return formatSuggestionCompact(suggestion);
 }

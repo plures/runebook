@@ -1,10 +1,10 @@
 // LLM Provider Factory
 // Creates appropriate provider based on config
 
-import type { LLMProvider, LLMProviderConfig } from "../types";
-import { OllamaProvider } from "./ollama";
-import { OpenAIProvider } from "./openai";
-import { MockProvider } from "./mock";
+import type { LLMProvider, LLMProviderConfig } from '../types';
+import { OllamaProvider } from './ollama';
+import { OpenAIProvider } from './openai';
+import { MockProvider } from './mock';
 
 export { MockProvider, OllamaProvider, OpenAIProvider };
 
@@ -19,23 +19,23 @@ export function createLLMProvider(
   }
 
   switch (config.type) {
-    case "ollama":
+    case 'ollama':
       return new OllamaProvider(config);
 
-    case "openai":
+    case 'openai':
       try {
         return new OpenAIProvider(config);
       } catch (error) {
-        console.error("Failed to create OpenAI provider:", error);
+        console.error('Failed to create OpenAI provider:', error);
         return null;
       }
 
-    case "mock":
+    case 'mock':
       return new MockProvider(config);
 
-    case "mcp":
+    case 'mcp':
       // TODO: Implement MCP provider
-      console.warn("MCP provider not yet implemented");
+      console.warn('MCP provider not yet implemented');
       return null;
 
     default:

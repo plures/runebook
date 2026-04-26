@@ -1,14 +1,14 @@
 // LLM/MCP Integration Types
 // Defines contracts for model-backed reasoning
 
-import type { AnalysisContext, AnalysisSuggestion } from "../analysis-pipeline";
+import type { AnalysisContext, AnalysisSuggestion } from '../analysis-pipeline';
 
 /**
  * Repository metadata for context
  */
 export interface RepoMetadata {
   root?: string;
-  type?: "git" | "hg" | "svn" | "none";
+  type?: 'git' | 'hg' | 'svn' | 'none';
   files?: string[]; // Relevant files (e.g., *.nix, flake.nix)
   language?: string;
   framework?: string;
@@ -48,8 +48,8 @@ export interface MCPToolOutput {
     description: string;
     actionableSnippet?: string;
     confidence: number; // 0.0 to 1.0
-    type: "command" | "optimization" | "shortcut" | "warning" | "tip";
-    priority: "low" | "medium" | "high";
+    type: 'command' | 'optimization' | 'shortcut' | 'warning' | 'tip';
+    priority: 'low' | 'medium' | 'high';
   }>;
   provenance: {
     provider: string; // 'ollama', 'openai', 'mcp', etc.
@@ -66,20 +66,20 @@ export interface SanitizedContext {
   original: AnalysisContext;
   sanitized: AnalysisContext;
   redactions: Array<{
-    type: "env" | "stdout" | "stderr" | "command";
+    type: 'env' | 'stdout' | 'stderr' | 'command';
     pattern: string;
     replaced: string;
   }>;
 }
 
 // Re-export for convenience
-export type { AnalysisContext, AnalysisSuggestion } from "../analysis-pipeline";
+export type { AnalysisContext, AnalysisSuggestion } from '../analysis-pipeline';
 
 /**
  * LLM Provider Configuration
  */
 export interface LLMProviderConfig {
-  type: "ollama" | "openai" | "mcp" | "mock";
+  type: 'ollama' | 'openai' | 'mcp' | 'mock';
   enabled: boolean;
   // Ollama config
   ollama?: {

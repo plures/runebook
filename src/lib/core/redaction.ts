@@ -33,7 +33,7 @@ export function redactValue(
 
   // If full redaction requested or value is short, use [REDACTED]
   if (fullRedaction || value.length <= 8) {
-    return "[REDACTED]";
+    return '[REDACTED]';
   }
 
   // For longer values in partial redaction mode, show first 4 and last 4 chars
@@ -52,7 +52,7 @@ export function isSecretKey(
   // Add custom patterns as regex
   for (const pattern of customPatterns) {
     try {
-      allPatterns.push(new RegExp(pattern, "i"));
+      allPatterns.push(new RegExp(pattern, 'i'));
     } catch (e) {
       // Invalid regex pattern, skip
       console.warn(`Invalid secret pattern: ${pattern}`);
@@ -74,7 +74,7 @@ export function sanitizeEnv(
   for (const [key, value] of Object.entries(env)) {
     if (isSecretKey(key, customPatterns)) {
       // Use full redaction for environment variables
-      sanitized[key] = "[REDACTED]";
+      sanitized[key] = '[REDACTED]';
     } else {
       sanitized[key] = value;
     }
@@ -109,15 +109,15 @@ export function redactSecretsFromText(
       if (value) {
         return `${key}=[REDACTED]`;
       }
-      return "[REDACTED]";
+      return '[REDACTED]';
     });
   }
 
   // Apply custom patterns
   for (const pattern of customPatterns) {
     try {
-      const regex = new RegExp(pattern, "gi");
-      redacted = redacted.replace(regex, "[REDACTED]");
+      const regex = new RegExp(pattern, 'gi');
+      redacted = redacted.replace(regex, '[REDACTED]');
     } catch (e) {
       // Invalid regex, skip
       console.warn(`Invalid secret pattern: ${pattern}`);
@@ -132,11 +132,11 @@ export function redactSecretsFromText(
  */
 export function validateRedaction(): boolean {
   const testEnv = {
-    PATH: "/usr/bin:/usr/local/bin",
-    HOME: "/home/user",
-    API_KEY: "sk-1234567890abcdef",
-    TOKEN: "secret-token-value",
-    NORMAL_VAR: "normal-value",
+    PATH: '/usr/bin:/usr/local/bin',
+    HOME: '/home/user',
+    API_KEY: 'sk-1234567890abcdef',
+    TOKEN: 'secret-token-value',
+    NORMAL_VAR: 'normal-value',
   };
 
   const sanitized = sanitizeEnv(testEnv);

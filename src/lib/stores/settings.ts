@@ -1,11 +1,11 @@
-import { writable } from "svelte/store";
-import { browser } from "$app/environment";
-import { useLocalStorage, usePluresDB } from "../utils/storage";
+import { writable } from 'svelte/store';
+import { browser } from '$app/environment';
+import { useLocalStorage, usePluresDB } from '../utils/storage';
 
-const STORAGE_KEY = "runebook-settings";
+const STORAGE_KEY = 'runebook-settings';
 
-export type ThemeType = "dark" | "light" | "auto";
-export type StorageType = "localStorage" | "pluresdb";
+export type ThemeType = 'dark' | 'light' | 'auto';
+export type StorageType = 'localStorage' | 'pluresdb';
 
 export interface AppSettings {
   fontFamily: string;
@@ -18,26 +18,26 @@ export interface AppSettings {
 }
 
 const DEFAULTS: AppSettings = {
-  fontFamily: "JetBrains Mono",
+  fontFamily: 'JetBrains Mono',
   fontSize: 14,
-  theme: "dark",
+  theme: 'dark',
   showGrid: true,
   gridSize: 24,
   snapToGrid: false,
-  storageType: "localStorage",
+  storageType: 'localStorage',
 };
 
 export const FONT_FAMILIES = [
-  { value: "JetBrains Mono", label: "JetBrains Mono" },
-  { value: "Cascadia Code", label: "Cascadia Code" },
-  { value: "Fira Code", label: "Fira Code" },
-  { value: "system", label: "System Mono" },
+  { value: 'JetBrains Mono', label: 'JetBrains Mono' },
+  { value: 'Cascadia Code', label: 'Cascadia Code' },
+  { value: 'Fira Code', label: 'Fira Code' },
+  { value: 'system', label: 'System Mono' },
 ];
 
 const FONT_STACKS: Record<string, string> = {
-  "JetBrains Mono": "'JetBrains Mono', ui-monospace, monospace",
-  "Cascadia Code": "'Cascadia Code', ui-monospace, monospace",
-  "Fira Code": "'Fira Code', ui-monospace, monospace",
+  'JetBrains Mono': "'JetBrains Mono', ui-monospace, monospace",
+  'Cascadia Code': "'Cascadia Code', ui-monospace, monospace",
+  'Fira Code': "'Fira Code', ui-monospace, monospace",
   system: "ui-monospace, 'Courier New', monospace",
 };
 
@@ -65,13 +65,13 @@ function applySettings(s: AppSettings): void {
   if (!browser) return;
   const root = document.documentElement;
   root.style.setProperty(
-    "--font-mono",
-    FONT_STACKS[s.fontFamily] ?? FONT_STACKS["JetBrains Mono"],
+    '--font-mono',
+    FONT_STACKS[s.fontFamily] ?? FONT_STACKS['JetBrains Mono'],
   );
-  root.style.setProperty("--canvas-show-grid", s.showGrid ? "1" : "0");
-  root.style.setProperty("--canvas-grid-size", `${s.gridSize}`);
-  root.style.setProperty("--canvas-snap-to-grid", s.snapToGrid ? "1" : "0");
-  if (s.storageType === "pluresdb") {
+  root.style.setProperty('--canvas-show-grid', s.showGrid ? '1' : '0');
+  root.style.setProperty('--canvas-grid-size', `${s.gridSize}`);
+  root.style.setProperty('--canvas-snap-to-grid', s.snapToGrid ? '1' : '0');
+  if (s.storageType === 'pluresdb') {
     usePluresDB();
   } else {
     useLocalStorage();

@@ -1,27 +1,18 @@
 // Layer 3: Optional LLM/MCP Analyzer (Gated)
 // Uses LLM or MCP to provide intelligent suggestions
 
-import type {
-  Analyzer,
-  AnalysisContext,
-  AnalysisSuggestion,
-} from "../analysis-pipeline";
-import type { EventStore } from "../../core/types";
-import type {
-  LLMProvider,
-  LLMProviderConfig,
-  MCPToolInput,
-  RepoMetadata,
-} from "../llm/types";
-import { createLLMProvider } from "../llm/providers";
-import { existsSync, readFileSync } from "fs";
-import { join, dirname } from "path";
+import type { AnalysisContext, AnalysisSuggestion, Analyzer } from '../analysis-pipeline';
+import type { EventStore } from '../../core/types';
+import type { LLMProvider, LLMProviderConfig, MCPToolInput, RepoMetadata } from '../llm/types';
+import { createLLMProvider } from '../llm/providers';
+import { existsSync, readFileSync } from 'fs';
+import { dirname, join } from 'path';
 
 /**
  * LLM/MCP analyzer (gated - only runs if enabled)
  */
 export class LLMAnalyzer implements Analyzer {
-  name = "llm-analyzer";
+  name = 'llm-analyzer';
   layer = 3;
   private enabled = false;
   private provider: LLMProvider | null = null;
@@ -106,7 +97,7 @@ export class LLMAnalyzer implements Analyzer {
         });
       }
     } catch (error) {
-      console.error("LLM analyzer failed:", error);
+      console.error('LLM analyzer failed:', error);
       // Don't throw - return empty suggestions on error
     }
 
@@ -123,28 +114,28 @@ export class LLMAnalyzer implements Analyzer {
     }
 
     // Detect repo type
-    let repoType: RepoMetadata["type"] = "none";
-    if (existsSync(join(repoRoot, ".git"))) {
-      repoType = "git";
-    } else if (existsSync(join(repoRoot, ".hg"))) {
-      repoType = "hg";
-    } else if (existsSync(join(repoRoot, ".svn"))) {
-      repoType = "svn";
+    let repoType: RepoMetadata['type'] = 'none';
+    if (existsSync(join(repoRoot, '.git'))) {
+      repoType = 'git';
+    } else if (existsSync(join(repoRoot, '.hg'))) {
+      repoType = 'hg';
+    } else if (existsSync(join(repoRoot, '.svn'))) {
+      repoType = 'svn';
     }
 
     // Find relevant files
     const files: string[] = [];
     const relevantPatterns = [
-      "flake.nix",
-      "*.nix",
-      "package.json",
-      "Cargo.toml",
-      "*.sh",
+      'flake.nix',
+      '*.nix',
+      'package.json',
+      'Cargo.toml',
+      '*.sh',
     ];
 
     for (const pattern of relevantPatterns) {
       // Simple check - in real implementation, would use glob
-      if (pattern.includes("*")) {
+      if (pattern.includes('*')) {
         // Skip glob patterns for now
         continue;
       }
@@ -158,28 +149,28 @@ export class LLMAnalyzer implements Analyzer {
     let framework: string | undefined;
 
     if (
-      existsSync(join(repoRoot, "flake.nix")) ||
-      existsSync(join(repoRoot, "default.nix"))
+      existsSync(join(repoRoot, 'flake.nix')) ||
+      existsSync(join(repoRoot, 'default.nix'))
     ) {
-      language = "nix";
-    } else if (existsSync(join(repoRoot, "package.json"))) {
-      language = "javascript";
+      language = 'nix';
+    } else if (existsSync(join(repoRoot, 'package.json'))) {
+      language = 'javascript';
       try {
         const pkgContent = readFileSync(
-          join(repoRoot, "package.json"),
-          "utf-8",
+          join(repoRoot, 'package.json'),
+          'utf-8',
         );
         const pkg = JSON.parse(pkgContent);
         if (pkg.dependencies?.react || pkg.devDependencies?.react) {
-          framework = "react";
+          framework = 'react';
         } else if (pkg.dependencies?.svelte || pkg.devDependencies?.svelte) {
-          framework = "svelte";
+          framework = 'svelte';
         }
       } catch {
         // Ignore parse errors
       }
-    } else if (existsSync(join(repoRoot, "Cargo.toml"))) {
-      language = "rust";
+    } else if (existsSync(join(repoRoot, 'Cargo.toml'))) {
+      language = 'rust';
     }
 
     return {
@@ -202,9 +193,9 @@ export class LLMAnalyzer implements Analyzer {
     while (depth < maxDepth) {
       // Check for common repository markers
       if (
-        existsSync(join(current, ".git")) ||
-        existsSync(join(current, "flake.nix")) ||
-        existsSync(join(current, ".gitignore"))
+        existsSync(join(current, '.git')) ||
+        existsSync(join(current, 'flake.nix')) ||
+        existsSync(join(current, '.gitignore'))
       ) {
         return current;
       }

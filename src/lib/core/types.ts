@@ -1,18 +1,18 @@
 // Canonical event schema for terminal observer layer
 // Low-level shell event capture
 
-export type ShellType = "bash" | "zsh" | "nushell" | "unknown";
+export type ShellType = 'bash' | 'zsh' | 'nushell' | 'unknown';
 
 export type EventType =
-  | "command_start"
-  | "command_end"
-  | "stdout_chunk"
-  | "stderr_chunk"
-  | "exit_status"
-  | "cwd_change"
-  | "env_change"
-  | "session_start"
-  | "session_end";
+  | 'command_start'
+  | 'command_end'
+  | 'stdout_chunk'
+  | 'stderr_chunk'
+  | 'exit_status'
+  | 'cwd_change'
+  | 'env_change'
+  | 'session_start'
+  | 'session_end';
 
 /**
  * Base event structure for all terminal observer events
@@ -31,7 +31,7 @@ export interface BaseTerminalEvent {
  * Command start event - fired when a command begins execution
  */
 export interface CommandStartEvent extends BaseTerminalEvent {
-  type: "command_start";
+  type: 'command_start';
   command: string;
   args: string[];
   cwd: string;
@@ -43,7 +43,7 @@ export interface CommandStartEvent extends BaseTerminalEvent {
  * Command end event - fired when a command completes
  */
 export interface CommandEndEvent extends BaseTerminalEvent {
-  type: "command_end";
+  type: 'command_end';
   commandId: string; // Reference to command_start event
   duration: number; // Milliseconds
 }
@@ -52,7 +52,7 @@ export interface CommandEndEvent extends BaseTerminalEvent {
  * Stdout chunk event - incremental stdout output
  */
 export interface StdoutChunkEvent extends BaseTerminalEvent {
-  type: "stdout_chunk";
+  type: 'stdout_chunk';
   commandId: string; // Reference to command_start event
   chunk: string;
   chunkIndex: number; // Sequential chunk number for this command
@@ -62,7 +62,7 @@ export interface StdoutChunkEvent extends BaseTerminalEvent {
  * Stderr chunk event - incremental stderr output
  */
 export interface StderrChunkEvent extends BaseTerminalEvent {
-  type: "stderr_chunk";
+  type: 'stderr_chunk';
   commandId: string; // Reference to command_start event
   chunk: string;
   chunkIndex: number; // Sequential chunk number for this command
@@ -72,7 +72,7 @@ export interface StderrChunkEvent extends BaseTerminalEvent {
  * Exit status event - command exit code
  */
 export interface ExitStatusEvent extends BaseTerminalEvent {
-  type: "exit_status";
+  type: 'exit_status';
   commandId: string; // Reference to command_start event
   exitCode: number;
   success: boolean;
@@ -82,7 +82,7 @@ export interface ExitStatusEvent extends BaseTerminalEvent {
  * CWD change event - working directory changed
  */
 export interface CwdChangeEvent extends BaseTerminalEvent {
-  type: "cwd_change";
+  type: 'cwd_change';
   cwd: string;
   previousCwd?: string;
 }
@@ -91,7 +91,7 @@ export interface CwdChangeEvent extends BaseTerminalEvent {
  * Environment change event - environment variables changed
  */
 export interface EnvChangeEvent extends BaseTerminalEvent {
-  type: "env_change";
+  type: 'env_change';
   envSummary: Record<string, string>; // Sanitized environment variables
   changedKeys: string[]; // Keys that were added/modified
 }
@@ -100,7 +100,7 @@ export interface EnvChangeEvent extends BaseTerminalEvent {
  * Session start event
  */
 export interface SessionStartEvent extends BaseTerminalEvent {
-  type: "session_start";
+  type: 'session_start';
   shellType: ShellType;
   cwd: string;
   envSummary: Record<string, string>;
@@ -110,7 +110,7 @@ export interface SessionStartEvent extends BaseTerminalEvent {
  * Session end event
  */
 export interface SessionEndEvent extends BaseTerminalEvent {
-  type: "session_end";
+  type: 'session_end';
   duration: number; // Session duration in milliseconds
 }
 
@@ -129,7 +129,7 @@ export type TerminalObserverEvent =
   | SessionEndEvent;
 
 // Re-export LLMProviderConfig from agent/llm/types
-export type { LLMProviderConfig } from "../agent/llm/types";
+export type { LLMProviderConfig } from '../agent/llm/types';
 
 /**
  * Configuration for terminal observer
