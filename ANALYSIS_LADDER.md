@@ -41,7 +41,7 @@ The analysis pipeline consists of three layers, executed in order:
 **Analyzer**:
 
 - **LocalSearchAnalyzer**: Uses ripgrep (or grep fallback) to search:
-  - Repository files (flake.nix, _.nix, _.sh, etc.)
+  - Repository files (flake.nix, *.nix, *.sh, etc.)
   - Configuration files
   - Environment variable references
   - Related error patterns

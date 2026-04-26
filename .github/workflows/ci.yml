@@ -24,9 +24,9 @@ jobs:
         run: |
           nix develop -c sh -lc '
             npm ci &&
-            (npm run check 2>/dev/null || true) &&
-            (npm test 2>/dev/null || true) &&
-            (npm run build 2>/dev/null || true)
+            npm run check &&
+            npm test &&
+            npm run build
           '
 
   rust:
