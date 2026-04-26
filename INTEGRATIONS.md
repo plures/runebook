@@ -65,6 +65,7 @@ Connect the outputs appropriately.
 ```
 
 This would automatically generate:
+
 - A terminal node running `date`
 - A terminal node running `ls`
 - A terminal node running `ls | wc -l`
@@ -74,6 +75,7 @@ This would automatically generate:
 ### Implementation Notes
 
 Sudolang integration will require:
+
 1. Parser for Sudolang syntax
 2. Code generator that creates canvas YAML
 3. Interpreter for dynamic execution
@@ -131,6 +133,7 @@ Terminal Command → Event Capture → Storage → Analysis → Suggestions
 ### Event Schema
 
 The system captures canonical event types:
+
 - `command_start`: Command begins execution
 - `command_end`: Command completes
 - `stdout_chunk`: Incremental stdout output
@@ -146,6 +149,7 @@ See [ARCHITECTURE.md](./ARCHITECTURE.md) for full event schema details.
 ### Memory Schema
 
 Cognitive memory storage organizes data into:
+
 - **Sessions**: Terminal session metadata
 - **Commands**: Normalized command records
 - **Outputs**: Chunked stdout/stderr (optionally compressed)
@@ -159,6 +163,7 @@ See [MEMORY.md](./MEMORY.md) for full memory schema details.
 ### Analysis Ladder
 
 Three-layer analysis system:
+
 1. **Layer 1**: Heuristic classifiers (fast, deterministic, high confidence)
 2. **Layer 2**: Local search (context-aware, medium confidence)
 3. **Layer 3**: Optional LLM/MCP (gated, disabled by default)
@@ -168,6 +173,7 @@ See [ANALYSIS_LADDER.md](./ANALYSIS_LADDER.md) for full details.
 ### Usage
 
 **Enable via CLI:**
+
 ```bash
 npm run agent enable
 npm run agent status
@@ -177,14 +183,16 @@ npm run memory inspect
 ```
 
 **Enable Observer (captures all shell commands):**
+
 ```bash
 npm run observer enable
 npm run observer events tail
 ```
 
 **Enable via Code:**
+
 ```typescript
-import { initAgent } from './lib/agent/integration';
+import { initAgent } from "./lib/agent/integration";
 
 initAgent({
   enabled: true,
@@ -206,6 +214,7 @@ initAgent({
 ### CLI Surface
 
 Full headless interface:
+
 - `npm run agent <command>`: Agent management (enable, disable, status, suggestions, events, clear)
 - `npm run observer <command>`: Observer management (enable, disable, status, events, tail)
 - `npm run analyze <command>`: Analysis commands (last)
@@ -214,6 +223,7 @@ Full headless interface:
 ### Demo
 
 Run the automated demo:
+
 ```bash
 bash scripts/demo.sh
 ```

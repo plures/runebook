@@ -1,7 +1,7 @@
 // Analysis Pipeline - Background job system for failure analysis
 // Runs analyzers in layers: heuristic → local search → optional LLM/MCP
 
-import type { TerminalObserverEvent, EventStore } from '../core/types';
+import type { EventStore, TerminalObserverEvent } from '../core/types';
 import type { Suggestion } from '../types/agent';
 
 /**
@@ -63,7 +63,10 @@ export interface AnalysisContext {
 export interface Analyzer {
   name: string;
   layer: number; // 1, 2, or 3
-  analyze(context: AnalysisContext, store: EventStore): Promise<AnalysisSuggestion[]>;
+  analyze(
+    context: AnalysisContext,
+    store: EventStore,
+  ): Promise<AnalysisSuggestion[]>;
 }
 
 /**
@@ -103,27 +106,46 @@ export class AnalysisJobQueue {
   async enqueueFailure(
     commandId: string,
     events: TerminalObserverEvent[],
-    store: EventStore
+    store: EventStore,
   ): Promise<string | null> {
     // Find command_start, exit_status, and stderr events
-    const commandStart = events.find(e => e.type === 'command_start' && e.id === commandId);
-    const exitStatus = events.find(e => e.type === 'exit_status' && e.commandId === commandId);
+    const commandStart = events.find(
+      (e) => e.type === 'command_start' && e.id === commandId,
+    );
+    const exitStatus = events.find(
+      (e) => e.type === 'exit_status' && e.commandId === commandId,
+    );
     const stderrChunks = events
-      .filter(e => e.type === 'stderr_chunk' && 'commandId' in e && e.commandId === commandId)
+      .filter(
+        (e) =>
+          e.type === 'stderr_chunk' &&
+          'commandId' in e &&
+          e.commandId === commandId,
+      )
       .sort((a, b) => {
         const aIdx = 'chunkIndex' in a ? a.chunkIndex : 0;
         const bIdx = 'chunkIndex' in b ? b.chunkIndex : 0;
         return aIdx - bIdx;
       });
     const stdoutChunks = events
-      .filter(e => e.type === 'stdout_chunk' && 'commandId' in e && e.commandId === commandId)
+      .filter(
+        (e) =>
+          e.type === 'stdout_chunk' &&
+          'commandId' in e &&
+          e.commandId === commandId,
+      )
       .sort((a, b) => {
         const aIdx = 'chunkIndex' in a ? a.chunkIndex : 0;
         const bIdx = 'chunkIndex' in b ? b.chunkIndex : 0;
         return aIdx - bIdx;
       });
 
-    if (!commandStart || !exitStatus || commandStart.type !== 'command_start' || exitStatus.type !== 'exit_status') {
+    if (
+      !commandStart ||
+      !exitStatus ||
+      commandStart.type !== 'command_start' ||
+      exitStatus.type !== 'exit_status'
+    ) {
       return null;
     }
 
@@ -134,21 +156,26 @@ export class AnalysisJobQueue {
 
     // Build context
     const stderr = stderrChunks
-      .map(e => ('chunk' in e ? e.chunk : ''))
+      .map((e) => ('chunk' in e ? e.chunk : ''))
       .join('');
     const stdout = stdoutChunks
-      .map(e => ('chunk' in e ? e.chunk : ''))
+      .map((e) => ('chunk' in e ? e.chunk : ''))
       .join('');
 
     // Get previous commands for context
     const allEvents = await store.getEvents(undefined, undefined, 50);
     const previousCommands = allEvents
-      .filter(e => e.type === 'command_start' && e.timestamp < commandStart.timestamp)
+      .filter(
+        (e) => e.type === 'command_start' && e.timestamp < commandStart.timestamp,
+      )
       .slice(-5)
-      .map(e => {
+      .map((e) => {
         if (e.type === 'command_start') {
           const exit = allEvents.find(
-            ev => ev.type === 'exit_status' && 'commandId' in ev && ev.commandId === e.id
+            (ev) =>
+              ev.type === 'exit_status' &&
+              'commandId' in ev &&
+              ev.commandId === e.id,
           );
           return {
             command: e.command,
@@ -191,7 +218,9 @@ export class AnalysisJobQueue {
       return;
     }
 
-    const pendingJob = Array.from(this.jobs.values()).find(j => j.status === 'pending');
+    const pendingJob = Array.from(this.jobs.values()).find(
+      (j) => j.status === 'pending',
+    );
     if (!pendingJob) {
       return;
     }
@@ -200,7 +229,7 @@ export class AnalysisJobQueue {
     pendingJob.status = 'running';
 
     // Process in background (non-blocking)
-    this.runAnalysis(pendingJob, store).catch(error => {
+    this.runAnalysis(pendingJob, store).catch((error) => {
       pendingJob.status = 'failed';
       pendingJob.error = String(error);
       this.running.delete(pendingJob.id);
@@ -210,7 +239,10 @@ export class AnalysisJobQueue {
   /**
    * Run analysis on a job (runs analyzers in layers)
    */
-  private async runAnalysis(job: AnalysisJob, store: EventStore): Promise<void> {
+  private async runAnalysis(
+    job: AnalysisJob,
+    store: EventStore,
+  ): Promise<void> {
     try {
       // Build analysis context
       const context: AnalysisContext = {
@@ -228,7 +260,7 @@ export class AnalysisJobQueue {
       const suggestions: AnalysisSuggestion[] = [];
 
       // Layer 1: Heuristic classifiers
-      const layer1Analyzers = this.analyzers.filter(a => a.layer === 1);
+      const layer1Analyzers = this.analyzers.filter((a) => a.layer === 1);
       for (const analyzer of layer1Analyzers) {
         try {
           const analyzerSuggestions = await analyzer.analyze(context, store);
@@ -239,10 +271,10 @@ export class AnalysisJobQueue {
       }
 
       // If we have high-confidence suggestions from layer 1, we might skip layer 2
-      const highConfidence = suggestions.filter(s => s.confidence >= 0.8);
+      const highConfidence = suggestions.filter((s) => s.confidence >= 0.8);
       if (highConfidence.length === 0) {
         // Layer 2: Local search
-        const layer2Analyzers = this.analyzers.filter(a => a.layer === 2);
+        const layer2Analyzers = this.analyzers.filter((a) => a.layer === 2);
         for (const analyzer of layer2Analyzers) {
           try {
             const analyzerSuggestions = await analyzer.analyze(context, store);
@@ -255,7 +287,7 @@ export class AnalysisJobQueue {
 
       // Layer 3: Optional LLM/MCP (gated)
       if (this.enableLLM) {
-        const layer3Analyzers = this.analyzers.filter(a => a.layer === 3);
+        const layer3Analyzers = this.analyzers.filter((a) => a.layer === 3);
         for (const analyzer of layer3Analyzers) {
           try {
             const analyzerSuggestions = await analyzer.analyze(context, store);
@@ -281,20 +313,30 @@ export class AnalysisJobQueue {
   /**
    * Get previous commands for context
    */
-  private async getPreviousCommands(job: AnalysisJob, store: EventStore): Promise<AnalysisContext['previousCommands']> {
+  private async getPreviousCommands(
+    job: AnalysisJob,
+    store: EventStore,
+  ): Promise<AnalysisContext['previousCommands']> {
     const events = await store.getEvents(undefined, undefined, 50);
-    const commandStart = job.events.find(e => e.type === 'command_start' && e.id === job.commandId);
+    const commandStart = job.events.find(
+      (e) => e.type === 'command_start' && e.id === job.commandId,
+    );
     if (!commandStart) {
       return [];
     }
 
     return events
-      .filter(e => e.type === 'command_start' && e.timestamp < commandStart.timestamp)
+      .filter(
+        (e) => e.type === 'command_start' && e.timestamp < commandStart.timestamp,
+      )
       .slice(-5)
-      .map(e => {
+      .map((e) => {
         if (e.type === 'command_start') {
           const exit = events.find(
-            ev => ev.type === 'exit_status' && 'commandId' in ev && ev.commandId === e.id
+            (ev) =>
+              ev.type === 'exit_status' &&
+              'commandId' in ev &&
+              ev.commandId === e.id,
           );
           return {
             command: e.command,
@@ -320,7 +362,7 @@ export class AnalysisJobQueue {
    */
   getLastJob(): AnalysisJob | undefined {
     const completed = Array.from(this.jobs.values())
-      .filter(j => j.status === 'completed')
+      .filter((j) => j.status === 'completed')
       .sort((a, b) => b.timestamp - a.timestamp);
     return completed[0];
   }
@@ -344,4 +386,3 @@ export class AnalysisJobQueue {
     return Array.from(this.jobs.values());
   }
 }
-

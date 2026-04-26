@@ -1,8 +1,8 @@
 // Tests for agent/node-status.ts
 
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { getAgentStatusFromFile, updateAgentStatusToFile } from '../node-status';
-import { mkdirSync, writeFileSync, rmSync, existsSync } from 'fs';
+import { existsSync, mkdirSync, rmSync, writeFileSync } from 'fs';
 import { join } from 'path';
 import { homedir } from 'os';
 
@@ -37,7 +37,7 @@ describe('node-status', () => {
           lastCommand: 'git push',
           lastCommandTimestamp: 999,
         }),
-        'utf-8'
+        'utf-8',
       );
 
       const status = getAgentStatusFromFile();
@@ -57,7 +57,11 @@ describe('node-status', () => {
 
     it('should use defaults for missing fields in file', () => {
       mkdirSync(CONFIG_DIR, { recursive: true });
-      writeFileSync(STATUS_FILE, JSON.stringify({ status: 'issues_found' }), 'utf-8');
+      writeFileSync(
+        STATUS_FILE,
+        JSON.stringify({ status: 'issues_found' }),
+        'utf-8',
+      );
 
       const status = getAgentStatusFromFile();
       expect(status.status).toBe('issues_found');
@@ -88,7 +92,10 @@ describe('node-status', () => {
         highPriorityCount: 0,
         lastUpdated: 100,
       };
-      updateAgentStatusToFile(current, { status: 'analyzing', suggestionCount: 5 });
+      updateAgentStatusToFile(current, {
+        status: 'analyzing',
+        suggestionCount: 5,
+      });
 
       const written = getAgentStatusFromFile();
       expect(written.status).toBe('analyzing');

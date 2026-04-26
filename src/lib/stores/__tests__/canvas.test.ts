@@ -1,7 +1,7 @@
 // Tests for canvas store (derived from canvas-praxis)
 
-import { describe, it, expect, beforeEach } from 'vitest';
-import { canvasStore, nodeDataStore, updateNodeData, getNodeInputData } from '../canvas';
+import { beforeEach, describe, expect, it } from 'vitest';
+import { canvasStore, getNodeInputData, nodeDataStore, updateNodeData } from '../canvas';
 import { canvasEngine } from '../canvas-praxis';
 import type { CanvasNode, Connection } from '../../types/canvas';
 
@@ -23,7 +23,7 @@ describe('canvasStore', () => {
 
   it('should subscribe and receive canvas updates', () => {
     const updates: any[] = [];
-    const unsub = canvasStore.subscribe(canvas => updates.push(canvas));
+    const unsub = canvasStore.subscribe((canvas) => updates.push(canvas));
     canvasStore.addNode(makeTextNode('n1'));
     unsub();
     expect(updates.length).toBeGreaterThan(0);
@@ -41,7 +41,7 @@ describe('canvasStore', () => {
     };
     canvasStore.set(newCanvas);
     const values: any[] = [];
-    const unsub = canvasStore.subscribe(c => values.push(c));
+    const unsub = canvasStore.subscribe((c) => values.push(c));
     unsub();
     expect(values[0].id).toBe('loaded');
   });
@@ -49,7 +49,7 @@ describe('canvasStore', () => {
   it('should add node via canvasStore.addNode', () => {
     canvasStore.addNode(makeTextNode('n1'));
     const values: any[] = [];
-    const unsub = canvasStore.subscribe(c => values.push(c));
+    const unsub = canvasStore.subscribe((c) => values.push(c));
     unsub();
     expect(values[0].nodes.some((n: CanvasNode) => n.id === 'n1')).toBe(true);
   });
@@ -58,7 +58,7 @@ describe('canvasStore', () => {
     canvasStore.addNode(makeTextNode('n1'));
     canvasStore.removeNode('n1');
     const values: any[] = [];
-    const unsub = canvasStore.subscribe(c => values.push(c));
+    const unsub = canvasStore.subscribe((c) => values.push(c));
     unsub();
     expect(values[0].nodes).toHaveLength(0);
   });
@@ -67,7 +67,7 @@ describe('canvasStore', () => {
     canvasStore.addNode(makeTextNode('n1'));
     canvasStore.updateNode('n1', { label: 'Updated' });
     const values: any[] = [];
-    const unsub = canvasStore.subscribe(c => values.push(c));
+    const unsub = canvasStore.subscribe((c) => values.push(c));
     unsub();
     expect(values[0].nodes[0].label).toBe('Updated');
   });
@@ -76,17 +76,22 @@ describe('canvasStore', () => {
     canvasStore.addNode(makeTextNode('n1'));
     canvasStore.updateNodePosition('n1', 50, 75);
     const values: any[] = [];
-    const unsub = canvasStore.subscribe(c => values.push(c));
+    const unsub = canvasStore.subscribe((c) => values.push(c));
     unsub();
     expect(values[0].nodes[0].position).toEqual({ x: 50, y: 75 });
   });
 
   it('should add and remove connections', () => {
-    const conn: Connection = { from: 'n1', to: 'n2', fromPort: 'out', toPort: 'in' };
+    const conn: Connection = {
+      from: 'n1',
+      to: 'n2',
+      fromPort: 'out',
+      toPort: 'in',
+    };
     canvasStore.addConnection(conn);
     canvasStore.removeConnection('n1', 'n2', 'out', 'in');
     const values: any[] = [];
-    const unsub = canvasStore.subscribe(c => values.push(c));
+    const unsub = canvasStore.subscribe((c) => values.push(c));
     unsub();
     expect(values[0].connections).toHaveLength(0);
   });
@@ -95,7 +100,7 @@ describe('canvasStore', () => {
     canvasStore.addNode(makeTextNode('n1'));
     canvasStore.clear();
     const values: any[] = [];
-    const unsub = canvasStore.subscribe(c => values.push(c));
+    const unsub = canvasStore.subscribe((c) => values.push(c));
     unsub();
     expect(values[0].nodes).toHaveLength(0);
   });
@@ -108,7 +113,7 @@ describe('nodeDataStore', () => {
 
   it('should subscribe and receive nodeData updates', () => {
     const updates: any[] = [];
-    const unsub = nodeDataStore.subscribe(data => updates.push(data));
+    const unsub = nodeDataStore.subscribe((data) => updates.push(data));
     updateNodeData('n1', 'out', 42);
     unsub();
     expect(updates[updates.length - 1]['n1:out']).toBe(42);
@@ -122,7 +127,7 @@ describe('nodeDataStore', () => {
 
   it('should allow updating nodeData via function (non-reactive path)', () => {
     // nodeDataStore.update also mutates a context clone without persisting
-    expect(() => nodeDataStore.update(data => ({ ...data, 'n2:out': 2 }))).not.toThrow();
+    expect(() => nodeDataStore.update((data) => ({ ...data, 'n2:out': 2 }))).not.toThrow();
   });
 });
 
@@ -145,13 +150,18 @@ describe('getNodeInputData helper', () => {
   it('should return data from the connected source', () => {
     canvasStore.addNode(makeTextNode('n1'));
     canvasStore.addNode(makeTextNode('n2'));
-    canvasStore.addConnection({ from: 'n1', to: 'n2', fromPort: 'out', toPort: 'in' });
+    canvasStore.addConnection({
+      from: 'n1',
+      to: 'n2',
+      fromPort: 'out',
+      toPort: 'in',
+    });
     updateNodeData('n1', 'out', 'value');
     const result = getNodeInputData(
       'n2',
       'in',
       canvasEngine.getContext().canvas.connections,
-      canvasEngine.getContext().nodeData
+      canvasEngine.getContext().nodeData,
     );
     expect(result).toBe('value');
   });
@@ -185,20 +195,30 @@ describe('canvasStore connection deduplication', () => {
   });
 
   it('should deduplicate connections with the same endpoints', () => {
-    const conn: Connection = { from: 'n1', to: 'n2', fromPort: 'out', toPort: 'in' };
+    const conn: Connection = {
+      from: 'n1',
+      to: 'n2',
+      fromPort: 'out',
+      toPort: 'in',
+    };
     canvasStore.addConnection(conn);
     canvasStore.addConnection(conn);
     const values: any[] = [];
-    const unsub = canvasStore.subscribe(c => values.push(c));
+    const unsub = canvasStore.subscribe((c) => values.push(c));
     unsub();
     expect(values[0].connections).toHaveLength(1);
   });
 
   it('should auto-generate a handle-based ID for connections', () => {
-    const conn: Connection = { from: 'n1', to: 'n2', fromPort: 'out', toPort: 'in' };
+    const conn: Connection = {
+      from: 'n1',
+      to: 'n2',
+      fromPort: 'out',
+      toPort: 'in',
+    };
     canvasStore.addConnection(conn);
     const values: any[] = [];
-    const unsub = canvasStore.subscribe(c => values.push(c));
+    const unsub = canvasStore.subscribe((c) => values.push(c));
     unsub();
     expect(values[0].connections[0].id).toBe('e-n1-out-n2-in');
   });

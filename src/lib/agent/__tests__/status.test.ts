@@ -1,7 +1,7 @@
 // Tests for agent/status.ts
 
-import { describe, it, expect, beforeEach } from 'vitest';
-import { getAgentStatus, updateAgentStatus, formatStatus } from '../status';
+import { beforeEach, describe, expect, it } from 'vitest';
+import { formatStatus, getAgentStatus, updateAgentStatus } from '../status';
 import type { AgentStatusData } from '../status';
 
 describe('agent status', () => {
@@ -40,7 +40,10 @@ describe('agent status', () => {
     });
 
     it('should update lastCommand', () => {
-      updateAgentStatus({ lastCommand: 'git commit', lastCommandTimestamp: 12345 });
+      updateAgentStatus({
+        lastCommand: 'git commit',
+        lastCommandTimestamp: 12345,
+      });
       const status = getAgentStatus();
       expect(status.lastCommand).toBe('git commit');
       expect(status.lastCommandTimestamp).toBe(12345);

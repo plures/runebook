@@ -1,6 +1,6 @@
 // Golden tests for status formatting
 
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import { formatStatus } from '../status';
 import type { AgentStatusData } from '../status';
 
@@ -13,7 +13,7 @@ describe('Status Formatting (Golden Tests)', () => {
         highPriorityCount: 0,
         lastUpdated: Date.now(),
       };
-      
+
       const output = formatStatus(status);
       expect(output).toBe('● idle');
     });
@@ -25,7 +25,7 @@ describe('Status Formatting (Golden Tests)', () => {
         highPriorityCount: 0,
         lastUpdated: Date.now(),
       };
-      
+
       const output = formatStatus(status);
       expect(output).toBe('⟳ analyzing');
     });
@@ -37,7 +37,7 @@ describe('Status Formatting (Golden Tests)', () => {
         highPriorityCount: 2,
         lastUpdated: Date.now(),
       };
-      
+
       const output = formatStatus(status);
       expect(output).toBe('⚠ 2 issues');
     });
@@ -49,7 +49,7 @@ describe('Status Formatting (Golden Tests)', () => {
         highPriorityCount: 1,
         lastUpdated: Date.now(),
       };
-      
+
       const output = formatStatus(status);
       expect(output).toBe('⚠ 1 issue');
     });
@@ -61,10 +61,9 @@ describe('Status Formatting (Golden Tests)', () => {
         highPriorityCount: 0,
         lastUpdated: Date.now(),
       };
-      
+
       const output = formatStatus(status);
       expect(output).toBe('⚠ 0 issues');
     });
   });
 });
-

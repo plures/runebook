@@ -1,12 +1,14 @@
 // Tests for agent/analyzers/llm.ts and local-search.ts
 
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { LLMAnalyzer, createLLMAnalyzer } from '../analyzers/llm';
-import { LocalSearchAnalyzer, createLocalSearchAnalyzer } from '../analyzers/local-search';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { createLLMAnalyzer, LLMAnalyzer } from '../analyzers/llm';
+import { createLocalSearchAnalyzer, LocalSearchAnalyzer } from '../analyzers/local-search';
 import type { AnalysisContext } from '../analysis-pipeline';
 import type { EventStore } from '../../core/types';
 
-const makeContext = (overrides: Partial<AnalysisContext> = {}): AnalysisContext => ({
+const makeContext = (
+  overrides: Partial<AnalysisContext> = {},
+): AnalysisContext => ({
   command: 'nix',
   args: ['build'],
   exitCode: 1,
@@ -24,7 +26,9 @@ const mockStore: EventStore = {
   getEventsByCommand: vi.fn().mockResolvedValue([]),
   getEventsBySession: vi.fn().mockResolvedValue([]),
   clearEvents: vi.fn().mockResolvedValue(undefined),
-  getStats: vi.fn().mockResolvedValue({ totalEvents: 0, eventsByType: {}, sessions: 0 }),
+  getStats: vi
+    .fn()
+    .mockResolvedValue({ totalEvents: 0, eventsByType: {}, sessions: 0 }),
 };
 
 describe('LLMAnalyzer', () => {

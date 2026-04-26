@@ -1,8 +1,8 @@
 // Additional tests for agent/memory.ts to increase coverage
 
-import { describe, it, expect, beforeEach } from 'vitest';
-import { MemoryStorage, createStorage } from '../memory';
-import type { TerminalEvent, AgentConfig, Suggestion, CommandPattern } from '../../types/agent';
+import { beforeEach, describe, expect, it } from 'vitest';
+import { createStorage, MemoryStorage } from '../memory';
+import type { AgentConfig, CommandPattern, Suggestion, TerminalEvent } from '../../types/agent';
 
 const testConfig: AgentConfig = {
   enabled: true,
@@ -12,7 +12,12 @@ const testConfig: AgentConfig = {
   maxEvents: 100,
 };
 
-const makeEvent = (id: string, command: string = 'echo', success = true, args: string[] = []): TerminalEvent => ({
+const makeEvent = (
+  id: string,
+  command: string = 'echo',
+  success = true,
+  args: string[] = [],
+): TerminalEvent => ({
   id,
   timestamp: Date.now(),
   command,
@@ -45,8 +50,8 @@ describe('MemoryStorage (extended coverage)', () => {
       await storage.saveEvent({ ...makeEvent('old'), timestamp: now - 10000 });
       await storage.saveEvent({ ...makeEvent('new'), timestamp: now + 1 });
       const events = await storage.getEvents(undefined, now);
-      expect(events.some(e => e.id === 'new')).toBe(true);
-      expect(events.some(e => e.id === 'old')).toBe(false);
+      expect(events.some((e) => e.id === 'new')).toBe(true);
+      expect(events.some((e) => e.id === 'old')).toBe(false);
     });
 
     it('should apply limit to returned events', async () => {
@@ -74,7 +79,7 @@ describe('MemoryStorage (extended coverage)', () => {
       await storage.saveEvent(makeEvent('e2', 'git', true, ['push']));
       const patterns = await storage.getPatterns();
       expect(patterns.length).toBeGreaterThan(0);
-      expect(patterns.some(p => p.command === 'git')).toBe(true);
+      expect(patterns.some((p) => p.command === 'git')).toBe(true);
     });
   });
 
@@ -92,7 +97,7 @@ describe('MemoryStorage (extended coverage)', () => {
       };
       await storage.savePattern(pattern);
       const patterns = await storage.getPatterns();
-      expect(patterns.some(p => p.id === 'pattern_test')).toBe(true);
+      expect(patterns.some((p) => p.id === 'pattern_test')).toBe(true);
     });
   });
 
@@ -136,7 +141,7 @@ describe('MemoryStorage (extended coverage)', () => {
       await storage.saveEvent(makeEvent('e1', 'npm', true));
       await storage.saveEvent(makeEvent('e2', 'npm', false));
       const patterns = await storage.getPatterns();
-      const npmPattern = patterns.find(p => p.command === 'npm');
+      const npmPattern = patterns.find((p) => p.command === 'npm');
       expect(npmPattern).toBeDefined();
       expect(npmPattern!.successRate).toBeCloseTo(0.5, 1);
     });
@@ -145,7 +150,7 @@ describe('MemoryStorage (extended coverage)', () => {
       await storage.saveEvent(makeEvent('e1', 'git', true, ['status']));
       await storage.saveEvent(makeEvent('e2', 'git', true, ['push']));
       const patterns = await storage.getPatterns();
-      const gitPattern = patterns.find(p => p.command === 'git');
+      const gitPattern = patterns.find((p) => p.command === 'git');
       expect(gitPattern!.commonArgs.length).toBeGreaterThan(0);
     });
   });

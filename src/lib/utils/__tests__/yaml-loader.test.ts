@@ -1,7 +1,12 @@
 // Tests for yaml-loader utility
 
-import { describe, it, expect, vi } from 'vitest';
-import { loadCanvasFromYAML, parseCanvasFromYAML, saveCanvasToYAML, loadCanvasFromFile } from '../yaml-loader';
+import { describe, expect, it, vi } from 'vitest';
+import {
+  loadCanvasFromFile,
+  loadCanvasFromYAML,
+  parseCanvasFromYAML,
+  saveCanvasToYAML,
+} from '../yaml-loader';
 import type { Canvas } from '../../types/canvas';
 
 const validCanvas: Canvas = {
@@ -40,7 +45,7 @@ nodes: []
 connections: []
 `;
       await expect(loadCanvasFromYAML(missingFields)).rejects.toThrow(
-        /invalid canvas yaml/i
+        /invalid canvas yaml/i,
       );
     });
 
@@ -51,7 +56,7 @@ name: Test Canvas
 connections: []
 `;
       await expect(loadCanvasFromYAML(missingNodes)).rejects.toThrow(
-        /invalid canvas yaml/i
+        /invalid canvas yaml/i,
       );
     });
 
@@ -190,13 +195,15 @@ connections:
       } as Response);
 
       await expect(loadCanvasFromFile('/missing.yaml')).rejects.toThrow(
-        'Failed to load canvas file: Not Found'
+        'Failed to load canvas file: Not Found',
       );
     });
 
     it('should throw when fetch fails', async () => {
       global.fetch = vi.fn().mockRejectedValue(new Error('Network error'));
-      await expect(loadCanvasFromFile('/unreachable.yaml')).rejects.toThrow('Network error');
+      await expect(loadCanvasFromFile('/unreachable.yaml')).rejects.toThrow(
+        'Network error',
+      );
     });
   });
 });

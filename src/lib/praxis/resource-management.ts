@@ -2,14 +2,8 @@
 // Terminal process limits, memory budgets, timeout enforcement, and cleanup
 // triggers for RuneBook canvas nodes.
 
-import {
-  defineEvent,
-  defineRule,
-  defineConstraint,
-  defineModule,
-  RuleResult,
-  fact,
-} from '@plures/praxis';
+import { defineConstraint, defineEvent, defineModule, defineRule } from '@plures/praxis';
+import { fact } from './fact';
 import type { PraxisModule } from '@plures/praxis';
 
 // ---------------------------------------------------------------------------
@@ -86,25 +80,25 @@ const processLimitRule = defineRule<ResourceManagementContext>({
   eventTypes: 'REQUEST_TERMINAL',
   impl: (state, events) => {
     const evt = events.find(RequestTerminalEvent.is);
-    if (!evt) return RuleResult.skip('no REQUEST_TERMINAL event');
+    if (!evt) return [];
 
     if (state.context.terminalCount >= state.context.maxTerminals) {
-      return RuleResult.emit([
+      return [
         fact(TERMINAL_DENIED_FACT, {
           nodeId: evt.payload.nodeId,
           current: state.context.terminalCount,
           max: state.context.maxTerminals,
         }),
-      ]);
+      ];
     }
 
     state.context.terminalCount += 1;
-    return RuleResult.emit([
+    return [
       fact(TERMINAL_GRANTED_FACT, {
         nodeId: evt.payload.nodeId,
         count: state.context.terminalCount,
       }),
-    ]);
+    ];
   },
 });
 
@@ -117,18 +111,18 @@ const releaseTerminalRule = defineRule<ResourceManagementContext>({
   eventTypes: 'RELEASE_TERMINAL',
   impl: (state, events) => {
     const evt = events.find(ReleaseTerminalEvent.is);
-    if (!evt) return RuleResult.skip('no RELEASE_TERMINAL event');
+    if (!evt) return [];
 
     if (state.context.terminalCount > 0) {
       state.context.terminalCount -= 1;
     }
 
-    return RuleResult.emit([
+    return [
       fact(TERMINAL_RELEASED_FACT, {
         nodeId: evt.payload.nodeId,
         count: state.context.terminalCount,
       }),
-    ]);
+    ];
   },
 });
 
@@ -143,22 +137,22 @@ const memoryBudgetRule = defineRule<ResourceManagementContext>({
   eventTypes: 'UPDATE_MEMORY_USAGE',
   impl: (state, events) => {
     const evt = events.find(UpdateMemoryUsageEvent.is);
-    if (!evt) return RuleResult.skip('no UPDATE_MEMORY_USAGE event');
+    if (!evt) return [];
 
     state.context.memoryUsage = evt.payload.bytes;
 
     const { memoryBudget } = state.context;
     if (memoryBudget > 0 && evt.payload.bytes > memoryBudget) {
-      return RuleResult.emit([
+      return [
         fact(MEMORY_PRESSURE_FACT, {
           usage: evt.payload.bytes,
           budget: memoryBudget,
           overBy: evt.payload.bytes - memoryBudget,
         }),
-      ]);
+      ];
     }
 
-    return RuleResult.noop('memory within budget');
+    return [];
   },
 });
 
@@ -173,20 +167,20 @@ const cleanupTriggerRule = defineRule<ResourceManagementContext>({
   eventTypes: 'NODE_TIMEOUT',
   impl: (state, events) => {
     const evt = events.find(NodeTimeoutEvent.is);
-    if (!evt) return RuleResult.skip('no NODE_TIMEOUT event');
+    if (!evt) return [];
 
     const { nodeId, elapsedMs } = evt.payload;
     if (!state.context.timedOutNodes.includes(nodeId)) {
       state.context.timedOutNodes.push(nodeId);
     }
 
-    return RuleResult.emit([
+    return [
       fact(CLEANUP_REQUIRED_FACT, {
         nodeId,
         elapsedMs,
         timeout: state.context.timeouts[nodeId] ?? 0,
       }),
-    ]);
+    ];
   },
 });
 
@@ -197,7 +191,7 @@ const cleanupTriggerRule = defineRule<ResourceManagementContext>({
 const terminalLimitConstraint = defineConstraint<ResourceManagementContext>({
   id: 'resource-management.terminalLimit',
   description: 'Active terminal count must not exceed the configured maximum',
-  impl: state =>
+  impl: (state) =>
     state.context.terminalCount <= state.context.maxTerminals ||
     `Terminal count ${state.context.terminalCount} exceeds max ${state.context.maxTerminals}`,
 });
@@ -205,7 +199,7 @@ const terminalLimitConstraint = defineConstraint<ResourceManagementContext>({
 const memoryBudgetConstraint = defineConstraint<ResourceManagementContext>({
   id: 'resource-management.memoryBudgetConstraint',
   description: 'Memory usage must remain within budget when a budget is configured',
-  impl: state => {
+  impl: (state) => {
     const { memoryBudget, memoryUsage } = state.context;
     if (memoryBudget === 0) return true;
     return (
@@ -220,7 +214,12 @@ const memoryBudgetConstraint = defineConstraint<ResourceManagementContext>({
 // ---------------------------------------------------------------------------
 
 export const resourceManagementModule: PraxisModule<ResourceManagementContext> = defineModule({
-  rules: [processLimitRule, releaseTerminalRule, memoryBudgetRule, cleanupTriggerRule],
+  rules: [
+    processLimitRule,
+    releaseTerminalRule,
+    memoryBudgetRule,
+    cleanupTriggerRule,
+  ],
   constraints: [terminalLimitConstraint, memoryBudgetConstraint],
   meta: { name: 'resource-management', version: '1.0.0' },
 });

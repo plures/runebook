@@ -1,6 +1,6 @@
 // Tests for agent/index.ts (AmbientAgent)
 
-import { describe, it, expect, beforeEach } from 'vitest';
+import { beforeEach, describe, expect, it } from 'vitest';
 import { AmbientAgent, createAgent, defaultAgentConfig } from '../index';
 import type { AgentConfig } from '../../types/agent';
 
@@ -39,21 +39,41 @@ describe('AmbientAgent', () => {
 
   describe('captureAndAnalyze', () => {
     it('should capture a command and return a terminal event', async () => {
-      const event = await agent.captureAndAnalyze('echo', ['hello'], {}, '/tmp', Date.now());
+      const event = await agent.captureAndAnalyze(
+        'echo',
+        ['hello'],
+        {},
+        '/tmp',
+        Date.now(),
+      );
       expect(event.command).toBe('echo');
       expect(event.args).toEqual(['hello']);
     });
 
     it('should throw when agent is not enabled', async () => {
       const disabled = new AmbientAgent(disabledConfig);
-      await expect(disabled.captureAndAnalyze('echo', [], {}, '/tmp', Date.now())).rejects.toThrow();
+      await expect(
+        disabled.captureAndAnalyze('echo', [], {}, '/tmp', Date.now()),
+      ).rejects.toThrow();
     });
   });
 
   describe('recordResult', () => {
     it('should record a command result and return suggestions', async () => {
-      const event = await agent.captureAndAnalyze('echo', ['hello'], {}, '/tmp', Date.now());
-      const suggestions = await agent.recordResult(event, 'hello\n', '', 0, Date.now());
+      const event = await agent.captureAndAnalyze(
+        'echo',
+        ['hello'],
+        {},
+        '/tmp',
+        Date.now(),
+      );
+      const suggestions = await agent.recordResult(
+        event,
+        'hello\n',
+        '',
+        0,
+        Date.now(),
+      );
       expect(Array.isArray(suggestions)).toBe(true);
     });
 
@@ -68,7 +88,13 @@ describe('AmbientAgent', () => {
         cwd: '/tmp',
         success: false,
       };
-      const suggestions = await disabled.recordResult(mockEvent, 'out', 'err', 0, Date.now());
+      const suggestions = await disabled.recordResult(
+        mockEvent,
+        'out',
+        'err',
+        0,
+        Date.now(),
+      );
       expect(suggestions).toEqual([]);
     });
   });

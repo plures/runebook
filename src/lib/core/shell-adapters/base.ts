@@ -1,12 +1,7 @@
 // Base shell adapter interface
 // All shell adapters must implement this interface
 
-import type {
-  TerminalObserverEvent,
-  ObserverConfig,
-  ShellType,
-  CommandStartEvent,
-} from '../types';
+import type { CommandStartEvent, ObserverConfig, ShellType, TerminalObserverEvent } from '../types';
 import type { EventStore } from '../storage';
 
 export interface ShellAdapter {
@@ -67,13 +62,13 @@ export abstract class BaseShellAdapter implements ShellAdapter {
     if (!this.config || !this.store) {
       throw new Error('Adapter not initialized. Call initialize() first.');
     }
-    
+
     if (!this.config.enabled) {
       return;
     }
-    
+
     this.active = true;
-    
+
     // Emit session start event
     await this.emitSessionStart();
   }
@@ -111,7 +106,7 @@ export abstract class BaseShellAdapter implements ShellAdapter {
     if (!this.store) {
       return;
     }
-    
+
     await this.store.saveEvent(event);
   }
 
@@ -122,7 +117,7 @@ export abstract class BaseShellAdapter implements ShellAdapter {
     command: string,
     args: string[],
     cwd: string,
-    env: Record<string, string>
+    env: Record<string, string>,
   ): Promise<string> {
     if (!this.config || !this.store) {
       throw new Error('Adapter not initialized');
@@ -187,7 +182,7 @@ export abstract class BaseShellAdapter implements ShellAdapter {
    */
   protected async captureStdoutChunk(
     commandId: string,
-    chunk: string
+    chunk: string,
   ): Promise<void> {
     if (!this.config || !this.store) {
       return;
@@ -217,7 +212,7 @@ export abstract class BaseShellAdapter implements ShellAdapter {
    */
   protected async captureStderrChunk(
     commandId: string,
-    chunk: string
+    chunk: string,
   ): Promise<void> {
     if (!this.config || !this.store) {
       return;
@@ -247,7 +242,7 @@ export abstract class BaseShellAdapter implements ShellAdapter {
    */
   protected async captureExitStatus(
     commandId: string,
-    exitCode: number
+    exitCode: number,
   ): Promise<void> {
     if (!this.config || !this.store) {
       return;
@@ -277,7 +272,10 @@ export abstract class BaseShellAdapter implements ShellAdapter {
 
     const { sanitizeEnv } = await import('../redaction.js');
     const envSummary = this.config.redactSecrets
-      ? sanitizeEnv(process.env as Record<string, string>, this.config.secretPatterns || [])
+      ? sanitizeEnv(
+        process.env as Record<string, string>,
+        this.config.secretPatterns || [],
+      )
       : (process.env as Record<string, string>);
 
     await this.emitEvent({
@@ -301,14 +299,14 @@ export abstract class BaseShellAdapter implements ShellAdapter {
       return;
     }
 
-    const sessionStart = this.config.sessionId 
+    const sessionStart = this.config.sessionId
       ? await this.store.getEventsBySession(this.config.sessionId, 1)
       : [];
-    
-    const startEvent = sessionStart.find((e: TerminalObserverEvent) => e.type === 'session_start');
-    const duration = startEvent
-      ? Date.now() - startEvent.timestamp
-      : 0;
+
+    const startEvent = sessionStart.find(
+      (e: TerminalObserverEvent) => e.type === 'session_start',
+    );
+    const duration = startEvent ? Date.now() - startEvent.timestamp : 0;
 
     await this.emitEvent({
       id: this.generateEventId(),
@@ -322,4 +320,3 @@ export abstract class BaseShellAdapter implements ShellAdapter {
     });
   }
 }
-

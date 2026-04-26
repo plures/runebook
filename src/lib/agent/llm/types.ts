@@ -115,4 +115,3 @@ export interface LLMProvider {
   analyze(input: MCPToolInput): Promise<MCPToolOutput>;
   sanitizeContext(context: AnalysisContext): Promise<SanitizedContext>;
 }
-

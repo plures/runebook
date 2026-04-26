@@ -1,7 +1,7 @@
 // Memory/storage layer for Ambient Agent Mode
 // Stores terminal events and patterns for analysis
 
-import type { TerminalEvent, CommandPattern, Suggestion, AgentConfig } from '../types/agent';
+import type { AgentConfig, CommandPattern, Suggestion, TerminalEvent } from '../types/agent';
 
 export interface EventStorage {
   saveEvent(event: TerminalEvent): Promise<void>;
@@ -35,7 +35,7 @@ export class MemoryStorage implements EventStorage {
 
   async saveEvent(event: TerminalEvent): Promise<void> {
     this.events.push(event);
-    
+
     // Enforce max events limit
     if (this.config.maxEvents && this.events.length > this.config.maxEvents) {
       this.events = this.events.slice(-this.config.maxEvents);
@@ -47,25 +47,28 @@ export class MemoryStorage implements EventStorage {
 
   async getEvents(limit?: number, since?: number): Promise<TerminalEvent[]> {
     let filtered = this.events;
-    
+
     if (since) {
-      filtered = filtered.filter(e => e.timestamp >= since);
+      filtered = filtered.filter((e) => e.timestamp >= since);
     }
-    
+
     if (limit) {
       filtered = filtered.slice(-limit);
     }
-    
+
     return filtered.sort((a, b) => b.timestamp - a.timestamp);
   }
 
-  async getEventsByCommand(command: string, limit?: number): Promise<TerminalEvent[]> {
-    let filtered = this.events.filter(e => e.command === command);
-    
+  async getEventsByCommand(
+    command: string,
+    limit?: number,
+  ): Promise<TerminalEvent[]> {
+    let filtered = this.events.filter((e) => e.command === command);
+
     if (limit) {
       filtered = filtered.slice(-limit);
     }
-    
+
     return filtered.sort((a, b) => b.timestamp - a.timestamp);
   }
 
@@ -93,7 +96,7 @@ export class MemoryStorage implements EventStorage {
 
   async clearEvents(olderThan?: number): Promise<void> {
     if (olderThan) {
-      this.events = this.events.filter(e => e.timestamp >= olderThan);
+      this.events = this.events.filter((e) => e.timestamp >= olderThan);
     } else {
       this.events = [];
     }
@@ -105,10 +108,13 @@ export class MemoryStorage implements EventStorage {
     avgSuccessRate: number;
     totalDuration: number;
   }> {
-    const uniqueCommands = new Set(this.events.map(e => e.command)).size;
-    const successful = this.events.filter(e => e.success).length;
+    const uniqueCommands = new Set(this.events.map((e) => e.command)).size;
+    const successful = this.events.filter((e) => e.success).length;
     const avgSuccessRate = this.events.length > 0 ? successful / this.events.length : 0;
-    const totalDuration = this.events.reduce((sum, e) => sum + (e.duration || 0), 0);
+    const totalDuration = this.events.reduce(
+      (sum, e) => sum + (e.duration || 0),
+      0,
+    );
 
     return {
       totalEvents: this.events.length,
@@ -137,22 +143,24 @@ export class MemoryStorage implements EventStorage {
 
     pattern.frequency += 1;
     pattern.lastUsed = Math.max(pattern.lastUsed, event.timestamp);
-    
+
     // Update success rate
     const commandEvents = await this.getEventsByCommand(event.command);
-    const successful = commandEvents.filter(e => e.success).length;
+    const successful = commandEvents.filter((e) => e.success).length;
     pattern.successRate = commandEvents.length > 0 ? successful / commandEvents.length : 0;
-    
+
     // Update average duration
-    const durations = commandEvents.filter(e => e.duration !== undefined).map(e => e.duration!);
+    const durations = commandEvents
+      .filter((e) => e.duration !== undefined)
+      .map((e) => e.duration!);
     pattern.avgDuration = durations.length > 0
       ? durations.reduce((sum, d) => sum + d, 0) / durations.length
       : 0;
-    
+
     // Track common args
     if (event.args.length > 0) {
       const argKey = event.args.join(' ');
-      const existing = pattern.commonArgs.find(a => a === argKey);
+      const existing = pattern.commonArgs.find((a) => a === argKey);
       if (!existing) {
         pattern.commonArgs.push(argKey);
         if (pattern.commonArgs.length > 10) {
@@ -187,7 +195,7 @@ export class PluresDBStorage implements EventStorage {
 
     try {
       const { SQLiteCompatibleAPI } = await import('pluresdb');
-      
+
       this.db = new SQLiteCompatibleAPI({
         config: {
           port: 34567,
@@ -232,9 +240,12 @@ export class PluresDBStorage implements EventStorage {
     return limit ? events.slice(0, limit) : events;
   }
 
-  async getEventsByCommand(command: string, limit?: number): Promise<TerminalEvent[]> {
+  async getEventsByCommand(
+    command: string,
+    limit?: number,
+  ): Promise<TerminalEvent[]> {
     const allEvents = await this.getEvents();
-    const filtered = allEvents.filter(e => e.command === command);
+    const filtered = allEvents.filter((e) => e.command === command);
     return limit ? filtered.slice(0, limit) : filtered;
   }
 
@@ -292,7 +303,7 @@ export class PluresDBStorage implements EventStorage {
   async clearEvents(olderThan?: number): Promise<void> {
     await this.ensureInitialized();
     const keys = await this.db.list(this.eventPrefix);
-    
+
     for (const key of keys) {
       try {
         const event = await this.db.getValue(key);
@@ -312,8 +323,8 @@ export class PluresDBStorage implements EventStorage {
     totalDuration: number;
   }> {
     const events = await this.getEvents();
-    const uniqueCommands = new Set(events.map(e => e.command)).size;
-    const successful = events.filter(e => e.success).length;
+    const uniqueCommands = new Set(events.map((e) => e.command)).size;
+    const successful = events.filter((e) => e.success).length;
     const avgSuccessRate = events.length > 0 ? successful / events.length : 0;
     const totalDuration = events.reduce((sum, e) => sum + (e.duration || 0), 0);
 
@@ -328,10 +339,12 @@ export class PluresDBStorage implements EventStorage {
   private async updatePattern(event: TerminalEvent): Promise<void> {
     const patternId = `pattern_${event.command}`;
     const existingEvents = await this.getEventsByCommand(event.command);
-    
-    const successful = existingEvents.filter(e => e.success).length;
+
+    const successful = existingEvents.filter((e) => e.success).length;
     const successRate = existingEvents.length > 0 ? successful / existingEvents.length : 0;
-    const durations = existingEvents.filter(e => e.duration !== undefined).map(e => e.duration!);
+    const durations = existingEvents
+      .filter((e) => e.duration !== undefined)
+      .map((e) => e.duration!);
     const avgDuration = durations.length > 0
       ? durations.reduce((sum, d) => sum + d, 0) / durations.length
       : 0;
@@ -340,10 +353,12 @@ export class PluresDBStorage implements EventStorage {
       id: patternId,
       command: event.command,
       frequency: existingEvents.length,
-      lastUsed: Math.max(...existingEvents.map(e => e.timestamp)),
+      lastUsed: Math.max(...existingEvents.map((e) => e.timestamp)),
       successRate,
       avgDuration,
-      commonArgs: [...new Set(existingEvents.flatMap(e => e.args.join(' ')))].slice(0, 10),
+      commonArgs: [
+        ...new Set(existingEvents.flatMap((e) => e.args.join(' '))),
+      ].slice(0, 10),
       commonEnv: {},
     };
 
@@ -360,4 +375,3 @@ export function createStorage(config: AgentConfig): EventStorage {
   }
   return new MemoryStorage(config);
 }
-

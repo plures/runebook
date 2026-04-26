@@ -1,9 +1,9 @@
 // Tests for analysis engine
 
-import { describe, it, expect, beforeEach } from 'vitest';
+import { beforeEach, describe, expect, it } from 'vitest';
 import { DefaultAnalyzer } from '../analysis';
 import { MemoryStorage } from '../memory';
-import type { TerminalEvent, AgentConfig } from '../../types/agent';
+import type { AgentConfig, TerminalEvent } from '../../types/agent';
 
 const testConfig: AgentConfig = {
   enabled: true,
@@ -49,8 +49,8 @@ describe('Analysis Engine', () => {
     };
 
     const suggestions = await analyzer.analyzeEvent(lastEvent, storage);
-    const warning = suggestions.find(s => s.type === 'warning');
-    
+    const warning = suggestions.find((s) => s.type === 'warning');
+
     expect(warning).toBeDefined();
     expect(warning?.priority).toBe('high');
   });
@@ -68,8 +68,8 @@ describe('Analysis Engine', () => {
     };
 
     const suggestions = await analyzer.analyzeEvent(slowEvent, storage);
-    const optimization = suggestions.find(s => s.type === 'optimization');
-    
+    const optimization = suggestions.find((s) => s.type === 'optimization');
+
     expect(optimization).toBeDefined();
     expect(optimization?.priority).toBe('medium');
   });
@@ -100,8 +100,8 @@ describe('Analysis Engine', () => {
     };
 
     const suggestions = await analyzer.analyzeEvent(event, storage);
-    const tip = suggestions.find(s => s.type === 'tip');
-    
+    const tip = suggestions.find((s) => s.type === 'tip');
+
     expect(tip).toBeDefined();
   });
 
@@ -122,10 +122,9 @@ describe('Analysis Engine', () => {
     }
 
     const suggestions = await analyzer.analyzePatterns(storage);
-    
+
     expect(suggestions.length).toBeGreaterThan(0);
-    const shortcut = suggestions.find(s => s.type === 'shortcut');
+    const shortcut = suggestions.find((s) => s.type === 'shortcut');
     expect(shortcut).toBeDefined();
   });
 });
-

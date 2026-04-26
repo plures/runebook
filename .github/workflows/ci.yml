@@ -1,12 +1,46 @@
 name: CI
 on:
   push:
-    branches: [main, "copilot/**", "feature/**"]
+    branches:
+      - main
+      - develop
   pull_request:
+    branches:
+      - main
+      - develop
   workflow_dispatch:
-permissions:
-  contents: read
-jobs:
-  ci:
-    uses: plures/.github/.github/workflows/ci-reusable.yml@main
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Nix
+        uses: cachix/install-nix-action@v27
+      - name: Run checks in Nix flake dev shell
+        run: |
+          nix develop -c sh -lc '
+            npm ci &&
+            npm run check &&
+            npm test &&
+            npm run build
+          '
+
+  rust:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: src-tauri
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Nix
+        uses: cachix/install-nix-action@v27
+      - name: Check formatting
+        run: nix develop .. -c cargo fmt --all -- --check
+      - name: Clippy
+        run: nix develop .. -c cargo clippy -- -D warnings
+      - name: Test
+        run: nix develop .. -c cargo test

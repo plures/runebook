@@ -18,7 +18,9 @@ function getCargoTomlVersion() {
 }
 
 function getTauriConfVersion() {
-  const config = JSON.parse(fs.readFileSync('src-tauri/tauri.conf.json', 'utf8'));
+  const config = JSON.parse(
+    fs.readFileSync('src-tauri/tauri.conf.json', 'utf8'),
+  );
   return config.version;
 }
 
@@ -59,4 +61,8 @@ if (require.main === module) {
   }
 }
 
-module.exports = { getPackageJsonVersion, getCargoTomlVersion, getTauriConfVersion };
+module.exports = {
+  getPackageJsonVersion,
+  getCargoTomlVersion,
+  getTauriConfVersion,
+};

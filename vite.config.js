@@ -30,12 +30,12 @@ export default defineConfig(async () => ({
       ignored: ["**/src-tauri/**"],
     },
   },
-  
+
   // Exclude Node.js-only modules from browser build
   ssr: {
     noExternal: [],
   },
-  
+
   define: {
     __APP_VERSION__: JSON.stringify(version),
   },

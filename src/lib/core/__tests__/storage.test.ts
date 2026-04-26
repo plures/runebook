@@ -1,49 +1,64 @@
 // Tests for core/storage.ts (LocalFileStore, createEventStore)
 
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { LocalFileStore, createEventStore } from '../storage';
-import { rmSync, existsSync } from 'fs';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { createEventStore, LocalFileStore } from '../storage';
+import { existsSync, rmSync } from 'fs';
 import { join } from 'path';
 import { tmpdir } from 'os';
-import type { TerminalObserverEvent, ObserverConfig } from '../types';
+import type { ObserverConfig, TerminalObserverEvent } from '../types';
 
 const TEST_DIR = join(tmpdir(), `runebook-storage-test-${Date.now()}`);
 
-const makeConfig = (overrides: Partial<ObserverConfig> = {}): ObserverConfig => ({
-  enabled: true,
-  redactSecrets: true,
-  storagePath: TEST_DIR,
-  maxEvents: 100,
-  ...overrides,
-} as ObserverConfig);
+const makeConfig = (overrides: Partial<ObserverConfig> = {}): ObserverConfig =>
+  ({
+    enabled: true,
+    redactSecrets: true,
+    storagePath: TEST_DIR,
+    maxEvents: 100,
+    ...overrides,
+  }) as ObserverConfig;
 
-const makeEvent = (id: string, sessionId = 'session-1', type: TerminalObserverEvent['type'] = 'command_start'): TerminalObserverEvent => ({
-  id,
-  type,
-  timestamp: Date.now(),
-  sessionId,
-  cwd: '/tmp',
-} as TerminalObserverEvent);
+const makeEvent = (
+  id: string,
+  sessionId = 'session-1',
+  type: TerminalObserverEvent['type'] = 'command_start',
+): TerminalObserverEvent =>
+  ({
+    id,
+    type,
+    timestamp: Date.now(),
+    sessionId,
+    cwd: '/tmp',
+  }) as TerminalObserverEvent;
 
-const makeCommandStartEvent = (id: string, sessionId = 'session-1'): TerminalObserverEvent => ({
-  id,
-  type: 'command_start',
-  timestamp: Date.now(),
-  sessionId,
-  cwd: '/tmp',
-  command: 'echo',
-  args: [],
-  env: {},
-} as any);
+const makeCommandStartEvent = (
+  id: string,
+  sessionId = 'session-1',
+): TerminalObserverEvent =>
+  ({
+    id,
+    type: 'command_start',
+    timestamp: Date.now(),
+    sessionId,
+    cwd: '/tmp',
+    command: 'echo',
+    args: [],
+    env: {},
+  }) as any;
 
-const makeCommandEndEvent = (id: string, commandId: string, sessionId = 'session-1'): TerminalObserverEvent => ({
-  id,
-  type: 'command_end',
-  timestamp: Date.now(),
-  sessionId,
-  commandId,
-  cwd: '/tmp',
-} as any);
+const makeCommandEndEvent = (
+  id: string,
+  commandId: string,
+  sessionId = 'session-1',
+): TerminalObserverEvent =>
+  ({
+    id,
+    type: 'command_end',
+    timestamp: Date.now(),
+    sessionId,
+    commandId,
+    cwd: '/tmp',
+  }) as any;
 
 describe('LocalFileStore', () => {
   let store: LocalFileStore;
@@ -104,13 +119,16 @@ describe('LocalFileStore', () => {
 
     it('should filter by since timestamp', async () => {
       const now = Date.now();
-      const oldEvent = { ...makeCommandStartEvent('old'), timestamp: now - 10000 };
+      const oldEvent = {
+        ...makeCommandStartEvent('old'),
+        timestamp: now - 10000,
+      };
       const newEvent = { ...makeCommandStartEvent('new'), timestamp: now + 1 };
       await store.saveEvent(oldEvent);
       await store.saveEvent(newEvent);
       const events = await store.getEvents(undefined, now);
-      expect(events.some(e => e.id === 'new')).toBe(true);
-      expect(events.some(e => e.id === 'old')).toBe(false);
+      expect(events.some((e) => e.id === 'new')).toBe(true);
+      expect(events.some((e) => e.id === 'old')).toBe(false);
     });
 
     it('should limit results', async () => {
@@ -142,16 +160,22 @@ describe('LocalFileStore', () => {
 
       const events = await store.getEventsByCommand('cmd1');
       // command_start with id=cmd1, and command_end with commandId=cmd1
-      expect(events.some(e => e.id === 'cmd1')).toBe(true);
-      expect(events.some(e => e.id === 'end1')).toBe(true);
-      expect(events.some(e => e.id === 'other')).toBe(false);
+      expect(events.some((e) => e.id === 'cmd1')).toBe(true);
+      expect(events.some((e) => e.id === 'end1')).toBe(true);
+      expect(events.some((e) => e.id === 'other')).toBe(false);
     });
   });
 
   describe('getEventsBySession', () => {
     it('should return events for a specific session', async () => {
-      await store.saveEvent({ ...makeCommandStartEvent('e1'), sessionId: 'session-a' });
-      await store.saveEvent({ ...makeCommandStartEvent('e2'), sessionId: 'session-b' });
+      await store.saveEvent({
+        ...makeCommandStartEvent('e1'),
+        sessionId: 'session-a',
+      });
+      await store.saveEvent({
+        ...makeCommandStartEvent('e2'),
+        sessionId: 'session-b',
+      });
       const events = await store.getEventsBySession('session-a');
       expect(events).toHaveLength(1);
       expect(events[0].id).toBe('e1');
@@ -159,7 +183,10 @@ describe('LocalFileStore', () => {
 
     it('should limit results', async () => {
       for (let i = 0; i < 5; i++) {
-        await store.saveEvent({ ...makeCommandStartEvent(`e${i}`), sessionId: 'sess' });
+        await store.saveEvent({
+          ...makeCommandStartEvent(`e${i}`),
+          sessionId: 'sess',
+        });
       }
       const events = await store.getEventsBySession('sess', 2);
       expect(events).toHaveLength(2);
@@ -182,8 +209,8 @@ describe('LocalFileStore', () => {
       await store.saveEvent(fresh);
       await store.clearEvents(now - 50000);
       const events = await store.getEvents();
-      expect(events.some(e => e.id === 'fresh')).toBe(true);
-      expect(events.some(e => e.id === 'old')).toBe(false);
+      expect(events.some((e) => e.id === 'fresh')).toBe(true);
+      expect(events.some((e) => e.id === 'old')).toBe(false);
     });
   });
 
@@ -195,8 +222,14 @@ describe('LocalFileStore', () => {
     });
 
     it('should count events by type and session', async () => {
-      await store.saveEvent({ ...makeCommandStartEvent('e1'), sessionId: 'sess-a' });
-      await store.saveEvent({ ...makeCommandStartEvent('e2'), sessionId: 'sess-b' });
+      await store.saveEvent({
+        ...makeCommandStartEvent('e1'),
+        sessionId: 'sess-a',
+      });
+      await store.saveEvent({
+        ...makeCommandStartEvent('e2'),
+        sessionId: 'sess-b',
+      });
       const stats = await store.getStats();
       expect(stats.totalEvents).toBe(2);
       expect(stats.sessions).toBe(2);

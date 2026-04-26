@@ -75,4 +75,3 @@ export interface AgentConfig {
   retentionDays?: number;
   llm?: LLMProviderConfig; // LLM/MCP integration config (disabled by default)
 }
-

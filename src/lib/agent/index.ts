@@ -1,12 +1,16 @@
 // Main Ambient Agent Mode coordinator
 // Orchestrates event capture, storage, analysis, and suggestions
 
-import { initCapture, stopCapture, captureCommand, captureResult, updateContext } from './capture';
+import { captureCommand, captureResult, initCapture, stopCapture, updateContext } from './capture';
 import { createStorage, type EventStorage } from './memory';
-import { createAnalyzer, type Analyzer } from './analysis';
-import { MemorySuggestionStore, formatSuggestionsForCLI, type SuggestionStore } from './suggestions';
-import { updateAgentStatus, getAgentStatus } from './status';
-import type { TerminalEvent, AgentConfig, Suggestion } from '../types/agent';
+import { type Analyzer, createAnalyzer } from './analysis';
+import {
+  formatSuggestionsForCLI,
+  MemorySuggestionStore,
+  type SuggestionStore,
+} from './suggestions';
+import { getAgentStatus, updateAgentStatus } from './status';
+import type { AgentConfig, Suggestion, TerminalEvent } from '../types/agent';
 
 export class AmbientAgent {
   private storage: EventStorage;
@@ -20,21 +24,25 @@ export class AmbientAgent {
     this.sessionId = `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
     this.storage = createStorage(config);
     this.analyzer = createAnalyzer();
-    
+
     // Initialize with MemorySuggestionStore (browser-safe)
     this.suggestionStore = new MemorySuggestionStore();
-    
+
     // In Node.js environment, upgrade to file-based store
     if (typeof process !== 'undefined' && process.versions?.node) {
-      import('./node-suggestions').then(({ FileSuggestionStore }) => {
-        this.suggestionStore = new FileSuggestionStore();
-        this.suggestionStore.load().catch(err => 
-          console.error('Failed to load suggestions:', err)
-        );
-      }).catch(() => {
-        // Fallback already initialized with MemorySuggestionStore
-        console.warn('FileSuggestionStore not available, using MemorySuggestionStore');
-      });
+      import('./node-suggestions')
+        .then(({ FileSuggestionStore }) => {
+          this.suggestionStore = new FileSuggestionStore();
+          this.suggestionStore
+            .load()
+            .catch((err) => console.error('Failed to load suggestions:', err));
+        })
+        .catch(() => {
+          // Fallback already initialized with MemorySuggestionStore
+          console.warn(
+            'FileSuggestionStore not available, using MemorySuggestionStore',
+          );
+        });
     }
 
     if (config.enabled && config.captureEvents) {
@@ -43,7 +51,7 @@ export class AmbientAgent {
         environment: process.env as Record<string, string>,
       });
     }
-    
+
     // Initialize status
     updateAgentStatus({ status: 'idle' });
   }
@@ -56,7 +64,7 @@ export class AmbientAgent {
     args: string[],
     env: Record<string, string>,
     cwd: string,
-    startTime: number
+    startTime: number,
   ): Promise<TerminalEvent> {
     if (!this.config.enabled || !this.config.captureEvents) {
       throw new Error('Agent not enabled or capture disabled');
@@ -74,21 +82,27 @@ export class AmbientAgent {
     stdout: string,
     stderr: string,
     exitCode: number,
-    endTime: number
+    endTime: number,
   ): Promise<Suggestion[]> {
     if (!this.config.enabled || !this.config.captureEvents) {
       return [];
     }
 
     // Update status to analyzing
-    updateAgentStatus({ 
+    updateAgentStatus({
       status: 'analyzing',
       lastCommand: event.command,
       lastCommandTimestamp: event.timestamp,
     });
 
-    const completedEvent = captureResult(event, stdout, stderr, exitCode, endTime);
-    
+    const completedEvent = captureResult(
+      event,
+      stdout,
+      stderr,
+      exitCode,
+      endTime,
+    );
+
     // Save to storage
     await this.storage.saveEvent(completedEvent);
 
@@ -101,8 +115,11 @@ export class AmbientAgent {
     // Analyze and generate suggestions
     let suggestions: Suggestion[] = [];
     if (this.config.analyzePatterns && this.config.suggestImprovements) {
-      suggestions = await this.analyzer.analyzeEvent(completedEvent, this.storage);
-      
+      suggestions = await this.analyzer.analyzeEvent(
+        completedEvent,
+        this.storage,
+      );
+
       for (const suggestion of suggestions) {
         this.suggestionStore.add(suggestion);
       }
@@ -110,9 +127,11 @@ export class AmbientAgent {
 
     // Update status based on suggestions
     const allSuggestions = this.suggestionStore.suggestions;
-    const highPriorityCount = allSuggestions.filter(s => s.priority === 'high').length;
+    const highPriorityCount = allSuggestions.filter(
+      (s) => s.priority === 'high',
+    ).length;
     const status = highPriorityCount > 0 ? 'issues_found' : 'idle';
-    
+
     updateAgentStatus({
       status,
       suggestionCount: allSuggestions.length,
@@ -169,7 +188,7 @@ export class AmbientAgent {
     }
 
     const suggestions = await this.analyzer.analyzePatterns(this.storage);
-    
+
     for (const suggestion of suggestions) {
       this.suggestionStore.add(suggestion);
     }
@@ -195,7 +214,7 @@ export class AmbientAgent {
    * Clear old events
    */
   async clearOldEvents(days: number = 30): Promise<void> {
-    const cutoff = Date.now() - (days * 24 * 60 * 60 * 1000);
+    const cutoff = Date.now() - days * 24 * 60 * 60 * 1000;
     await this.storage.clearEvents(cutoff);
   }
 
@@ -211,7 +230,7 @@ export class AmbientAgent {
    */
   updateConfig(updates: Partial<AgentConfig>): void {
     this.config = { ...this.config, ...updates };
-    
+
     if (!this.config.enabled) {
       stopCapture();
     } else if (this.config.captureEvents) {
@@ -241,4 +260,3 @@ export const defaultAgentConfig: AgentConfig = {
   maxEvents: 10000,
   retentionDays: 30,
 };
-

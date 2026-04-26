@@ -48,6 +48,7 @@ npm run version:check
 ## Version Management
 
 RuneBook maintains version numbers in three files:
+
 - `package.json` (primary source)
 - `src-tauri/Cargo.toml`
 - `src-tauri/tauri.conf.json`
@@ -59,6 +60,7 @@ RuneBook maintains version numbers in three files:
 3. Run the workflow
 
 To verify versions are synchronized locally:
+
 ```bash
 npm run version:check
 ```
@@ -95,6 +97,7 @@ runebook/
 - Prefer event attributes (onclick) over on: directives
 
 Example:
+
 ```typescript
 // Good
 function calculateNodePosition(node: CanvasNode): Position {
@@ -119,6 +122,7 @@ let { node }: Props = $props();
 - Keep functions focused and testable
 
 Example:
+
 ```rust
 /// Executes a terminal command and returns the output
 #[tauri::command]
@@ -135,9 +139,10 @@ async fn execute_terminal_command(
 ### Adding a New Node Type
 
 1. Define the type in `src/lib/types/canvas.ts`:
+
    ```typescript
    export interface MyNode extends BaseNode {
-     type: 'mynode';
+     type: "mynode";
      myProperty: string;
    }
    ```
@@ -153,6 +158,7 @@ async fn execute_terminal_command(
 ### Adding a New Tauri Command
 
 1. Define the function in `src-tauri/src/lib.rs`:
+
    ```rust
    #[tauri::command]
    async fn my_command(param: String) -> Result<String, String> {
@@ -161,6 +167,7 @@ async fn execute_terminal_command(
    ```
 
 2. Register in the Builder:
+
    ```rust
    .invoke_handler(tauri::generate_handler![
        greet,
@@ -170,10 +177,11 @@ async fn execute_terminal_command(
    ```
 
 3. Call from frontend:
+
    ```typescript
-   import { invoke } from '@tauri-apps/api/core';
-   
-   const result = await invoke<string>('my_command', { param: 'value' });
+   import { invoke } from "@tauri-apps/api/core";
+
+   const result = await invoke<string>("my_command", { param: "value" });
    ```
 
 ## Testing

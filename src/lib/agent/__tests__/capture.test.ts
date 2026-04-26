@@ -1,7 +1,13 @@
 // Tests for event capture system
 
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { initCapture, stopCapture, captureCommand, captureResult, isCaptureEnabled } from '../capture';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import {
+  captureCommand,
+  captureResult,
+  initCapture,
+  isCaptureEnabled,
+  stopCapture,
+} from '../capture';
 
 describe('Event Capture', () => {
   beforeEach(() => {
@@ -24,9 +30,9 @@ describe('Event Capture', () => {
   it('should capture command execution', () => {
     initCapture('test-session');
     const startTime = Date.now();
-    
+
     const event = captureCommand('echo', ['hello'], {}, '/test', startTime);
-    
+
     expect(event.id).toBeDefined();
     expect(event.command).toBe('echo');
     expect(event.args).toEqual(['hello']);
@@ -38,10 +44,10 @@ describe('Event Capture', () => {
     initCapture('test-session');
     const startTime = Date.now();
     const event = captureCommand('echo', ['hello'], {}, '/test', startTime);
-    
+
     const endTime = startTime + 100;
     const completed = captureResult(event, 'hello\n', '', 0, endTime);
-    
+
     expect(completed.stdout).toBe('hello\n');
     expect(completed.exitCode).toBe(0);
     expect(completed.duration).toBe(100);
@@ -50,7 +56,7 @@ describe('Event Capture', () => {
 
   it('should not capture when disabled', () => {
     expect(isCaptureEnabled()).toBe(false);
-    
+
     expect(() => {
       captureCommand('echo', [], {}, '/test', Date.now());
     }).toThrow('Capture not initialized');
@@ -59,9 +65,8 @@ describe('Event Capture', () => {
   it('should stop capture', () => {
     initCapture('test-session');
     expect(isCaptureEnabled()).toBe(true);
-    
+
     stopCapture();
     expect(isCaptureEnabled()).toBe(false);
   });
 });
-

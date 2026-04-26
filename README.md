@@ -30,11 +30,13 @@ Download the latest release for your platform from [GitHub Releases](https://git
 ### Package Managers
 
 **npm**:
+
 ```bash
 npm install -g @plures/runebook
 ```
 
 **NixOS / Nix Flakes**:
+
 ```bash
 # Run directly from flake
 nix run github:plures/runebook
@@ -59,17 +61,20 @@ nix build github:plures/runebook#runebook-agent
 ### Build from Source
 
 1. Clone the repository:
+
    ```bash
    git clone https://github.com/plures/runebook.git
    cd runebook
    ```
 
 2. Install dependencies:
+
    ```bash
    npm install
    ```
 
 3. Run in development mode:
+
    ```bash
    npm run tauri dev
    ```
@@ -82,6 +87,7 @@ nix build github:plures/runebook#runebook-agent
 ### NixOS Support
 
 **Development:**
+
 ```bash
 nix develop  # Enter development shell
 npm install
@@ -89,12 +95,14 @@ npm run dev
 ```
 
 **Building:**
+
 ```bash
 nix build .#runebook        # Build Tauri app
 nix build .#runebook-agent  # Build headless agent CLI
 ```
 
 **Running:**
+
 ```bash
 nix run .#runebook                    # Run Tauri app
 nix run .#runebook-agent -- agent status  # Run agent CLI
@@ -122,11 +130,13 @@ Use the toolbar to add nodes to the canvas:
 ### Saving and Loading
 
 **Save Options:**
+
 - **Browser Storage**: Save to localStorage (click "💾 Save to Storage")
 - **PluresDB Storage**: P2P-enabled persistent storage (requires PluresDB server)
 - **Export YAML**: Download canvas as a file (click "📥 Export YAML")
 
 **Load Options:**
+
 - **Saved Canvases**: Click "📚 Saved Canvases" to view your saved work
 - **Load Example**: Click "📂 Load Example" to try pre-built demos
 
@@ -135,6 +145,7 @@ Use the toolbar to add nodes to the canvas:
 The Ambient Agent analyzes your terminal commands and provides intelligent suggestions. This feature runs in the background and operates entirely locally—no data leaves your machine.
 
 **Features:**
+
 - Captures terminal commands and outcomes automatically
 - Analyzes patterns in command usage (frequency, success rates, performance)
 - Suggests optimizations, shortcuts, and warnings
@@ -142,6 +153,7 @@ The Ambient Agent analyzes your terminal commands and provides intelligent sugge
 - Uses multi-layer analysis (heuristics, local search, optional LLM)
 
 **Enable via CLI:**
+
 ```bash
 # Enable the agent
 npm run agent enable
@@ -160,6 +172,7 @@ npm run analyze last
 ```
 
 **Enable via Observer:**
+
 ```bash
 # Enable terminal observer (captures all shell commands)
 npm run observer enable
@@ -174,6 +187,7 @@ npm run observer events 20
 **What Data is Stored:**
 
 All data is stored locally:
+
 - Command names, arguments, and outputs
 - Working directory
 - Environment variables (secrets automatically redacted)
@@ -182,11 +196,13 @@ All data is stored locally:
 - Generated suggestions with confidence scores
 
 **Storage locations:**
+
 - Observer events: `~/.runebook/observer/events.json`
 - Agent config: `~/.runebook/agent-config.json`
 - PluresDB data: `./pluresdb-data` (if PluresDB enabled)
 
 **Privacy & Security:**
+
 - All data stored locally—never sent to external services
 - Secrets automatically redacted (API keys, tokens, passwords)
 - Opt-in by default (disabled until explicitly enabled)
@@ -195,23 +211,28 @@ All data is stored locally:
 **CLI Commands:**
 
 Agent:
+
 - `npm run agent enable|disable|status`
 - `npm run agent suggestions [priority]`
 - `npm run agent events [limit]`
 - `npm run agent clear [days]`
 
 Observer:
+
 - `npm run observer enable|disable|status`
 - `npm run observer events [limit]`
 - `npm run observer events tail`
 
 Analysis:
+
 - `npm run analyze last`
 
 Memory:
+
 - `npm run memory inspect`
 
 For detailed documentation, see:
+
 - [ARCHITECTURE.md](./ARCHITECTURE.md) - Technical architecture
 - [ANALYSIS_LADDER.md](./ANALYSIS_LADDER.md) - Analysis system
 - [MEMORY.md](./MEMORY.md) - Memory storage schema
@@ -219,6 +240,7 @@ For detailed documentation, see:
 ## Architecture
 
 **Stack:**
+
 - **Frontend**: Svelte 5 with SvelteKit
 - **State Management**: Praxis reactive logic engine
 - **Backend**: Tauri (Rust) for native system access
@@ -226,6 +248,7 @@ For detailed documentation, see:
 - **Serialization**: YAML for canvas definitions
 
 **Project Structure:**
+
 ```
 runebook/
 ├── src/

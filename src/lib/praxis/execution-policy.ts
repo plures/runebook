@@ -2,14 +2,8 @@
 // Scheduling rules, cycle detection, and timeout enforcement for the reactive
 // execution graph.
 
-import {
-  defineEvent,
-  defineRule,
-  defineConstraint,
-  defineModule,
-  RuleResult,
-  fact,
-} from '@plures/praxis';
+import { defineConstraint, defineEvent, defineModule, defineRule } from '@plures/praxis';
+import { fact } from './fact';
 import type { PraxisModule } from '@plures/praxis';
 
 // ---------------------------------------------------------------------------
@@ -80,15 +74,15 @@ function topologicalSort(
   nodes: string[],
   edges: ExecutionEdge[],
 ): { order: string[]; hasCycles: boolean } {
-  const inDegree = new Map<string, number>(nodes.map(id => [id, 0]));
-  const adjacency = new Map<string, string[]>(nodes.map(id => [id, []]));
+  const inDegree = new Map<string, number>(nodes.map((id) => [id, 0]));
+  const adjacency = new Map<string, string[]>(nodes.map((id) => [id, []]));
 
   for (const { from, to } of edges) {
     adjacency.get(from)?.push(to);
     inDegree.set(to, (inDegree.get(to) ?? 0) + 1);
   }
 
-  const queue = nodes.filter(id => (inDegree.get(id) ?? 0) === 0);
+  const queue = nodes.filter((id) => (inDegree.get(id) ?? 0) === 0);
   const order: string[] = [];
 
   // Use an index-based queue to keep dequeue operations O(1).
@@ -117,21 +111,26 @@ function topologicalSort(
  */
 const scheduleExecutionRule = defineRule<ExecutionPolicyContext>({
   id: 'execution-policy.scheduleExecution',
-  description: 'Compute topological execution order; detect cycles via Kahn\'s algorithm',
+  description: "Compute topological execution order; detect cycles via Kahn's algorithm",
   eventTypes: 'SCHEDULE_EXECUTION',
   impl: (state, events) => {
     const evt = events.find(ScheduleExecutionEvent.is);
-    if (!evt) return RuleResult.skip('no SCHEDULE_EXECUTION event');
+    if (!evt) return [];
 
-    const { order, hasCycles } = topologicalSort(state.context.nodes, state.context.edges);
+    const { order, hasCycles } = topologicalSort(
+      state.context.nodes,
+      state.context.edges,
+    );
     state.context.executionOrder = order;
     state.context.hasCycles = hasCycles;
 
     if (hasCycles) {
-      return RuleResult.emit([fact(CYCLE_DETECTED_FACT, { triggeredBy: evt.payload.changedNodeId })]);
+      return [
+        fact(CYCLE_DETECTED_FACT, { triggeredBy: evt.payload.changedNodeId }),
+      ];
     }
 
-    return RuleResult.emit([fact(EXECUTION_ORDER_FACT, { order })]);
+    return [fact(EXECUTION_ORDER_FACT, { order })];
   },
 });
 
@@ -146,16 +145,19 @@ const detectCyclesRule = defineRule<ExecutionPolicyContext>({
   eventTypes: 'DETECT_CYCLES',
   impl: (state, events) => {
     const evt = events.find(DetectCyclesEvent.is);
-    if (!evt) return RuleResult.skip('no DETECT_CYCLES event');
+    if (!evt) return [];
 
-    const { hasCycles } = topologicalSort(state.context.nodes, state.context.edges);
+    const { hasCycles } = topologicalSort(
+      state.context.nodes,
+      state.context.edges,
+    );
     state.context.hasCycles = hasCycles;
 
     if (hasCycles) {
-      return RuleResult.emit([fact(CYCLE_DETECTED_FACT, {})]);
+      return [fact(CYCLE_DETECTED_FACT, {})];
     }
 
-    return RuleResult.emit([fact(GRAPH_ACYCLIC_FACT, {})]);
+    return [fact(GRAPH_ACYCLIC_FACT, {})];
   },
 });
 
@@ -171,19 +173,19 @@ const timeoutEnforcementRule = defineRule<ExecutionPolicyContext>({
   eventTypes: 'REPORT_ELAPSED',
   impl: (state, events) => {
     const evt = events.find(ReportElapsedEvent.is);
-    if (!evt) return RuleResult.skip('no REPORT_ELAPSED event');
+    if (!evt) return [];
 
     const { nodeId, elapsedMs } = evt.payload;
     state.context.elapsed[nodeId] = elapsedMs;
 
     const budget = state.context.timeouts[nodeId] ?? 0;
     if (budget > 0 && elapsedMs > budget) {
-      return RuleResult.emit([
+      return [
         fact(TIMEOUT_EXCEEDED_FACT, { nodeId, elapsedMs, budget }),
-      ]);
+      ];
     }
 
-    return RuleResult.noop('within timeout budget');
+    return [];
   },
 });
 
@@ -194,7 +196,7 @@ const timeoutEnforcementRule = defineRule<ExecutionPolicyContext>({
 const acyclicGraphConstraint = defineConstraint<ExecutionPolicyContext>({
   id: 'execution-policy.acyclicGraph',
   description: 'The execution graph must be acyclic before scheduling',
-  impl: state => !state.context.hasCycles || 'Execution graph contains a cycle',
+  impl: (state) => !state.context.hasCycles || 'Execution graph contains a cycle',
 });
 
 // ---------------------------------------------------------------------------

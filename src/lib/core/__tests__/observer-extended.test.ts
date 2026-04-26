@@ -1,8 +1,8 @@
 // Additional tests for core/observer.ts to increase coverage
 
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { TerminalObserver, createObserver, defaultObserverConfig } from '../observer';
-import { rmSync, existsSync } from 'fs';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { createObserver, defaultObserverConfig, TerminalObserver } from '../observer';
+import { existsSync, rmSync } from 'fs';
 import { join } from 'path';
 import { tmpdir } from 'os';
 
@@ -37,7 +37,9 @@ describe('TerminalObserver (extended)', () => {
   describe('disabled observer', () => {
     it('should throw when start is called on disabled observer', async () => {
       const disabledObserver = createObserver({ enabled: false });
-      await expect(disabledObserver.start()).rejects.toThrow('Observer is not enabled');
+      await expect(disabledObserver.start()).rejects.toThrow(
+        'Observer is not enabled',
+      );
     });
 
     it('should not initialize when disabled', async () => {
@@ -51,7 +53,12 @@ describe('TerminalObserver (extended)', () => {
     it('should return session events', async () => {
       await observer.initialize();
       await observer.start();
-      const commandId = await observer.captureCommand('echo', ['session-test'], process.cwd(), {});
+      const commandId = await observer.captureCommand(
+        'echo',
+        ['session-test'],
+        process.cwd(),
+        {},
+      );
       await observer.captureCommandResult(commandId, 'session-test\n', '', 0);
       const events = await observer.getEventsBySession();
       expect(events.length).toBeGreaterThan(0);
@@ -61,7 +68,12 @@ describe('TerminalObserver (extended)', () => {
       await observer.initialize();
       await observer.start();
       for (let i = 0; i < 3; i++) {
-        const id = await observer.captureCommand('echo', [`s${i}`], process.cwd(), {});
+        const id = await observer.captureCommand(
+          'echo',
+          [`s${i}`],
+          process.cwd(),
+          {},
+        );
         await observer.captureCommandResult(id, `s${i}\n`, '', 0);
       }
       const events = await observer.getEventsBySession(2);
@@ -86,9 +98,9 @@ describe('TerminalObserver (extended)', () => {
   describe('captureCommand when not enabled/initialized', () => {
     it('should throw when not initialized', async () => {
       const uninitObserver = createObserver(makeConfig());
-      await expect(uninitObserver.captureCommand('echo', [], process.cwd(), {})).rejects.toThrow(
-        'Observer not initialized or not enabled'
-      );
+      await expect(
+        uninitObserver.captureCommand('echo', [], process.cwd(), {}),
+      ).rejects.toThrow('Observer not initialized or not enabled');
     });
   });
 
@@ -96,7 +108,9 @@ describe('TerminalObserver (extended)', () => {
     it('should return when not initialized', async () => {
       const uninitObserver = createObserver(makeConfig());
       // Should not throw
-      await expect(uninitObserver.captureCommandResult('cmd1', 'out', 'err', 0)).resolves.toBeUndefined();
+      await expect(
+        uninitObserver.captureCommandResult('cmd1', 'out', 'err', 0),
+      ).resolves.toBeUndefined();
     });
   });
 
@@ -137,7 +151,12 @@ describe('TerminalObserver (extended)', () => {
     it('should clear events older than specified days', async () => {
       await observer.initialize();
       await observer.start();
-      const id = await observer.captureCommand('echo', ['test'], process.cwd(), {});
+      const id = await observer.captureCommand(
+        'echo',
+        ['test'],
+        process.cwd(),
+        {},
+      );
       await observer.captureCommandResult(id, 'test\n', '', 0);
       // Clear events older than 30 days (recent events should remain)
       await observer.clearEvents(30);
@@ -148,7 +167,12 @@ describe('TerminalObserver (extended)', () => {
     it('should clear all events when called without days', async () => {
       await observer.initialize();
       await observer.start();
-      const id = await observer.captureCommand('echo', ['test'], process.cwd(), {});
+      const id = await observer.captureCommand(
+        'echo',
+        ['test'],
+        process.cwd(),
+        {},
+      );
       await observer.captureCommandResult(id, 'test\n', '', 0);
       await observer.clearEvents();
       const events = await observer.getEvents();

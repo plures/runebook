@@ -17,7 +17,9 @@ export interface StorageAdapter {
 export class LocalStorageAdapter implements StorageAdapter {
   private readonly prefix = 'runebook_canvas_';
 
-  private validateCanvas(data: any): data is { canvas: Canvas; timestamp: number } {
+  private validateCanvas(
+    data: any,
+  ): data is { canvas: Canvas; timestamp: number } {
     return (
       data &&
       typeof data === 'object' &&
@@ -62,7 +64,7 @@ export class LocalStorageAdapter implements StorageAdapter {
 
   async list(): Promise<{ id: string; name: string; timestamp: number }[]> {
     const canvases: { id: string; name: string; timestamp: number }[] = [];
-    
+
     for (let i = 0; i < localStorage.length; i++) {
       const key = localStorage.key(i);
       if (key && key.startsWith(this.prefix)) {
@@ -125,7 +127,7 @@ export class PluresDBAdapter implements StorageAdapter {
     try {
       // Dynamic import to avoid bundling issues
       const { SQLiteCompatibleAPI } = await import('pluresdb');
-      
+
       this.db = new SQLiteCompatibleAPI({
         config: this.config,
         autoStart: true,
@@ -134,14 +136,21 @@ export class PluresDBAdapter implements StorageAdapter {
       // Wait for initialization
       await this.db.start();
       this.initialized = true;
-      console.log('PluresDB initialized successfully with config:', this.config);
+      console.log(
+        'PluresDB initialized successfully with config:',
+        this.config,
+      );
     } catch (error) {
       console.error('Failed to initialize PluresDB:', error);
-      throw new Error('PluresDB initialization failed. Make sure PluresDB server is running or use LocalStorageAdapter as fallback.');
+      throw new Error(
+        'PluresDB initialization failed. Make sure PluresDB server is running or use LocalStorageAdapter as fallback.',
+      );
     }
   }
 
-  private validateCanvas(data: any): data is { canvas: Canvas; timestamp: number } {
+  private validateCanvas(
+    data: any,
+  ): data is { canvas: Canvas; timestamp: number } {
     return (
       data &&
       typeof data === 'object' &&
@@ -163,7 +172,7 @@ export class PluresDBAdapter implements StorageAdapter {
     const key = this.prefix + canvas.id;
     const metaKey = this.metaPrefix + canvas.id;
     const timestamp = Date.now();
-    
+
     const data = {
       canvas,
       timestamp,
@@ -184,10 +193,10 @@ export class PluresDBAdapter implements StorageAdapter {
     await this.ensureInitialized();
 
     const key = this.prefix + id;
-    
+
     try {
       const data = await this.db.getValue(key);
-      
+
       if (!data) {
         return null;
       }
@@ -216,7 +225,12 @@ export class PluresDBAdapter implements StorageAdapter {
       for (const key of keys) {
         try {
           const meta = await this.db.getValue(key);
-          if (meta && meta.id && meta.name && typeof meta.timestamp === 'number') {
+          if (
+            meta &&
+            meta.id &&
+            meta.name &&
+            typeof meta.timestamp === 'number'
+          ) {
             canvases.push({
               id: meta.id,
               name: meta.name,
@@ -286,7 +300,11 @@ export function useLocalStorage(): void {
  * Switch to PluresDB adapter
  * @param config Optional PluresDB configuration
  */
-export function usePluresDB(config?: { port?: number; host?: string; dataDir?: string }): void {
+export function usePluresDB(config?: {
+  port?: number;
+  host?: string;
+  dataDir?: string;
+}): void {
   currentAdapter = new PluresDBAdapter(config);
 }
 
@@ -314,7 +332,9 @@ export async function loadCanvas(id: string): Promise<Canvas | null> {
 /**
  * List all saved canvases
  */
-export async function listCanvases(): Promise<{ id: string; name: string; timestamp: number }[]> {
+export async function listCanvases(): Promise<
+  { id: string; name: string; timestamp: number }[]
+> {
   return await currentAdapter.list();
 }
 

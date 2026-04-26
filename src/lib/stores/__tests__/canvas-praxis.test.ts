@@ -1,12 +1,12 @@
 // Tests for canvas-praxis store
 
-import { describe, it, expect, beforeEach } from 'vitest';
+import { beforeEach, describe, expect, it } from 'vitest';
 import type { CanvasNode, Connection } from '../../types/canvas';
 
 // We need to reset module state between tests by reimporting
 describe('canvas-praxis store', () => {
-  let canvasPraxisStore: typeof import('../canvas-praxis')['canvasPraxisStore'];
-  let canvasEngine: typeof import('../canvas-praxis')['canvasEngine'];
+  let canvasPraxisStore: (typeof import('../canvas-praxis'))['canvasPraxisStore'];
+  let canvasEngine: (typeof import('../canvas-praxis'))['canvasEngine'];
 
   beforeEach(async () => {
     // Fresh import each time to avoid state leakage across tests
@@ -53,7 +53,12 @@ describe('canvas-praxis store', () => {
     it('should remove connections involving the removed node', () => {
       canvasPraxisStore.addNode(makeTextNode('n1'));
       canvasPraxisStore.addNode(makeTextNode('n2'));
-      const conn: Connection = { from: 'n1', to: 'n2', fromPort: 'out', toPort: 'in' };
+      const conn: Connection = {
+        from: 'n1',
+        to: 'n2',
+        fromPort: 'out',
+        toPort: 'in',
+      };
       canvasPraxisStore.addConnection(conn);
       canvasPraxisStore.removeNode('n1');
       expect(canvasPraxisStore.canvas.connections).toHaveLength(0);
@@ -71,7 +76,7 @@ describe('canvas-praxis store', () => {
     it('should update node properties', () => {
       canvasPraxisStore.addNode(makeTextNode('n1'));
       canvasPraxisStore.updateNode('n1', { label: 'Updated Label' });
-      const node = canvasPraxisStore.canvas.nodes.find(n => n.id === 'n1');
+      const node = canvasPraxisStore.canvas.nodes.find((n) => n.id === 'n1');
       expect(node?.label).toBe('Updated Label');
     });
 
@@ -85,14 +90,19 @@ describe('canvas-praxis store', () => {
     it('should update node position', () => {
       canvasPraxisStore.addNode(makeTextNode('n1'));
       canvasPraxisStore.updateNodePosition('n1', 100, 200);
-      const node = canvasPraxisStore.canvas.nodes.find(n => n.id === 'n1');
+      const node = canvasPraxisStore.canvas.nodes.find((n) => n.id === 'n1');
       expect(node?.position).toEqual({ x: 100, y: 200 });
     });
   });
 
   describe('addConnection', () => {
     it('should add a connection', () => {
-      const conn: Connection = { from: 'n1', to: 'n2', fromPort: 'out', toPort: 'in' };
+      const conn: Connection = {
+        from: 'n1',
+        to: 'n2',
+        fromPort: 'out',
+        toPort: 'in',
+      };
       canvasPraxisStore.addConnection(conn);
       expect(canvasPraxisStore.canvas.connections).toHaveLength(1);
     });
@@ -100,14 +110,24 @@ describe('canvas-praxis store', () => {
 
   describe('removeConnection', () => {
     it('should remove a connection', () => {
-      const conn: Connection = { from: 'n1', to: 'n2', fromPort: 'out', toPort: 'in' };
+      const conn: Connection = {
+        from: 'n1',
+        to: 'n2',
+        fromPort: 'out',
+        toPort: 'in',
+      };
       canvasPraxisStore.addConnection(conn);
       canvasPraxisStore.removeConnection('n1', 'n2', 'out', 'in');
       expect(canvasPraxisStore.canvas.connections).toHaveLength(0);
     });
 
     it('should not remove connections that do not match all fields', () => {
-      const conn: Connection = { from: 'n1', to: 'n2', fromPort: 'out', toPort: 'in' };
+      const conn: Connection = {
+        from: 'n1',
+        to: 'n2',
+        fromPort: 'out',
+        toPort: 'in',
+      };
       canvasPraxisStore.addConnection(conn);
       canvasPraxisStore.removeConnection('n1', 'n2', 'out', 'other-port');
       expect(canvasPraxisStore.canvas.connections).toHaveLength(1);
@@ -153,7 +173,12 @@ describe('canvas-praxis store', () => {
     it('should return data from connected source port', () => {
       canvasPraxisStore.addNode(makeTextNode('n1'));
       canvasPraxisStore.addNode(makeTextNode('n2'));
-      canvasPraxisStore.addConnection({ from: 'n1', to: 'n2', fromPort: 'out', toPort: 'in' });
+      canvasPraxisStore.addConnection({
+        from: 'n1',
+        to: 'n2',
+        fromPort: 'out',
+        toPort: 'in',
+      });
       canvasPraxisStore.updateNodeData('n1', 'out', 'hello');
       const result = canvasPraxisStore.getNodeInputData('n2', 'in');
       expect(result).toBe('hello');
@@ -179,7 +204,9 @@ describe('canvas-praxis store', () => {
   });
 
   describe('sub-canvas navigation', () => {
-    const makeSubCanvasNode = (id: string): import('../../types/canvas').SubCanvasNode => ({
+    const makeSubCanvasNode = (
+      id: string,
+    ): import('../../types/canvas').SubCanvasNode => ({
       id,
       type: 'sub-canvas',
       position: { x: 0, y: 0 },
@@ -231,7 +258,9 @@ describe('canvas-praxis store', () => {
       canvasPraxisStore.navigateUp();
 
       // After navigating up the parent sub-canvas node should have the inner node
-      const updatedSub = canvasPraxisStore.canvas.nodes.find(n => n.id === 'sub1') as import('../../types/canvas').SubCanvasNode;
+      const updatedSub = canvasPraxisStore.canvas.nodes.find(
+        (n) => n.id === 'sub1',
+      ) as import('../../types/canvas').SubCanvasNode;
       expect(updatedSub.children.nodes).toHaveLength(1);
       expect(updatedSub.children.nodes[0].id).toBe('inner-node');
     });

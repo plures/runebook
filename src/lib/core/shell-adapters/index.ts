@@ -3,7 +3,7 @@
 import { BashAdapter } from './bash';
 import { ZshAdapter } from './zsh';
 import type { ShellAdapter } from './base';
-import type { ShellType, ObserverConfig } from '../types';
+import type { ObserverConfig, ShellType } from '../types';
 import type { EventStore } from '../storage';
 
 /**
@@ -11,19 +11,19 @@ import type { EventStore } from '../storage';
  */
 export function detectShellType(): ShellType {
   const shell = process.env.SHELL || '';
-  
+
   if (shell.includes('bash')) {
     return 'bash';
   }
-  
+
   if (shell.includes('zsh')) {
     return 'zsh';
   }
-  
+
   if (shell.includes('nu')) {
     return 'nushell';
   }
-  
+
   return 'unknown';
 }
 
@@ -32,7 +32,7 @@ export function detectShellType(): ShellType {
  */
 export function createShellAdapter(shellType?: ShellType): ShellAdapter {
   const type = shellType || detectShellType();
-  
+
   switch (type) {
     case 'bash':
       return new BashAdapter();
@@ -59,4 +59,3 @@ export function getAvailableAdapters(): ShellAdapter[] {
 
 export { BashAdapter, ZshAdapter };
 export type { ShellAdapter } from './base';
-

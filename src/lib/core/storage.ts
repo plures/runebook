@@ -1,12 +1,7 @@
 // Event storage layer for terminal observer
 // Supports both PluresDB and local file-based storage
 
-import type {
-  TerminalObserverEvent,
-  EventStore,
-  EventType,
-  ObserverConfig,
-} from './types';
+import type { EventStore, EventType, ObserverConfig, TerminalObserverEvent } from './types';
 import { mkdir, readFile, writeFile } from 'fs/promises';
 import { join } from 'path';
 import { homedir } from 'os';
@@ -51,7 +46,12 @@ export class LocalFileStore implements EventStore {
       const data = await readFile(this.eventsFile, 'utf-8');
       this.events = JSON.parse(data);
     } catch (error: unknown) {
-      if (error && typeof error === 'object' && 'code' in error && error.code === 'ENOENT') {
+      if (
+        error &&
+        typeof error === 'object' &&
+        'code' in error &&
+        error.code === 'ENOENT'
+      ) {
         // File doesn't exist yet, start with empty array
         this.events = [];
       } else {
@@ -70,18 +70,22 @@ export class LocalFileStore implements EventStore {
       while (this.writePromise) {
         await this.writePromise;
       }
-      
+
       // Now perform this write
       try {
-        await writeFile(this.eventsFile, JSON.stringify(this.events, null, 2), 'utf-8');
+        await writeFile(
+          this.eventsFile,
+          JSON.stringify(this.events, null, 2),
+          'utf-8',
+        );
       } catch (error) {
         console.error('Failed to persist events to file:', error);
       }
     })();
-    
+
     this.writePromise = writeOp;
     await writeOp;
-    
+
     // Clear writePromise only if it's still this operation
     if (this.writePromise === writeOp) {
       this.writePromise = null;
@@ -90,9 +94,9 @@ export class LocalFileStore implements EventStore {
 
   async saveEvent(event: TerminalObserverEvent): Promise<void> {
     await this.ensureInitialized();
-    
+
     this.events.push(event);
-    
+
     // Enforce max events limit
     if (this.config.maxEvents && this.config.maxEvents > 0) {
       if (this.events.length > this.config.maxEvents) {
@@ -108,70 +112,72 @@ export class LocalFileStore implements EventStore {
   async getEvents(
     type?: EventType,
     since?: number,
-    limit?: number
+    limit?: number,
   ): Promise<TerminalObserverEvent[]> {
     await this.ensureInitialized();
-    
+
     let filtered = this.events;
-    
+
     if (type) {
-      filtered = filtered.filter(e => e.type === type);
+      filtered = filtered.filter((e) => e.type === type);
     }
-    
+
     if (since) {
-      filtered = filtered.filter(e => e.timestamp >= since);
+      filtered = filtered.filter((e) => e.timestamp >= since);
     }
-    
+
     // Sort by timestamp (newest first)
     filtered.sort((a, b) => b.timestamp - a.timestamp);
-    
+
     if (limit && limit > 0) {
       filtered = filtered.slice(0, limit);
     }
-    
+
     return filtered;
   }
 
   async getEventsByCommand(
-    commandId: string
+    commandId: string,
   ): Promise<TerminalObserverEvent[]> {
     await this.ensureInitialized();
-    
-    return this.events.filter(e => {
-      // command_start events use their id as the command identifier
-      if (e.type === 'command_start' && e.id === commandId) {
-        return true;
-      }
-      // Other events reference the command via commandId field
-      if ('commandId' in e && e.commandId === commandId) {
-        return true;
-      }
-      return false;
-    }).sort((a, b) => a.timestamp - b.timestamp);
+
+    return this.events
+      .filter((e) => {
+        // command_start events use their id as the command identifier
+        if (e.type === 'command_start' && e.id === commandId) {
+          return true;
+        }
+        // Other events reference the command via commandId field
+        if ('commandId' in e && e.commandId === commandId) {
+          return true;
+        }
+        return false;
+      })
+      .sort((a, b) => a.timestamp - b.timestamp);
   }
 
   async getEventsBySession(
     sessionId: string,
-    limit?: number
+    limit?: number,
   ): Promise<TerminalObserverEvent[]> {
     await this.ensureInitialized();
-    
-    let filtered = this.events.filter(e => e.sessionId === sessionId);
-    
+
+    let filtered = this.events.filter((e) => e.sessionId === sessionId);
+
     filtered.sort((a, b) => b.timestamp - a.timestamp);
-    
+
     if (limit && limit > 0) {
       filtered = filtered.slice(0, limit);
     }
-    
+
     return filtered;
   }
 
   async clearEvents(olderThan?: number): Promise<void> {
     await this.ensureInitialized();
-    
+
     if (olderThan) {
-      this.events = this.events.filter(e => e.timestamp >= olderThan);
+      this.events = this.events.filter((e) => e.timestamp >= olderThan);
     } else {
       this.events = [];
     }
@@ -186,15 +192,15 @@ export class LocalFileStore implements EventStore {
     sessions: number;
   }> {
     await this.ensureInitialized();
-    
+
     const eventsByType: Record<string, number> = {};
     const sessions = new Set<string>();
-    
+
     for (const event of this.events) {
       eventsByType[event.type] = (eventsByType[event.type] || 0) + 1;
       sessions.add(event.sessionId);
     }
-    
+
     return {
       totalEvents: this.events.length,
       eventsByType: eventsByType as Record<EventType, number>,
@@ -223,7 +229,7 @@ export class PluresDBEventStore implements EventStore {
 
     try {
       const { SQLiteCompatibleAPI } = await import('pluresdb');
-      
+
       this.db = new SQLiteCompatibleAPI({
         config: {
           port: 34567,
@@ -236,7 +242,10 @@ export class PluresDBEventStore implements EventStore {
       await this.db.start();
       this.initialized = true;
     } catch (error) {
-      console.error('Failed to initialize PluresDB for observer storage:', error);
+      console.error(
+        'Failed to initialize PluresDB for observer storage:',
+        error,
+      );
       throw new Error('PluresDB initialization failed for observer storage');
     }
   }
@@ -250,7 +259,7 @@ export class PluresDBEventStore implements EventStore {
   async getEvents(
     type?: EventType,
     since?: number,
-    limit?: number
+    limit?: number,
   ): Promise<TerminalObserverEvent[]> {
     await this.ensureInitialized();
     const keys = await this.db.list(this.eventPrefix);
@@ -278,42 +287,44 @@ export class PluresDBEventStore implements EventStore {
   }
 
   async getEventsByCommand(
-    commandId: string
+    commandId: string,
   ): Promise<TerminalObserverEvent[]> {
     const allEvents = await this.getEvents();
-    return allEvents.filter(e => {
-      // command_start events use their id as the command identifier
-      if (e.type === 'command_start' && e.id === commandId) {
-        return true;
-      }
-      // Other events reference the command via commandId field
-      if ('commandId' in e && e.commandId === commandId) {
-        return true;
-      }
-      return false;
-    }).sort((a, b) => a.timestamp - b.timestamp);
+    return allEvents
+      .filter((e) => {
+        // command_start events use their id as the command identifier
+        if (e.type === 'command_start' && e.id === commandId) {
+          return true;
+        }
+        // Other events reference the command via commandId field
+        if ('commandId' in e && e.commandId === commandId) {
+          return true;
+        }
+        return false;
+      })
+      .sort((a, b) => a.timestamp - b.timestamp);
   }
 
   async getEventsBySession(
     sessionId: string,
-    limit?: number
+    limit?: number,
   ): Promise<TerminalObserverEvent[]> {
     const allEvents = await this.getEvents();
-    let filtered = allEvents.filter(e => e.sessionId === sessionId);
-    
+    let filtered = allEvents.filter((e) => e.sessionId === sessionId);
+
     filtered.sort((a, b) => b.timestamp - a.timestamp);
-    
+
     if (limit && limit > 0) {
       filtered = filtered.slice(0, limit);
     }
-    
+
     return filtered;
   }
 
   async clearEvents(olderThan?: number): Promise<void> {
     await this.ensureInitialized();
     const keys = await this.db.list(this.eventPrefix);
-    
+
     for (const key of keys) {
       try {
         const event = await this.db.getValue(key);
@@ -334,12 +345,12 @@ export class PluresDBEventStore implements EventStore {
     const events = await this.getEvents();
     const eventsByType: Record<string, number> = {};
     const sessions = new Set<string>();
-    
+
     for (const event of events) {
       eventsByType[event.type] = (eventsByType[event.type] || 0) + 1;
       sessions.add(event.sessionId);
     }
-    
+
     return {
       totalEvents: events.length,
       eventsByType: eventsByType as Record<EventType, number>,
@@ -357,4 +368,3 @@ export function createEventStore(config: ObserverConfig): EventStore {
   }
   return new LocalFileStore(config);
 }
-

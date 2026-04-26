@@ -1,8 +1,8 @@
 // Tests for agent/node-suggestions.ts (FileSuggestionStore)
 
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { FileSuggestionStore } from '../node-suggestions';
-import { rmSync, existsSync } from 'fs';
+import { existsSync, rmSync } from 'fs';
 import { join } from 'path';
 import { tmpdir } from 'os';
 import type { Suggestion } from '../../types/agent';
@@ -41,14 +41,14 @@ describe('FileSuggestionStore', () => {
   it('should add a suggestion and persist to file', async () => {
     store.add(makeSuggestion('s1'));
     // Wait for async save to complete
-    await new Promise(resolve => setTimeout(resolve, 50));
+    await new Promise((resolve) => setTimeout(resolve, 50));
     expect(existsSync(TEST_PATH)).toBe(true);
     expect(store.suggestions).toHaveLength(1);
   });
 
   it('should load suggestions from file', async () => {
     store.add(makeSuggestion('s1'));
-    await new Promise(resolve => setTimeout(resolve, 50));
+    await new Promise((resolve) => setTimeout(resolve, 50));
 
     // Create a new store and load from the same file
     const store2 = new FileSuggestionStore(TEST_PATH);
@@ -72,9 +72,9 @@ describe('FileSuggestionStore', () => {
   it('should remove a suggestion and persist', async () => {
     store.add(makeSuggestion('s1'));
     store.add(makeSuggestion('s2'));
-    await new Promise(resolve => setTimeout(resolve, 50));
+    await new Promise((resolve) => setTimeout(resolve, 50));
     store.remove('s1');
-    await new Promise(resolve => setTimeout(resolve, 50));
+    await new Promise((resolve) => setTimeout(resolve, 50));
     expect(store.suggestions).toHaveLength(1);
     expect(store.suggestions[0].id).toBe('s2');
   });
@@ -82,9 +82,9 @@ describe('FileSuggestionStore', () => {
   it('should clear suggestions and persist', async () => {
     store.add(makeSuggestion('s1'));
     store.add(makeSuggestion('s2'));
-    await new Promise(resolve => setTimeout(resolve, 50));
+    await new Promise((resolve) => setTimeout(resolve, 50));
     store.clear();
-    await new Promise(resolve => setTimeout(resolve, 50));
+    await new Promise((resolve) => setTimeout(resolve, 50));
     expect(store.suggestions).toHaveLength(0);
   });
 

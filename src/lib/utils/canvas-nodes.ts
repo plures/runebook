@@ -1,11 +1,19 @@
-import type { Port, TextNode, TerminalNode, InputNode, DisplayNode, TransformNode, SubCanvasNode } from '../types/canvas';
+import type {
+  DisplayNode,
+  InputNode,
+  Port,
+  SubCanvasNode,
+  TerminalNode,
+  TextNode,
+  TransformNode,
+} from '../types/canvas';
 
 /**
  * Resolve the index of a port by its ID within a port array.
  * Returns the found index, or 0 as a safe fallback when the port ID is not found.
  */
 export function resolvePortIndex(ports: Port[], portId: string): number {
-  const idx = ports.findIndex(p => p.id === portId);
+  const idx = ports.findIndex((p) => p.id === portId);
   return idx >= 0 ? idx : 0;
 }
 
@@ -17,7 +25,12 @@ export interface CreateNodeOptions {
 }
 
 /** Factory that creates a fully-initialised TextNode with default ports. */
-export function createTextNode({ id, x, y, label = 'Note' }: CreateNodeOptions): TextNode {
+export function createTextNode({
+  id,
+  x,
+  y,
+  label = 'Note',
+}: CreateNodeOptions): TextNode {
   return {
     id,
     type: 'text',
@@ -31,7 +44,12 @@ export function createTextNode({ id, x, y, label = 'Note' }: CreateNodeOptions):
 }
 
 /** Factory that creates a fully-initialised TerminalNode with a default command. */
-export function createTerminalNode({ id, x, y, label = 'Terminal' }: CreateNodeOptions): TerminalNode {
+export function createTerminalNode({
+  id,
+  x,
+  y,
+  label = 'Terminal',
+}: CreateNodeOptions): TerminalNode {
   return {
     id,
     type: 'terminal',
@@ -47,7 +65,12 @@ export function createTerminalNode({ id, x, y, label = 'Terminal' }: CreateNodeO
 }
 
 /** Factory that creates a fully-initialised InputNode with a text input type. */
-export function createInputNode({ id, x, y, label = 'Text Input' }: CreateNodeOptions): InputNode {
+export function createInputNode({
+  id,
+  x,
+  y,
+  label = 'Text Input',
+}: CreateNodeOptions): InputNode {
   return {
     id,
     type: 'input',
@@ -62,7 +85,12 @@ export function createInputNode({ id, x, y, label = 'Text Input' }: CreateNodeOp
 }
 
 /** Factory that creates a fully-initialised DisplayNode with text display type. */
-export function createDisplayNode({ id, x, y, label = 'Display' }: CreateNodeOptions): DisplayNode {
+export function createDisplayNode({
+  id,
+  x,
+  y,
+  label = 'Display',
+}: CreateNodeOptions): DisplayNode {
   return {
     id,
     type: 'display',
@@ -77,7 +105,12 @@ export function createDisplayNode({ id, x, y, label = 'Display' }: CreateNodeOpt
 }
 
 /** Factory that creates a fully-initialised TransformNode with a map transform type. */
-export function createTransformNode({ id, x, y, label = 'Transform' }: CreateNodeOptions): TransformNode {
+export function createTransformNode({
+  id,
+  x,
+  y,
+  label = 'Transform',
+}: CreateNodeOptions): TransformNode {
   return {
     id,
     type: 'transform',
@@ -99,7 +132,12 @@ export interface CreateSubCanvasNodeOptions {
 }
 
 /** Factory that creates a fully-initialised SubCanvasNode with default ports and an empty child canvas. */
-export function createSubCanvasNode({ id, x, y, label = 'Sub-Canvas' }: CreateSubCanvasNodeOptions): SubCanvasNode {
+export function createSubCanvasNode({
+  id,
+  x,
+  y,
+  label = 'Sub-Canvas',
+}: CreateSubCanvasNodeOptions): SubCanvasNode {
   return {
     id,
     type: 'sub-canvas',

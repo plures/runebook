@@ -1,0 +1,22 @@
+name: Version Bump
+
+on:
+  workflow_dispatch:
+    inputs:
+      version_type:
+        description: "Version bump type"
+        required: true
+        type: choice
+        options:
+          - patch
+          - minor
+          - major
+        default: patch
+
+jobs:
+  release:
+    uses: plures/.github/.github/workflows/release-reusable.yml@main
+    with:
+      bump: ${{ inputs.version_type }}
+      target_version: ''
+    secrets: inherit

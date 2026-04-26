@@ -35,7 +35,9 @@ const SAMPLE_CANVAS: Canvas = {
       content: null,
     } as any,
   ],
-  connections: [{ from: 'node-1', to: 'node-2', fromPort: 'out', toPort: 'in' }],
+  connections: [
+    { from: 'node-1', to: 'node-2', fromPort: 'out', toPort: 'in' },
+  ],
   version: '1.0.0',
 };
 
@@ -46,25 +48,31 @@ name: "${canvas.name}"
 version: "${canvas.version}"
 nodes:
 ${
-    canvas.nodes.map((n) =>
-      `  - id: ${n.id}
+    canvas.nodes
+      .map(
+        (n) =>
+          `  - id: ${n.id}
     type: ${n.type}
     label: "${n.label}"
     position:
       x: ${n.position.x}
       y: ${n.position.y}
     inputs: []
-    outputs: []`
-    ).join('\n')
+    outputs: []`,
+      )
+      .join('\n')
   }
 connections:
 ${
-    canvas.connections.map((c) =>
-      `  - from: ${c.from}
+    canvas.connections
+      .map(
+        (c) =>
+          `  - from: ${c.from}
     to: ${c.to}
     fromPort: ${c.fromPort}
-    toPort: ${c.toPort}`
-    ).join('\n')
+    toPort: ${c.toPort}`,
+      )
+      .join('\n')
   }
 `;
 }
@@ -151,7 +159,9 @@ describe('TUIApp', () => {
       unlinkSync(loadPath);
       try {
         unlinkSync(savePath);
-      } catch { /* ignore */ }
+      } catch {
+        /* ignore */
+      }
     }
   });
 
@@ -309,7 +319,9 @@ describe('TUIApp', () => {
     try {
       const app = new TUIApp();
       app.loadFromFile(path);
-      const spy = vi.spyOn(app, 'quit').mockImplementation(() => {/* stub */});
+      const spy = vi.spyOn(app, 'quit').mockImplementation(() => {
+        /* stub */
+      });
       app.handleKey('q', Buffer.from([0x71]));
       expect(spy).toHaveBeenCalledOnce();
     } finally {
@@ -322,7 +334,9 @@ describe('TUIApp', () => {
     try {
       const app = new TUIApp();
       app.loadFromFile(path);
-      const spy = vi.spyOn(app, 'quit').mockImplementation(() => {/* stub */});
+      const spy = vi.spyOn(app, 'quit').mockImplementation(() => {
+        /* stub */
+      });
       app.handleKey('\x03', Buffer.from([0x03]));
       expect(spy).toHaveBeenCalledOnce();
     } finally {
@@ -628,7 +642,9 @@ describe('TUIApp', () => {
     await app.runSelected();
 
     const output = (app as any).state.terminalOutput as string[];
-    expect(output.some((l: string) => l.includes('[err]') && l.includes('oops'))).toBe(true);
+    expect(
+      output.some((l: string) => l.includes('[err]') && l.includes('oops')),
+    ).toBe(true);
   });
 
   it('runSelected() returns mode to normal after execution completes', async () => {

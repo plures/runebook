@@ -1,18 +1,18 @@
 // Tests for execution-policy PraxisModule
 
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import { createPraxisEngine, PraxisRegistry } from '@plures/praxis';
 import {
-  executionPolicyModule,
-  ScheduleExecutionEvent,
-  DetectCyclesEvent,
-  ReportElapsedEvent,
-  EXECUTION_ORDER_FACT,
   CYCLE_DETECTED_FACT,
+  DetectCyclesEvent,
+  EXECUTION_ORDER_FACT,
+  executionPolicyModule,
   GRAPH_ACYCLIC_FACT,
+  ReportElapsedEvent,
+  ScheduleExecutionEvent,
   TIMEOUT_EXCEEDED_FACT,
 } from '../execution-policy';
-import type { ExecutionPolicyContext, ExecutionEdge } from '../execution-policy';
+import type { ExecutionEdge, ExecutionPolicyContext } from '../execution-policy';
 
 function makeEngine(
   nodes: string[] = [],
@@ -46,7 +46,9 @@ describe('execution-policy module', () => {
         ],
       );
       const result = engine.step([ScheduleExecutionEvent.create({})]);
-      const orderFact = result.state.facts.find(f => f.tag === EXECUTION_ORDER_FACT);
+      const orderFact = result.state.facts.find(
+        (f) => f.tag === EXECUTION_ORDER_FACT,
+      );
       expect(orderFact).toBeDefined();
       const order = (orderFact?.payload as any).order as string[];
       expect(order.indexOf('n1')).toBeLessThan(order.indexOf('n2'));
@@ -65,7 +67,9 @@ describe('execution-policy module', () => {
         ],
       );
       const result = engine.step([ScheduleExecutionEvent.create({})]);
-      const orderFact = result.state.facts.find(f => f.tag === EXECUTION_ORDER_FACT);
+      const orderFact = result.state.facts.find(
+        (f) => f.tag === EXECUTION_ORDER_FACT,
+      );
       expect(orderFact).toBeDefined();
       const order = (orderFact?.payload as any).order as string[];
       expect(order[0]).toBe('n1');
@@ -75,7 +79,9 @@ describe('execution-policy module', () => {
     it('handles isolated nodes', () => {
       const engine = makeEngine(['n1', 'n2'], []);
       const result = engine.step([ScheduleExecutionEvent.create({})]);
-      const orderFact = result.state.facts.find(f => f.tag === EXECUTION_ORDER_FACT);
+      const orderFact = result.state.facts.find(
+        (f) => f.tag === EXECUTION_ORDER_FACT,
+      );
       expect(orderFact).toBeDefined();
       expect((orderFact?.payload as any).order).toHaveLength(2);
     });
@@ -91,7 +97,9 @@ describe('execution-policy module', () => {
         ],
       );
       const result = engine.step([ScheduleExecutionEvent.create({})]);
-      const cycleFact = result.state.facts.find(f => f.tag === CYCLE_DETECTED_FACT);
+      const cycleFact = result.state.facts.find(
+        (f) => f.tag === CYCLE_DETECTED_FACT,
+      );
       expect(cycleFact).toBeDefined();
       expect(engine.getContext().hasCycles).toBe(true);
     });
@@ -101,7 +109,9 @@ describe('execution-policy module', () => {
     it('emits GRAPH_ACYCLIC_FACT for an acyclic graph', () => {
       const engine = makeEngine(['a', 'b'], [{ from: 'a', to: 'b' }]);
       const result = engine.step([DetectCyclesEvent.create({})]);
-      const acyclicFact = result.state.facts.find(f => f.tag === GRAPH_ACYCLIC_FACT);
+      const acyclicFact = result.state.facts.find(
+        (f) => f.tag === GRAPH_ACYCLIC_FACT,
+      );
       expect(acyclicFact).toBeDefined();
     });
 
@@ -114,7 +124,9 @@ describe('execution-policy module', () => {
         ],
       );
       const result = engine.step([DetectCyclesEvent.create({})]);
-      const cycleFact = result.state.facts.find(f => f.tag === CYCLE_DETECTED_FACT);
+      const cycleFact = result.state.facts.find(
+        (f) => f.tag === CYCLE_DETECTED_FACT,
+      );
       expect(cycleFact).toBeDefined();
     });
   });
@@ -125,7 +137,9 @@ describe('execution-policy module', () => {
       const result = engine.step([
         ReportElapsedEvent.create({ nodeId: 'n1', elapsedMs: 1000 }),
       ]);
-      const timeoutFact = result.state.facts.find(f => f.tag === TIMEOUT_EXCEEDED_FACT);
+      const timeoutFact = result.state.facts.find(
+        (f) => f.tag === TIMEOUT_EXCEEDED_FACT,
+      );
       expect(timeoutFact).toBeUndefined();
     });
 
@@ -134,7 +148,9 @@ describe('execution-policy module', () => {
       const result = engine.step([
         ReportElapsedEvent.create({ nodeId: 'n1', elapsedMs: 1200 }),
       ]);
-      const timeoutFact = result.state.facts.find(f => f.tag === TIMEOUT_EXCEEDED_FACT);
+      const timeoutFact = result.state.facts.find(
+        (f) => f.tag === TIMEOUT_EXCEEDED_FACT,
+      );
       expect(timeoutFact).toBeDefined();
       expect((timeoutFact?.payload as any).nodeId).toBe('n1');
     });
@@ -144,7 +160,9 @@ describe('execution-policy module', () => {
       const result = engine.step([
         ReportElapsedEvent.create({ nodeId: 'n1', elapsedMs: 99999 }),
       ]);
-      const timeoutFact = result.state.facts.find(f => f.tag === TIMEOUT_EXCEEDED_FACT);
+      const timeoutFact = result.state.facts.find(
+        (f) => f.tag === TIMEOUT_EXCEEDED_FACT,
+      );
       expect(timeoutFact).toBeUndefined();
     });
   });

@@ -1,17 +1,17 @@
 // Unit tests for event schema validation
 
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import type {
-  TerminalObserverEvent,
-  CommandStartEvent,
   CommandEndEvent,
-  StdoutChunkEvent,
-  StderrChunkEvent,
-  ExitStatusEvent,
+  CommandStartEvent,
   CwdChangeEvent,
   EnvChangeEvent,
-  SessionStartEvent,
+  ExitStatusEvent,
   SessionEndEvent,
+  SessionStartEvent,
+  StderrChunkEvent,
+  StdoutChunkEvent,
+  TerminalObserverEvent,
 } from '../types';
 
 describe('Event Schema Validation', () => {
@@ -247,4 +247,3 @@ describe('Event Schema Validation', () => {
     });
   });
 });
-

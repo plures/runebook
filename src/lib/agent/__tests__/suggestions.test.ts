@@ -1,16 +1,20 @@
 // Tests for agent/suggestions.ts (MemorySuggestionStore and formatting functions)
 
-import { describe, it, expect, beforeEach } from 'vitest';
+import { beforeEach, describe, expect, it } from 'vitest';
 import {
-  MemorySuggestionStore,
   formatSuggestion,
-  formatSuggestionsForCLI,
   formatSuggestionCompact,
+  formatSuggestionsForCLI,
   formatTopSuggestion,
+  MemorySuggestionStore,
 } from '../suggestions';
 import type { Suggestion } from '../../types/agent';
 
-const makeSuggestion = (id: string, priority: Suggestion['priority'] = 'medium', type: Suggestion['type'] = 'tip'): Suggestion => ({
+const makeSuggestion = (
+  id: string,
+  priority: Suggestion['priority'] = 'medium',
+  type: Suggestion['type'] = 'tip',
+): Suggestion => ({
   id,
   type,
   priority,
@@ -79,7 +83,10 @@ describe('MemorySuggestionStore', () => {
   });
 
   it('should get suggestions for a command via context.command', () => {
-    const s: Suggestion = { ...makeSuggestion('s1'), context: { command: 'git' } };
+    const s: Suggestion = {
+      ...makeSuggestion('s1'),
+      context: { command: 'git' },
+    };
     store.add(s);
     store.add(makeSuggestion('s2'));
     expect(store.getForCommand('git')).toHaveLength(1);
@@ -125,7 +132,11 @@ describe('formatSuggestion', () => {
   });
 
   it('should include command when present', () => {
-    const s: Suggestion = { ...makeSuggestion('s1', 'medium', 'command'), command: 'git', args: ['status'] };
+    const s: Suggestion = {
+      ...makeSuggestion('s1', 'medium', 'command'),
+      command: 'git',
+      args: ['status'],
+    };
     const result = formatSuggestion(s);
     expect(result).toContain('git');
     expect(result).toContain('status');

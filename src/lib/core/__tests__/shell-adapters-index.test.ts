@@ -1,7 +1,7 @@
 // Tests for core/shell-adapters/index.ts
 
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { detectShellType, createShellAdapter, getAvailableAdapters } from '../shell-adapters/index';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { createShellAdapter, detectShellType, getAvailableAdapters } from '../shell-adapters/index';
 import { BashAdapter } from '../shell-adapters/bash';
 import { ZshAdapter } from '../shell-adapters/zsh';
 
@@ -50,11 +50,15 @@ describe('createShellAdapter', () => {
   });
 
   it('should throw for nushell (not implemented)', () => {
-    expect(() => createShellAdapter('nushell')).toThrow('Nushell adapter not yet implemented');
+    expect(() => createShellAdapter('nushell')).toThrow(
+      'Nushell adapter not yet implemented',
+    );
   });
 
   it('should throw for unknown shell type', () => {
-    expect(() => createShellAdapter('unknown')).toThrow('Unsupported shell type: unknown');
+    expect(() => createShellAdapter('unknown')).toThrow(
+      'Unsupported shell type: unknown',
+    );
   });
 
   it('should use detected shell type when no arg provided', () => {
@@ -70,7 +74,7 @@ describe('getAvailableAdapters', () => {
   it('should return a list of adapters', () => {
     const adapters = getAvailableAdapters();
     expect(adapters.length).toBeGreaterThan(0);
-    expect(adapters.some(a => a instanceof BashAdapter)).toBe(true);
-    expect(adapters.some(a => a instanceof ZshAdapter)).toBe(true);
+    expect(adapters.some((a) => a instanceof BashAdapter)).toBe(true);
+    expect(adapters.some((a) => a instanceof ZshAdapter)).toBe(true);
   });
 });

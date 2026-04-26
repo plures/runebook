@@ -1,8 +1,8 @@
 // Tests for memory/storage layer
 
-import { describe, it, expect, beforeEach } from 'vitest';
+import { beforeEach, describe, expect, it } from 'vitest';
 import { MemoryStorage } from '../memory';
-import type { TerminalEvent, AgentConfig } from '../../types/agent';
+import type { AgentConfig, TerminalEvent } from '../../types/agent';
 
 const testConfig: AgentConfig = {
   enabled: true,
@@ -35,7 +35,7 @@ describe('Memory Storage', () => {
 
     await storage.saveEvent(event);
     const events = await storage.getEvents();
-    
+
     expect(events).toHaveLength(1);
     expect(events[0].id).toBe('test-1');
   });
@@ -98,7 +98,7 @@ describe('Memory Storage', () => {
 
     const echoEvents = await storage.getEventsByCommand('echo');
     expect(echoEvents).toHaveLength(2);
-    expect(echoEvents.every(e => e.command === 'echo')).toBe(true);
+    expect(echoEvents.every((e) => e.command === 'echo')).toBe(true);
   });
 
   it('should calculate statistics', async () => {
@@ -173,9 +173,8 @@ describe('Memory Storage', () => {
 
     await storage.clearEvents(now - 50000);
     const events = await storage.getEvents();
-    
+
     expect(events).toHaveLength(1);
     expect(events[0].id).toBe('new');
   });
 });
-

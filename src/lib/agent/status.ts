@@ -35,7 +35,7 @@ export function getAgentStatus(): AgentStatusData {
       console.error('Failed to load agent status:', error);
     }
   }
-  
+
   return inMemoryStatus;
 }
 
@@ -48,14 +48,16 @@ export function updateAgentStatus(updates: Partial<AgentStatusData>): void {
     ...updates,
     lastUpdated: Date.now(),
   };
-  
+
   // In Node.js, also persist to file
   if (isNode) {
-    import('./node-status').then(({ updateAgentStatusToFile }) => {
-      updateAgentStatusToFile(inMemoryStatus, updates);
-    }).catch(err => {
-      console.error('Failed to persist status to file:', err);
-    });
+    import('./node-status')
+      .then(({ updateAgentStatusToFile }) => {
+        updateAgentStatusToFile(inMemoryStatus, updates);
+      })
+      .catch((err) => {
+        console.error('Failed to persist status to file:', err);
+      });
   }
 }
 
@@ -68,13 +70,12 @@ export function formatStatus(status: AgentStatusData): string {
     analyzing: '⟳',
     issues_found: '⚠',
   };
-  
+
   const statusText = {
     idle: 'idle',
     analyzing: 'analyzing',
     issues_found: `${status.highPriorityCount} issue${status.highPriorityCount !== 1 ? 's' : ''}`,
   };
-  
+
   return `${statusSymbol[status.status]} ${statusText[status.status]}`;
 }
-

@@ -43,16 +43,11 @@ export default defineConfig({
     environment: 'node',
     // Use happy-dom for component tests (provides browser APIs for Svelte rendering)
     // All other tests use the default node environment
-    environmentMatchGlobs: [
-      ['**/components/__tests__/**', 'happy-dom'],
-    ],
+    environmentMatchGlobs: [['**/components/__tests__/**', 'happy-dom']],
     include: ['src/**/*.{test,spec}.{js,ts}'],
     server: {
       deps: {
-        inline: [
-          '@testing-library/svelte',
-          '@testing-library/svelte-core',
-        ],
+        inline: ['@testing-library/svelte', '@testing-library/svelte-core'],
       },
     },
     coverage: {
@@ -68,4 +63,3 @@ export default defineConfig({
     },
   },
 });
-

@@ -1,18 +1,15 @@
 // Tests for canvas-validation PraxisModule
 
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
+import { createPraxisEngine, PraxisRegistry } from '@plures/praxis';
 import {
-  createPraxisEngine,
-  PraxisRegistry,
-} from '@plures/praxis';
-import {
-  canvasValidationModule,
-  ValidateConnectionEvent,
-  ValidateCanvasStateEvent,
-  CONNECTION_VALID_FACT,
-  CONNECTION_INVALID_FACT,
-  CANVAS_STATE_VALID_FACT,
   CANVAS_STATE_INVALID_FACT,
+  CANVAS_STATE_VALID_FACT,
+  canvasValidationModule,
+  CONNECTION_INVALID_FACT,
+  CONNECTION_VALID_FACT,
+  ValidateCanvasStateEvent,
+  ValidateConnectionEvent,
 } from '../canvas-validation';
 import type { CanvasValidationContext } from '../canvas-validation';
 
@@ -54,13 +51,18 @@ describe('canvas-validation module', () => {
     it('rejects a connection from a node to itself', () => {
       const engine = makeEngine();
       const result = engine.step([
-        ValidateConnectionEvent.create({ from: 'n1', fromPort: 'out', to: 'n1', toPort: 'in' }),
+        ValidateConnectionEvent.create({
+          from: 'n1',
+          fromPort: 'out',
+          to: 'n1',
+          toPort: 'in',
+        }),
       ]);
       const facts = result.state.facts;
       const ctx = engine.getContext();
       expect(ctx.validationResult?.valid).toBe(false);
       expect(ctx.validationResult?.reason).toMatch(/self-loop/i);
-      const invalidFact = facts.find(f => f.tag === CONNECTION_INVALID_FACT);
+      const invalidFact = facts.find((f) => f.tag === CONNECTION_INVALID_FACT);
       expect(invalidFact).toBeDefined();
       expect((invalidFact?.payload as any).reason).toBe('self-loop');
     });
@@ -68,7 +70,12 @@ describe('canvas-validation module', () => {
     it('does not reject a connection between different nodes', () => {
       const engine = makeEngine();
       engine.step([
-        ValidateConnectionEvent.create({ from: 'n1', fromPort: 'out', to: 'n2', toPort: 'in' }),
+        ValidateConnectionEvent.create({
+          from: 'n1',
+          fromPort: 'out',
+          to: 'n2',
+          toPort: 'in',
+        }),
       ]);
       const ctx = engine.getContext();
       expect(ctx.validationResult?.valid).toBe(true);
@@ -79,9 +86,16 @@ describe('canvas-validation module', () => {
     it('accepts connections with matching data types', () => {
       const engine = makeEngine();
       const result = engine.step([
-        ValidateConnectionEvent.create({ from: 'n1', fromPort: 'out', to: 'n2', toPort: 'in' }),
+        ValidateConnectionEvent.create({
+          from: 'n1',
+          fromPort: 'out',
+          to: 'n2',
+          toPort: 'in',
+        }),
       ]);
-      const validFact = result.state.facts.find(f => f.tag === CONNECTION_VALID_FACT);
+      const validFact = result.state.facts.find(
+        (f) => f.tag === CONNECTION_VALID_FACT,
+      );
       expect(validFact).toBeDefined();
     });
 
@@ -99,9 +113,16 @@ describe('canvas-validation module', () => {
         },
       ]);
       const result = engine.step([
-        ValidateConnectionEvent.create({ from: 'src', fromPort: 'out', to: 'dst', toPort: 'in' }),
+        ValidateConnectionEvent.create({
+          from: 'src',
+          fromPort: 'out',
+          to: 'dst',
+          toPort: 'in',
+        }),
       ]);
-      const invalidFact = result.state.facts.find(f => f.tag === CONNECTION_INVALID_FACT);
+      const invalidFact = result.state.facts.find(
+        (f) => f.tag === CONNECTION_INVALID_FACT,
+      );
       expect(invalidFact).toBeDefined();
       expect((invalidFact?.payload as any).reason).toBe('type-mismatch');
     });
@@ -120,9 +141,16 @@ describe('canvas-validation module', () => {
         },
       ]);
       const result = engine.step([
-        ValidateConnectionEvent.create({ from: 'a', fromPort: 'out', to: 'b', toPort: 'in' }),
+        ValidateConnectionEvent.create({
+          from: 'a',
+          fromPort: 'out',
+          to: 'b',
+          toPort: 'in',
+        }),
       ]);
-      const validFact = result.state.facts.find(f => f.tag === CONNECTION_VALID_FACT);
+      const validFact = result.state.facts.find(
+        (f) => f.tag === CONNECTION_VALID_FACT,
+      );
       expect(validFact).toBeDefined();
     });
 
@@ -136,7 +164,9 @@ describe('canvas-validation module', () => {
           toPort: 'in',
         }),
       ]);
-      const invalidFact = result.state.facts.find(f => f.tag === CONNECTION_INVALID_FACT);
+      const invalidFact = result.state.facts.find(
+        (f) => f.tag === CONNECTION_INVALID_FACT,
+      );
       expect(invalidFact).toBeDefined();
       expect((invalidFact?.payload as any).reason).toBe('unknown-node');
     });
@@ -153,7 +183,9 @@ describe('canvas-validation module', () => {
           toPort: 'in',
         }),
       ]);
-      const firstInvalidFact = firstResult.state.facts.find(f => f.tag === CONNECTION_INVALID_FACT);
+      const firstInvalidFact = firstResult.state.facts.find(
+        (f) => f.tag === CONNECTION_INVALID_FACT,
+      );
       expect(firstInvalidFact).toBeDefined();
       const afterFirst = engine.getContext();
       expect(afterFirst.validationResult?.valid).toBe(false);
@@ -166,7 +198,9 @@ describe('canvas-validation module', () => {
           toPort: 'in',
         }),
       ]);
-      const secondValidFact = secondResult.state.facts.find(f => f.tag === CONNECTION_VALID_FACT);
+      const secondValidFact = secondResult.state.facts.find(
+        (f) => f.tag === CONNECTION_VALID_FACT,
+      );
       expect(secondValidFact).toBeDefined();
       const afterSecond = engine.getContext();
       expect(afterSecond.validationResult?.valid).toBe(true);
@@ -192,7 +226,9 @@ describe('canvas-validation module', () => {
     it('emits a valid fact for a consistent canvas', () => {
       const engine = makeEngine();
       const result = engine.step([ValidateCanvasStateEvent.create({})]);
-      const validFact = result.state.facts.find(f => f.tag === CANVAS_STATE_VALID_FACT);
+      const validFact = result.state.facts.find(
+        (f) => f.tag === CANVAS_STATE_VALID_FACT,
+      );
       expect(validFact).toBeDefined();
     });
 
@@ -202,7 +238,9 @@ describe('canvas-validation module', () => {
         { id: 'dup', inputs: [], outputs: [] },
       ]);
       const result = engine.step([ValidateCanvasStateEvent.create({})]);
-      const invalidFact = result.state.facts.find(f => f.tag === CANVAS_STATE_INVALID_FACT);
+      const invalidFact = result.state.facts.find(
+        (f) => f.tag === CANVAS_STATE_INVALID_FACT,
+      );
       expect(invalidFact).toBeDefined();
     });
   });

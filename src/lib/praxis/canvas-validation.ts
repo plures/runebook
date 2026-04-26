@@ -1,14 +1,8 @@
 // canvas-validation PraxisModule
 // Node connection rules, wire type compatibility, and canvas state consistency.
 
-import {
-  defineEvent,
-  defineRule,
-  defineConstraint,
-  defineModule,
-  RuleResult,
-  fact,
-} from '@plures/praxis';
+import { defineConstraint, defineEvent, defineModule, defineRule } from '@plures/praxis';
+import { fact } from './fact';
 import type { PraxisModule } from '@plures/praxis';
 
 // ---------------------------------------------------------------------------
@@ -85,7 +79,7 @@ const selfLoopCheckRule = defineRule<CanvasValidationContext>({
   eventTypes: 'VALIDATE_CONNECTION',
   impl: (state, events) => {
     const evt = events.find(ValidateConnectionEvent.is);
-    if (!evt) return RuleResult.skip('no VALIDATE_CONNECTION event');
+    if (!evt) return [];
 
     // Reset stale validation state so each new VALIDATE_CONNECTION event
     // starts from a clean slate, regardless of what happened previously.
@@ -98,10 +92,12 @@ const selfLoopCheckRule = defineRule<CanvasValidationContext>({
         valid: false,
         reason: 'Self-loops are not allowed',
       };
-      return RuleResult.emit([fact(CONNECTION_INVALID_FACT, { reason: 'self-loop', ...evt.payload })]);
+      return [
+        fact(CONNECTION_INVALID_FACT, { reason: 'self-loop', ...evt.payload }),
+      ];
     }
 
-    return RuleResult.noop('not a self-loop');
+    return [];
   },
 });
 
@@ -119,40 +115,48 @@ const portTypeCompatibilityRule = defineRule<CanvasValidationContext>({
   eventTypes: 'VALIDATE_CONNECTION',
   impl: (state, events) => {
     const evt = events.find(ValidateConnectionEvent.is);
-    if (!evt) return RuleResult.skip('no VALIDATE_CONNECTION event');
+    if (!evt) return [];
 
     // Store the current request immediately so context always reflects the
     // most-recent validation request, even on failure paths.
     state.context.pendingConnection = evt.payload;
 
     // Short-circuit: selfLoopCheckRule already flagged this connection as invalid.
-    if (state.context.validationResult?.valid === false) return RuleResult.noop('already failed');
+    if (state.context.validationResult?.valid === false) {
+      return [];
+    }
 
     const { from, fromPort, to, toPort } = evt.payload;
-    const srcNode = state.context.nodes.find(n => n.id === from);
-    const dstNode = state.context.nodes.find(n => n.id === to);
+    const srcNode = state.context.nodes.find((n) => n.id === from);
+    const dstNode = state.context.nodes.find((n) => n.id === to);
 
     if (!srcNode || !dstNode) {
       state.context.validationResult = {
         valid: false,
         reason: `Unknown node: ${!srcNode ? from : to}`,
       };
-      return RuleResult.emit([
-        fact(CONNECTION_INVALID_FACT, { reason: 'unknown-node', ...evt.payload }),
-      ]);
+      return [
+        fact(CONNECTION_INVALID_FACT, {
+          reason: 'unknown-node',
+          ...evt.payload,
+        }),
+      ];
     }
 
-    const srcPort = srcNode.outputs.find(p => p.id === fromPort);
-    const dstPortDesc = dstNode.inputs.find(p => p.id === toPort);
+    const srcPort = srcNode.outputs.find((p) => p.id === fromPort);
+    const dstPortDesc = dstNode.inputs.find((p) => p.id === toPort);
 
     if (!srcPort || !dstPortDesc) {
       state.context.validationResult = {
         valid: false,
         reason: `Unknown port: ${!srcPort ? fromPort : toPort}`,
       };
-      return RuleResult.emit([
-        fact(CONNECTION_INVALID_FACT, { reason: 'unknown-port', ...evt.payload }),
-      ]);
+      return [
+        fact(CONNECTION_INVALID_FACT, {
+          reason: 'unknown-port',
+          ...evt.payload,
+        }),
+      ];
     }
 
     // Both ports are typed — they must match
@@ -165,19 +169,19 @@ const portTypeCompatibilityRule = defineRule<CanvasValidationContext>({
         valid: false,
         reason: `Type mismatch: ${srcPort.dataType} → ${dstPortDesc.dataType}`,
       };
-      return RuleResult.emit([
+      return [
         fact(CONNECTION_INVALID_FACT, {
           reason: 'type-mismatch',
           fromType: srcPort.dataType,
           toType: dstPortDesc.dataType,
           ...evt.payload,
         }),
-      ]);
+      ];
     }
 
     state.context.pendingConnection = evt.payload;
     state.context.validationResult = { valid: true, reason: 'compatible' };
-    return RuleResult.emit([fact(CONNECTION_VALID_FACT, evt.payload)]);
+    return [fact(CONNECTION_VALID_FACT, evt.payload)];
   },
 });
 
@@ -193,9 +197,9 @@ const canvasStateConsistencyRule = defineRule<CanvasValidationContext>({
   eventTypes: 'VALIDATE_CANVAS_STATE',
   impl: (state, events) => {
     const evt = events.find(ValidateCanvasStateEvent.is);
-    if (!evt) return RuleResult.skip('no VALIDATE_CANVAS_STATE event');
+    if (!evt) return [];
 
-    const ids = state.context.nodes.map(n => n.id);
+    const ids = state.context.nodes.map((n) => n.id);
     const uniqueIds = new Set(ids);
 
     if (ids.length !== uniqueIds.size) {
@@ -203,11 +207,13 @@ const canvasStateConsistencyRule = defineRule<CanvasValidationContext>({
         valid: false,
         reason: 'Duplicate node IDs detected',
       };
-      return RuleResult.emit([fact(CANVAS_STATE_INVALID_FACT, { reason: 'duplicate-node-ids' })]);
+      return [
+        fact(CANVAS_STATE_INVALID_FACT, { reason: 'duplicate-node-ids' }),
+      ];
     }
 
     state.context.validationResult = { valid: true, reason: 'consistent' };
-    return RuleResult.emit([fact(CANVAS_STATE_VALID_FACT, {})]);
+    return [fact(CANVAS_STATE_VALID_FACT, {})];
   },
 });
 
@@ -218,7 +224,7 @@ const canvasStateConsistencyRule = defineRule<CanvasValidationContext>({
 const noSelfLoopConstraint = defineConstraint<CanvasValidationContext>({
   id: 'canvas-validation.noSelfLoop',
   description: 'A validated connection must not be a self-loop',
-  impl: state => {
+  impl: (state) => {
     const { pendingConnection, validationResult } = state.context;
     if (!pendingConnection || !validationResult?.valid) return true;
     return pendingConnection.from !== pendingConnection.to;
@@ -230,7 +236,11 @@ const noSelfLoopConstraint = defineConstraint<CanvasValidationContext>({
 // ---------------------------------------------------------------------------
 
 export const canvasValidationModule: PraxisModule<CanvasValidationContext> = defineModule({
-  rules: [selfLoopCheckRule, portTypeCompatibilityRule, canvasStateConsistencyRule],
+  rules: [
+    selfLoopCheckRule,
+    portTypeCompatibilityRule,
+    canvasStateConsistencyRule,
+  ],
   constraints: [noSelfLoopConstraint],
   meta: { name: 'canvas-validation', version: '1.0.0' },
 });

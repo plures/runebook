@@ -1,15 +1,15 @@
 // Tests for utils/storage (LocalStorageAdapter)
 
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
+  deleteCanvas,
+  getCurrentAdapter,
+  listCanvases,
+  loadCanvas,
   LocalStorageAdapter,
+  saveCanvas,
   useLocalStorage,
   usePluresDB,
-  getCurrentAdapter,
-  saveCanvas,
-  loadCanvas,
-  listCanvases,
-  deleteCanvas,
 } from '../storage';
 import type { Canvas } from '../../types/canvas';
 
@@ -27,11 +27,19 @@ function createLocalStorageMock() {
   let store: Record<string, string> = {};
   return {
     getItem: vi.fn((key: string) => store[key] ?? null),
-    setItem: vi.fn((key: string, value: string) => { store[key] = value; }),
-    removeItem: vi.fn((key: string) => { delete store[key]; }),
-    get length() { return Object.keys(store).length; },
+    setItem: vi.fn((key: string, value: string) => {
+      store[key] = value;
+    }),
+    removeItem: vi.fn((key: string) => {
+      delete store[key];
+    }),
+    get length() {
+      return Object.keys(store).length;
+    },
     key: vi.fn((i: number) => Object.keys(store)[i] ?? null),
-    clear: vi.fn(() => { store = {}; }),
+    clear: vi.fn(() => {
+      store = {};
+    }),
   };
 }
 
@@ -63,7 +71,9 @@ describe('LocalStorageAdapter', () => {
   });
 
   it('should return null for invalid canvas data', async () => {
-    localStorageMock.getItem.mockReturnValueOnce(JSON.stringify({ bad: 'data' }));
+    localStorageMock.getItem.mockReturnValueOnce(
+      JSON.stringify({ bad: 'data' }),
+    );
     const result = await adapter.load('any-id');
     expect(result).toBeNull();
   });
@@ -79,7 +89,7 @@ describe('LocalStorageAdapter', () => {
     await adapter.save(makeCanvas('c2', 'Canvas 2'));
     const list = await adapter.list();
     expect(list.length).toBe(2);
-    expect(list.map(c => c.id).sort()).toEqual(['c1', 'c2']);
+    expect(list.map((c) => c.id).sort()).toEqual(['c1', 'c2']);
   });
 
   it('should return empty list when no canvases saved', async () => {
@@ -91,8 +101,14 @@ describe('LocalStorageAdapter', () => {
     // Manually inject two items with distinct timestamps
     const ts1 = 1000;
     const ts2 = 2000;
-    localStorageMock.setItem('runebook_canvas_c1', JSON.stringify({ canvas: makeCanvas('c1', 'Canvas 1'), timestamp: ts1 }));
-    localStorageMock.setItem('runebook_canvas_c2', JSON.stringify({ canvas: makeCanvas('c2', 'Canvas 2'), timestamp: ts2 }));
+    localStorageMock.setItem(
+      'runebook_canvas_c1',
+      JSON.stringify({ canvas: makeCanvas('c1', 'Canvas 1'), timestamp: ts1 }),
+    );
+    localStorageMock.setItem(
+      'runebook_canvas_c2',
+      JSON.stringify({ canvas: makeCanvas('c2', 'Canvas 2'), timestamp: ts2 }),
+    );
     const list = await adapter.list();
     // Latest timestamp should be first
     expect(list[0].id).toBe('c2');
@@ -136,7 +152,10 @@ describe('Storage adapter management', () => {
   it('saveCanvas delegates to current adapter', async () => {
     const canvas = makeCanvas('c1', 'Canvas 1');
     const mock = createLocalStorageMock();
-    Object.defineProperty(global, 'localStorage', { value: mock, writable: true });
+    Object.defineProperty(global, 'localStorage', {
+      value: mock,
+      writable: true,
+    });
     useLocalStorage();
     await saveCanvas(canvas);
     expect(mock.setItem).toHaveBeenCalled();
@@ -144,7 +163,10 @@ describe('Storage adapter management', () => {
 
   it('loadCanvas delegates to current adapter', async () => {
     const mock = createLocalStorageMock();
-    Object.defineProperty(global, 'localStorage', { value: mock, writable: true });
+    Object.defineProperty(global, 'localStorage', {
+      value: mock,
+      writable: true,
+    });
     useLocalStorage();
     const result = await loadCanvas('non-existent');
     expect(result).toBeNull();
@@ -152,7 +174,10 @@ describe('Storage adapter management', () => {
 
   it('listCanvases delegates to current adapter', async () => {
     const mock = createLocalStorageMock();
-    Object.defineProperty(global, 'localStorage', { value: mock, writable: true });
+    Object.defineProperty(global, 'localStorage', {
+      value: mock,
+      writable: true,
+    });
     useLocalStorage();
     const result = await listCanvases();
     expect(Array.isArray(result)).toBe(true);
@@ -160,7 +185,10 @@ describe('Storage adapter management', () => {
 
   it('deleteCanvas delegates to current adapter', async () => {
     const mock = createLocalStorageMock();
-    Object.defineProperty(global, 'localStorage', { value: mock, writable: true });
+    Object.defineProperty(global, 'localStorage', {
+      value: mock,
+      writable: true,
+    });
     useLocalStorage();
     await deleteCanvas('some-id');
     expect(mock.removeItem).toHaveBeenCalled();

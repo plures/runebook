@@ -1,10 +1,13 @@
 // Analysis engine for Ambient Agent Mode
 // Analyzes patterns and generates suggestions
 
-import type { TerminalEvent, CommandPattern, Suggestion, EventStorage } from '../types/agent';
+import type { CommandPattern, EventStorage, Suggestion, TerminalEvent } from '../types/agent';
 
 export interface Analyzer {
-  analyzeEvent(event: TerminalEvent, storage: EventStorage): Promise<Suggestion[]>;
+  analyzeEvent(
+    event: TerminalEvent,
+    storage: EventStorage,
+  ): Promise<Suggestion[]>;
   analyzePatterns(storage: EventStorage): Promise<Suggestion[]>;
 }
 
@@ -12,21 +15,27 @@ export interface Analyzer {
  * Default analyzer implementation
  */
 export class DefaultAnalyzer implements Analyzer {
-  async analyzeEvent(event: TerminalEvent, storage: EventStorage): Promise<Suggestion[]> {
+  async analyzeEvent(
+    event: TerminalEvent,
+    storage: EventStorage,
+  ): Promise<Suggestion[]> {
     const suggestions: Suggestion[] = [];
 
     // Check for repeated failures
     if (!event.success) {
       const recentFailures = await storage.getEventsByCommand(event.command, 5);
-      const failureCount = recentFailures.filter((e: TerminalEvent) => !e.success).length;
-      
+      const failureCount = recentFailures.filter(
+        (e: TerminalEvent) => !e.success,
+      ).length;
+
       if (failureCount >= 3) {
         suggestions.push({
           id: `suggestion_${Date.now()}_repeated_failure`,
           type: 'warning',
           priority: 'high',
           title: 'Repeated Command Failures',
-          description: `The command "${event.command}" has failed ${failureCount} times recently. Consider checking the command syntax or environment.`,
+          description:
+            `The command "${event.command}" has failed ${failureCount} times recently. Consider checking the command syntax or environment.`,
           timestamp: Date.now(),
         });
       }
@@ -39,15 +48,19 @@ export class DefaultAnalyzer implements Analyzer {
         type: 'optimization',
         priority: 'medium',
         title: 'Slow Command Execution',
-        description: `Command "${event.command}" took ${(event.duration / 1000).toFixed(1)}s to execute. Consider optimizing or using a faster alternative.`,
+        description: `Command "${event.command}" took ${
+          (event.duration / 1000).toFixed(1)
+        }s to execute. Consider optimizing or using a faster alternative.`,
         timestamp: Date.now(),
       });
     }
 
     // Check for common patterns
     const patterns = await storage.getPatterns();
-    const pattern = patterns.find((p: CommandPattern) => p.command === event.command);
-    
+    const pattern = patterns.find(
+      (p: CommandPattern) => p.command === event.command,
+    );
+
     if (pattern && pattern.frequency > 5) {
       // Suggest shortcuts for frequently used commands
       if (pattern.commonArgs.length > 0 && event.args.length === 0) {
@@ -56,7 +69,8 @@ export class DefaultAnalyzer implements Analyzer {
           type: 'tip',
           priority: 'low',
           title: 'Common Arguments',
-          description: `You often use "${event.command}" with arguments. Consider creating a shortcut or alias.`,
+          description:
+            `You often use "${event.command}" with arguments. Consider creating a shortcut or alias.`,
           command: event.command,
           args: pattern.commonArgs[0].split(' '),
           timestamp: Date.now(),
@@ -68,9 +82,12 @@ export class DefaultAnalyzer implements Analyzer {
     if (!event.success) {
       const similarEvents = await storage.getEvents(20);
       const similarSuccessful = similarEvents.filter(
-        (e: TerminalEvent) => e.command === event.command && e.success && e.args.length === event.args.length
+        (e: TerminalEvent) =>
+          e.command === event.command &&
+          e.success &&
+          e.args.length === event.args.length,
       );
-      
+
       if (similarSuccessful.length > 0) {
         const lastSuccessful = similarSuccessful[0];
         suggestions.push({
@@ -110,7 +127,8 @@ export class DefaultAnalyzer implements Analyzer {
         type: 'shortcut',
         priority: 'low',
         title: 'Frequently Used Command',
-        description: `"${pattern.command}" has been used ${pattern.frequency} times. Consider creating an alias or script.`,
+        description:
+          `"${pattern.command}" has been used ${pattern.frequency} times. Consider creating an alias or script.`,
         command: pattern.command,
         timestamp: Date.now(),
       });
@@ -119,7 +137,9 @@ export class DefaultAnalyzer implements Analyzer {
     // Suggest optimization for slow commands
     const slowPatterns = patterns
       .filter((p: CommandPattern) => p.avgDuration > 3000)
-      .sort((a: CommandPattern, b: CommandPattern) => b.avgDuration - a.avgDuration)
+      .sort(
+        (a: CommandPattern, b: CommandPattern) => b.avgDuration - a.avgDuration,
+      )
       .slice(0, 3);
 
     for (const pattern of slowPatterns) {
@@ -128,7 +148,9 @@ export class DefaultAnalyzer implements Analyzer {
         type: 'optimization',
         priority: 'medium',
         title: 'Slow Command Pattern',
-        description: `"${pattern.command}" averages ${(pattern.avgDuration / 1000).toFixed(1)}s execution time. Consider optimization.`,
+        description: `"${pattern.command}" averages ${
+          (pattern.avgDuration / 1000).toFixed(1)
+        }s execution time. Consider optimization.`,
         command: pattern.command,
         timestamp: Date.now(),
       });
@@ -141,7 +163,9 @@ export class DefaultAnalyzer implements Analyzer {
         type: 'tip',
         priority: 'medium',
         title: 'Low Success Rate',
-        description: `Overall command success rate is ${(stats.avgSuccessRate * 100).toFixed(1)}%. Review failed commands for patterns.`,
+        description: `Overall command success rate is ${
+          (stats.avgSuccessRate * 100).toFixed(1)
+        }%. Review failed commands for patterns.`,
         timestamp: Date.now(),
       });
     }
@@ -156,4 +180,3 @@ export class DefaultAnalyzer implements Analyzer {
 export function createAnalyzer(): Analyzer {
   return new DefaultAnalyzer();
 }
-

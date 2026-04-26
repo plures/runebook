@@ -12,6 +12,7 @@ This walkthrough demonstrates RuneBook's Ambient Agent Mode from setup to analys
 ## Demo Overview
 
 This demo will:
+
 1. Enable Ambient Agent Mode
 2. Run a few failing Nix commands
 3. Show RuneBook capturing the events
@@ -28,6 +29,7 @@ npm run agent status
 ```
 
 You should see:
+
 ```
 === Ambient Agent Status ===
 
@@ -50,6 +52,7 @@ nix build .#cursor
 ```
 
 This will likely fail with an error like:
+
 ```
 error: attribute 'cursor' missing
 ```
@@ -61,6 +64,7 @@ nix flake init -t flake-parts#devShells
 ```
 
 This might fail with:
+
 ```
 error: path '/nix/store/.../devShells' does not exist
 ```
@@ -82,6 +86,7 @@ npm run agent events 10
 ```
 
 You should see output like:
+
 ```
 === Recent Events (3) ===
 
@@ -124,9 +129,9 @@ error: attribute 'cursor' missing
 
 [NixErrorAnalyzer] Missing Attribute "cursor" (confidence: 90%)
   The attribute "cursor" is missing from your flake outputs or packages.
-  
+
   Check your flake.nix file and ensure the attribute exists:
-  
+
   outputs = { self, nixpkgs, ... }: {
     packages.x86_64-linux.cursor = ...;
     # or
@@ -135,7 +140,7 @@ error: attribute 'cursor' missing
 
 [LocalSearchAnalyzer] Check flake.nix for available attributes (confidence: 75%)
   Your flake.nix might have similar attributes. Check the file for available options.
-  
+
   grep -r "packages\|outputs" flake.nix
 ```
 
@@ -148,6 +153,7 @@ npm run agent suggestions
 ```
 
 Output:
+
 ```
 === Suggestions ===
 
@@ -173,6 +179,7 @@ npm run memory inspect
 ```
 
 Output:
+
 ```
 === RuneBook Cognitive Memory ===
 
@@ -203,6 +210,7 @@ npm run agent status
 ```
 
 Output:
+
 ```
 === Ambient Agent Status ===
 
@@ -237,11 +245,13 @@ npm run observer events tail
 ```
 
 In another terminal, run a command:
+
 ```bash
 nix build .#test
 ```
 
 You'll see events stream in:
+
 ```
 [2024-12-27T10:35:00.000Z] command_start   nix build .#test
   CWD: /home/user/projects/myproject
@@ -266,11 +276,13 @@ npm run agent clear
 ### Agent not capturing events
 
 1. Check if agent is enabled:
+
    ```bash
    npm run agent status
    ```
 
 2. Verify configuration:
+
    ```bash
    cat ~/.runebook/agent-config.json
    ```
@@ -294,11 +306,13 @@ npm run agent clear
 If you see "PluresDB server not available":
 
 1. Check if PluresDB is running:
+
    ```bash
    curl http://localhost:34567/health
    ```
 
 2. Start PluresDB:
+
    ```bash
    pluresdb --port 34567
    ```
@@ -310,11 +324,13 @@ If you see "PluresDB server not available":
 ### Analysis not working
 
 1. Ensure observer is enabled:
+
    ```bash
    npm run observer status
    ```
 
 2. Check that commands are being captured:
+
    ```bash
    npm run observer events 10
    ```
@@ -335,4 +351,3 @@ For an automated version of this demo, run:
 ```bash
 bash scripts/demo.sh
 ```
-

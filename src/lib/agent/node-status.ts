@@ -1,7 +1,7 @@
 // Node.js-only agent status tracking with file persistence
 // This file should only be imported in Node.js environments
 
-import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'fs';
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'fs';
 import { join } from 'path';
 import { homedir } from 'os';
 import type { AgentStatusData } from './status';
@@ -28,7 +28,7 @@ export function getAgentStatusFromFile(): AgentStatusData {
       console.error('Failed to load agent status:', error);
     }
   }
-  
+
   return {
     status: 'idle',
     suggestionCount: 0,
@@ -40,17 +40,20 @@ export function getAgentStatusFromFile(): AgentStatusData {
 /**
  * Update agent status to file (Node.js only)
  */
-export function updateAgentStatusToFile(current: AgentStatusData, updates: Partial<AgentStatusData>): void {
+export function updateAgentStatusToFile(
+  current: AgentStatusData,
+  updates: Partial<AgentStatusData>,
+): void {
   const configDir = join(homedir(), '.runebook');
   if (!existsSync(configDir)) {
     mkdirSync(configDir, { recursive: true });
   }
-  
+
   const updated: AgentStatusData = {
     ...current,
     ...updates,
     lastUpdated: Date.now(),
   };
-  
+
   writeFileSync(STATUS_FILE, JSON.stringify(updated, null, 2), 'utf-8');
 }

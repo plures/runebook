@@ -128,7 +128,6 @@
           
           nativeBuildInputs = [
             nodejs
-            pkgs.nodePackages.typescript
           ];
 
           # Don't build the frontend, just install deps
@@ -174,7 +173,6 @@
             pkgs.gtk3
             pkgs.libayatana-appindicator
             pkgs.libsoup_2_4
-            pkgs.nodePackages.typescript
             # Optional: pre-commit hooks
             pkgs.pre-commit
             pkgs.nixpkgs-fmt

@@ -7,30 +7,30 @@
 
 import { createPraxisEngine, PraxisRegistry } from '@plures/praxis';
 import {
-  canvasValidationModule,
-  ValidateConnectionEvent,
   type CanvasValidationContext,
+  canvasValidationModule,
   type NodeDescriptor,
+  ValidateConnectionEvent,
 } from './canvas-validation';
 import {
-  executionPolicyModule,
-  ScheduleExecutionEvent,
   CYCLE_DETECTED_FACT,
   EXECUTION_ORDER_FACT,
-  type ExecutionPolicyContext,
   type ExecutionEdge,
+  type ExecutionPolicyContext,
+  executionPolicyModule,
+  ScheduleExecutionEvent,
 } from './execution-policy';
 import {
+  type ComponentCapability,
+  type ComponentRegistryContext,
   componentRegistryModule,
   RegisterComponentEvent,
-  type ComponentRegistryContext,
-  type ComponentCapability,
 } from './component-registry';
 import {
-  resourceManagementModule,
-  RequestTerminalEvent,
   ReleaseTerminalEvent,
+  RequestTerminalEvent,
   type ResourceManagementContext,
+  resourceManagementModule,
 } from './resource-management';
 import type { CanvasNode, Connection } from '../types/canvas';
 
@@ -43,7 +43,11 @@ canvasValidationRegistry.registerModule(canvasValidationModule);
 
 /** Singleton engine driving connection-validation rules. */
 export const canvasValidationEngine = createPraxisEngine<CanvasValidationContext>({
-  initialContext: { nodes: [], pendingConnection: null, validationResult: null },
+  initialContext: {
+    nodes: [],
+    pendingConnection: null,
+    validationResult: null,
+  },
   registry: canvasValidationRegistry,
 });
 
@@ -55,11 +59,11 @@ export function syncValidationNodes(canvasNodes: CanvasNode[]): void {
   const nodes: NodeDescriptor[] = canvasNodes.map(
     (n): NodeDescriptor => ({
       id: n.id,
-      inputs: n.inputs.map(p => ({ id: p.id, dataType: p.dataType })),
-      outputs: n.outputs.map(p => ({ id: p.id, dataType: p.dataType })),
+      inputs: n.inputs.map((p) => ({ id: p.id, dataType: p.dataType })),
+      outputs: n.outputs.map((p) => ({ id: p.id, dataType: p.dataType })),
     }),
   );
-  canvasValidationEngine.updateContext(ctx => ({ ...ctx, nodes }));
+  canvasValidationEngine.updateContext((ctx) => ({ ...ctx, nodes }));
 }
 
 /**
@@ -90,17 +94,19 @@ const executionPolicyRegistry = new PraxisRegistry<ExecutionPolicyContext>();
 executionPolicyRegistry.registerModule(executionPolicyModule);
 
 /** Singleton engine driving scheduling and cycle-detection rules. */
-export const executionPolicyEngine = createPraxisEngine<ExecutionPolicyContext>({
-  initialContext: {
-    nodes: [],
-    edges: [],
-    executionOrder: [],
-    hasCycles: false,
-    timeouts: {},
-    elapsed: {},
+export const executionPolicyEngine = createPraxisEngine<ExecutionPolicyContext>(
+  {
+    initialContext: {
+      nodes: [],
+      edges: [],
+      executionOrder: [],
+      hasCycles: false,
+      timeouts: {},
+      elapsed: {},
+    },
+    registry: executionPolicyRegistry,
   },
-  registry: executionPolicyRegistry,
-});
+);
 
 /**
  * Recompute the topological execution order for the current canvas graph.
@@ -108,17 +114,26 @@ export const executionPolicyEngine = createPraxisEngine<ExecutionPolicyContext>(
  *
  * @returns The computed execution order array (empty if a cycle is detected).
  */
-export function scheduleExecution(canvasNodes: CanvasNode[], connections: Connection[]): string[] {
+export function scheduleExecution(
+  canvasNodes: CanvasNode[],
+  connections: Connection[],
+): string[] {
   const result = executionPolicyEngine.stepWithContext(
-    ctx => ({
+    (ctx) => ({
       ...ctx,
-      nodes: canvasNodes.map(n => n.id),
-      edges: connections.map((c): ExecutionEdge => ({ from: c.from, to: c.to })),
+      nodes: canvasNodes.map((n) => n.id),
+      edges: connections.map(
+        (c): ExecutionEdge => ({ from: c.from, to: c.to }),
+      ),
     }),
     [ScheduleExecutionEvent.create({})],
   );
-  const hasCycles = result.state.facts.some(f => f.tag === CYCLE_DETECTED_FACT);
-  const orderFact = result.state.facts.find(f => f.tag === EXECUTION_ORDER_FACT);
+  const hasCycles = result.state.facts.some(
+    (f) => f.tag === CYCLE_DETECTED_FACT,
+  );
+  const orderFact = result.state.facts.find(
+    (f) => f.tag === EXECUTION_ORDER_FACT,
+  );
   return hasCycles ? [] : ((orderFact?.payload as { order?: string[] })?.order ?? []);
 }
 
@@ -212,7 +227,7 @@ export const resourceManagementEngine = createPraxisEngine<ResourceManagementCon
 export function requestTerminal(nodeId: string): boolean {
   let countBefore = 0;
   const result = resourceManagementEngine.stepWithContext(
-    ctx => {
+    (ctx) => {
       countBefore = ctx.terminalCount;
       return ctx;
     },

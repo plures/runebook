@@ -3,7 +3,7 @@
 // Provides hooks for capturing bash shell events
 
 import { BaseShellAdapter } from './base';
-import type { ShellType, ObserverConfig } from '../types';
+import type { ObserverConfig, ShellType } from '../types';
 import type { EventStore } from '../storage';
 import { join } from 'path';
 import { homedir } from 'os';
@@ -46,7 +46,7 @@ export class BashAdapter extends BaseShellAdapter {
       '  }\n\n' +
       '  # Hook into command execution\n' +
       '  trap \'__runebook_capture_start "$BASH_COMMAND"\' DEBUG\n' +
-      '  trap \'__runebook_capture_end\' ERR\n' +
+      "  trap '__runebook_capture_end' ERR\n" +
       'fi\n'
     );
   }
@@ -71,7 +71,7 @@ export class BashAdapter extends BaseShellAdapter {
     command: string,
     args: string[],
     cwd: string,
-    env: Record<string, string>
+    env: Record<string, string>,
   ): Promise<string> {
     return await this.captureCommandStart(command, args, cwd, env);
   }
@@ -83,28 +83,27 @@ export class BashAdapter extends BaseShellAdapter {
     commandId: string,
     stdout: string,
     stderr: string,
-    exitCode: number
+    exitCode: number,
   ): Promise<void> {
     // Split stdout/stderr into chunks if configured
     const chunkSize = this.config?.chunkSize || 4096;
-    
+
     // Capture stdout chunks
     for (let i = 0; i < stdout.length; i += chunkSize) {
       const chunk = stdout.substring(i, i + chunkSize);
       await this.captureStdoutChunk(commandId, chunk);
     }
-    
+
     // Capture stderr chunks
     for (let i = 0; i < stderr.length; i += chunkSize) {
       const chunk = stderr.substring(i, i + chunkSize);
       await this.captureStderrChunk(commandId, chunk);
     }
-    
+
     // Capture exit status
     await this.captureExitStatus(commandId, exitCode);
-    
+
     // Capture command end
     await this.captureCommandEnd(commandId);
   }
 }
-

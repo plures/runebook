@@ -3,5 +3,9 @@
 export * from './heuristic';
 export * from './local-search';
 export * from './llm';
-export type { Analyzer, AnalysisContext, AnalysisSuggestion, AnalysisJob } from '../analysis-pipeline';
-
+export type {
+  AnalysisContext,
+  AnalysisJob,
+  AnalysisSuggestion,
+  Analyzer,
+} from '../analysis-pipeline';

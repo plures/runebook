@@ -14,15 +14,17 @@ export class OpenAIProvider extends BaseLLMProvider {
     super(
       config.safety?.requireUserReview ?? true,
       config.safety?.cacheEnabled ?? false,
-      config.safety?.cacheTtl ?? 3600
+      config.safety?.cacheTtl ?? 3600,
     );
-    
+
     // Get API key from env var
     this.apiKey = config.openai?.apiKey || process.env.OPENAI_API_KEY || '';
     if (!this.apiKey) {
-      throw new Error('OpenAI API key not found. Set OPENAI_API_KEY environment variable.');
+      throw new Error(
+        'OpenAI API key not found. Set OPENAI_API_KEY environment variable.',
+      );
     }
-    
+
     this.model = config.openai?.model || 'gpt-4o-mini';
     this.baseUrl = config.openai?.baseUrl || 'https://api.openai.com/v1';
   }
@@ -34,13 +36,13 @@ export class OpenAIProvider extends BaseLLMProvider {
   async callLLM(input: MCPToolInput, _sanitized: any): Promise<MCPToolOutput> {
     // Build messages
     const messages = this.buildMessages(input);
-    
+
     // Call OpenAI API
     const response = await fetch(`${this.baseUrl}/chat/completions`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${this.apiKey}`,
+        Authorization: `Bearer ${this.apiKey}`,
       },
       body: JSON.stringify({
         model: this.model,
@@ -57,16 +59,19 @@ export class OpenAIProvider extends BaseLLMProvider {
 
     const data = await response.json();
     const text = data.choices[0]?.message?.content || '';
-    
+
     // Parse response
     return this.parseResponse(text, input, data.usage);
   }
 
-  private buildMessages(input: MCPToolInput): Array<{ role: string; content: string }> {
+  private buildMessages(
+    input: MCPToolInput,
+  ): Array<{ role: string; content: string }> {
     const { contextWindow, errorSummary, repoMetadata } = input;
-    
-    const systemPrompt = `You are a helpful assistant analyzing terminal command failures. Provide actionable suggestions in JSON format.`;
-    
+
+    const systemPrompt =
+      `You are a helpful assistant analyzing terminal command failures. Provide actionable suggestions in JSON format.`;
+
     const userPrompt = `Analyze this command failure:
 
 Command: ${contextWindow.command} ${contextWindow.args.join(' ')}
@@ -80,12 +85,21 @@ Standard Output:
 ${contextWindow.stdout.substring(0, 1000)}
 
 Previous Commands:
-${contextWindow.previousCommands.slice(-3).map(c => `  ${c.command} ${c.args.join(' ')} (exit: ${c.exitCode})`).join('\n')}
+${
+      contextWindow.previousCommands
+        .slice(-3)
+        .map((c) => `  ${c.command} ${c.args.join(' ')} (exit: ${c.exitCode})`)
+        .join('\n')
+    }
 
 Repository Context:
 ${repoMetadata.type ? `Type: ${repoMetadata.type}` : 'Unknown'}
 ${repoMetadata.language ? `Language: ${repoMetadata.language}` : ''}
-${repoMetadata.files && repoMetadata.files.length > 0 ? `Relevant files: ${repoMetadata.files.slice(0, 5).join(', ')}` : ''}
+${
+      repoMetadata.files && repoMetadata.files.length > 0
+        ? `Relevant files: ${repoMetadata.files.slice(0, 5).join(', ')}`
+        : ''
+    }
 
 Provide 1-3 actionable suggestions in this JSON format:
 {
@@ -100,17 +114,21 @@ Provide 1-3 actionable suggestions in this JSON format:
     }
   ]
 }`;
-    
+
     return [
       { role: 'system', content: systemPrompt },
       { role: 'user', content: userPrompt },
     ];
   }
 
-  private parseResponse(text: string, input: MCPToolInput, usage?: any): MCPToolOutput {
+  private parseResponse(
+    text: string,
+    input: MCPToolInput,
+    usage?: any,
+  ): MCPToolOutput {
     try {
       const parsed = JSON.parse(text);
-      
+
       // Convert to MCPToolOutput format
       const suggestions = (parsed.suggestions || []).map((s: any) => ({
         title: s.title || 'Suggestion',
@@ -120,7 +138,7 @@ Provide 1-3 actionable suggestions in this JSON format:
         type: s.type || 'tip',
         priority: s.priority || 'medium',
       }));
-      
+
       return {
         suggestions,
         provenance: {
@@ -133,13 +151,15 @@ Provide 1-3 actionable suggestions in this JSON format:
     } catch (error) {
       // Fallback: create a generic suggestion
       return {
-        suggestions: [{
-          title: 'LLM Analysis',
-          description: text.substring(0, 500),
-          confidence: 0.5,
-          type: 'tip',
-          priority: 'medium',
-        }],
+        suggestions: [
+          {
+            title: 'LLM Analysis',
+            description: text.substring(0, 500),
+            confidence: 0.5,
+            type: 'tip',
+            priority: 'medium',
+          },
+        ],
         provenance: {
           provider: 'openai',
           model: this.model,
@@ -150,4 +170,3 @@ Provide 1-3 actionable suggestions in this JSON format:
     }
   }
 }
-

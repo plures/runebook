@@ -1,7 +1,7 @@
 // Integration test for terminal observer
 // Tests command capture, event persistence, and retrieval
 
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { createObserver, type ObserverConfig } from '../observer';
 import { LocalFileStore } from '../storage';
 import { exec } from 'child_process';
@@ -52,7 +52,7 @@ describe('TerminalObserver Integration', () => {
       'echo',
       ['hello', 'world'],
       process.cwd(),
-      process.env as Record<string, string>
+      process.env as Record<string, string>,
     );
 
     expect(commandId).toBeDefined();
@@ -65,21 +65,21 @@ describe('TerminalObserver Integration', () => {
     const events = await observer.getEventsByCommand(commandId);
 
     expect(events.length).toBeGreaterThan(0);
-    
-    const startEvent = events.find(e => e.type === 'command_start');
+
+    const startEvent = events.find((e) => e.type === 'command_start');
     expect(startEvent).toBeDefined();
     if (startEvent && startEvent.type === 'command_start') {
       expect(startEvent.command).toBe('echo');
       expect(startEvent.args).toEqual(['hello', 'world']);
     }
 
-    const stdoutEvent = events.find(e => e.type === 'stdout_chunk');
+    const stdoutEvent = events.find((e) => e.type === 'stdout_chunk');
     expect(stdoutEvent).toBeDefined();
     if (stdoutEvent && stdoutEvent.type === 'stdout_chunk') {
       expect(stdoutEvent.chunk).toContain('hello world');
     }
 
-    const exitEvent = events.find(e => e.type === 'exit_status');
+    const exitEvent = events.find((e) => e.type === 'exit_status');
     expect(exitEvent).toBeDefined();
     if (exitEvent && exitEvent.type === 'exit_status') {
       expect(exitEvent.exitCode).toBe(0);
@@ -95,14 +95,14 @@ describe('TerminalObserver Integration', () => {
       'echo',
       ['test'],
       process.cwd(),
-      process.env as Record<string, string>
+      process.env as Record<string, string>,
     );
 
     await observer.captureCommandResult(commandId, 'test\n', '', 0);
 
     // Stop and create new observer instance
     await observer.stop();
-    
+
     const newObserver = createObserver(config);
     await newObserver.initialize();
 
@@ -128,18 +128,18 @@ describe('TerminalObserver Integration', () => {
       'echo',
       ['test'],
       process.cwd(),
-      envWithSecrets as Record<string, string>
+      envWithSecrets as Record<string, string>,
     );
 
     const events = await observer.getEventsByCommand(commandId);
-    const startEvent = events.find(e => e.type === 'command_start');
-    
+    const startEvent = events.find((e) => e.type === 'command_start');
+
     expect(startEvent).toBeDefined();
     if (startEvent && startEvent.type === 'command_start') {
       // Secrets should be redacted
       expect(startEvent.envSummary.API_KEY).not.toBe('sk-1234567890abcdef');
       expect(startEvent.envSummary.TOKEN).not.toBe('secret-token-value');
-      
+
       // Non-secrets should be preserved
       expect(startEvent.envSummary.PATH).toBe('/usr/bin');
     }
@@ -155,7 +155,7 @@ describe('TerminalObserver Integration', () => {
         'echo',
         [`test${i}`],
         process.cwd(),
-        process.env as Record<string, string>
+        process.env as Record<string, string>,
       );
       await observer.captureCommandResult(commandId, `test${i}\n`, '', 0);
     }
@@ -175,17 +175,19 @@ describe('TerminalObserver Integration', () => {
       'echo',
       ['test'],
       process.cwd(),
-      process.env as Record<string, string>
+      process.env as Record<string, string>,
     );
     await observer.captureCommandResult(commandId, 'test\n', '', 0);
 
     const commandStartEvents = await observer.getEvents('command_start');
     expect(commandStartEvents.length).toBeGreaterThan(0);
-    expect(commandStartEvents.every(e => e.type === 'command_start')).toBe(true);
+    expect(commandStartEvents.every((e) => e.type === 'command_start')).toBe(
+      true,
+    );
 
     const stdoutEvents = await observer.getEvents('stdout_chunk');
     expect(stdoutEvents.length).toBeGreaterThan(0);
-    expect(stdoutEvents.every(e => e.type === 'stdout_chunk')).toBe(true);
+    expect(stdoutEvents.every((e) => e.type === 'stdout_chunk')).toBe(true);
   });
 
   it('should limit events when retrieving', async () => {
@@ -198,7 +200,7 @@ describe('TerminalObserver Integration', () => {
         'echo',
         [`test${i}`],
         process.cwd(),
-        process.env as Record<string, string>
+        process.env as Record<string, string>,
       );
       await observer.captureCommandResult(commandId, `test${i}\n`, '', 0);
     }
@@ -216,7 +218,7 @@ describe('TerminalObserver Integration', () => {
       'echo',
       ['test'],
       process.cwd(),
-      process.env as Record<string, string>
+      process.env as Record<string, string>,
     );
     await observer.captureCommandResult(commandId, 'test\n', '', 0);
 
@@ -232,4 +234,3 @@ describe('TerminalObserver Integration', () => {
     expect(events.length).toBe(0);
   });
 });
-

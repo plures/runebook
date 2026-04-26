@@ -159,7 +159,9 @@ export class TUIApp extends EventEmitter {
     if (!this.state.canvas || this.nodes.length === 0) return;
     const node = this.selectedNode;
     if (!node) return;
-    this.state.canvas.nodes = this.state.canvas.nodes.filter((n) => n.id !== node.id);
+    this.state.canvas.nodes = this.state.canvas.nodes.filter(
+      (n) => n.id !== node.id,
+    );
     this.state.canvas.connections = this.state.canvas.connections.filter(
       (c) => c.from !== node.id && c.to !== node.id,
     );
@@ -310,7 +312,10 @@ export class TUIApp extends EventEmitter {
 
   /** Render the full TUI screen. Safe to call at any time. */
   render(): void {
-    const out = this.out as NodeJS.WritableStream & { columns?: number; rows?: number };
+    const out = this.out as NodeJS.WritableStream & {
+      columns?: number;
+      rows?: number;
+    };
     const cols: number = out.columns ?? (process.stdout as NodeJS.WriteStream).columns ?? 80;
     const rows: number = out.rows ?? (process.stdout as NodeJS.WriteStream).rows ?? 24;
     const contentH = Math.max(1, rows - 1); // reserve 1 row for status bar
@@ -346,7 +351,9 @@ export class TUIApp extends EventEmitter {
 
     if (this.state.message) {
       const msg = this.state.message;
-      buf.push(at(rows, 1) + A.yellow + A.bold + pad(` ${msg}`, cols) + A.reset);
+      buf.push(
+        at(rows, 1) + A.yellow + A.bold + pad(` ${msg}`, cols) + A.reset,
+      );
       this.state.message = '';
     }
 
@@ -412,40 +419,58 @@ export class TUIApp extends EventEmitter {
       // Label row
       const labelStr = pad(` ${node.label || node.type}`, BOX_W - 2);
       this.setCell(grid, ny + 1, nx, vc);
-      for (let x = 0; x < BOX_W - 2; x++) this.setCell(grid, ny + 1, nx + 1 + x, labelStr[x]);
+      for (let x = 0; x < BOX_W - 2; x++) {
+        this.setCell(grid, ny + 1, nx + 1 + x, labelStr[x]);
+      }
       this.setCell(grid, ny + 1, nx + BOX_W - 1, vc);
 
       // Type row
       const typeStr = pad(` [${node.type}]`, BOX_W - 2);
       this.setCell(grid, ny + 2, nx, vc);
-      for (let x = 0; x < BOX_W - 2; x++) this.setCell(grid, ny + 2, nx + 1 + x, typeStr[x]);
+      for (let x = 0; x < BOX_W - 2; x++) {
+        this.setCell(grid, ny + 2, nx + 1 + x, typeStr[x]);
+      }
       this.setCell(grid, ny + 2, nx + BOX_W - 1, vc);
 
       // Bottom border
       this.setCell(grid, ny + BOX_H - 1, nx, bl);
-      for (let x = 1; x < BOX_W - 1; x++) this.setCell(grid, ny + BOX_H - 1, nx + x, hc);
+      for (let x = 1; x < BOX_W - 1; x++) {
+        this.setCell(grid, ny + BOX_H - 1, nx + x, hc);
+      }
       this.setCell(grid, ny + BOX_H - 1, nx + BOX_W - 1, br);
     }
 
     // Draw connections (L-shaped routing)
-    for (const conn of (this.state.canvas?.connections ?? [])) {
+    for (const conn of this.state.canvas?.connections ?? []) {
       const from = this.nodes.find((n) => n.id === conn.from);
       const to = this.nodes.find((n) => n.id === conn.to);
       if (!from || !to) continue;
 
       const fx = Math.max(
         0,
-        Math.min(Math.floor((from.position.x / VMAX) * (w - BOX_W)) + BOX_W / 2, w - 1),
+        Math.min(
+          Math.floor((from.position.x / VMAX) * (w - BOX_W)) + BOX_W / 2,
+          w - 1,
+        ),
       );
       const fy = Math.max(
         0,
-        Math.min(Math.floor((from.position.y / VMAX) * (h - BOX_H)) + BOX_H - 1, h - 1),
+        Math.min(
+          Math.floor((from.position.y / VMAX) * (h - BOX_H)) + BOX_H - 1,
+          h - 1,
+        ),
       );
       const tx = Math.max(
         0,
-        Math.min(Math.floor((to.position.x / VMAX) * (w - BOX_W)) + BOX_W / 2, w - 1),
+        Math.min(
+          Math.floor((to.position.x / VMAX) * (w - BOX_W)) + BOX_W / 2,
+          w - 1,
+        ),
       );
-      const ty = Math.max(0, Math.min(Math.floor((to.position.y / VMAX) * (h - BOX_H)), h - 1));
+      const ty = Math.max(
+        0,
+        Math.min(Math.floor((to.position.y / VMAX) * (h - BOX_H)), h - 1),
+      );
 
       const midY = Math.floor((fy + ty) / 2);
       for (let y = Math.min(fy, midY); y <= Math.max(fy, midY); y++) {
@@ -521,7 +546,9 @@ export class TUIApp extends EventEmitter {
     if (node.type === 'terminal') {
       const t = node as TerminalNode;
       props.push(['Cmd', (t.command || '').substring(0, 14)]);
-      if (t.args?.length) props.push(['Args', t.args.join(' ').substring(0, 14)]);
+      if (t.args?.length) {
+        props.push(['Args', t.args.join(' ').substring(0, 14)]);
+      }
       if (t.cwd) props.push(['Cwd', t.cwd.substring(0, 14)]);
     }
     if (typeof n['content'] === 'string') {
@@ -545,7 +572,9 @@ export class TUIApp extends EventEmitter {
     if (this._activeProc) {
       try {
         this._activeProc.kill();
-      } catch { /* ignore */ }
+      } catch {
+        /* ignore */
+      }
       this._activeProc = null;
     }
     if (this._stdinHandler) {

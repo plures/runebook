@@ -1,9 +1,9 @@
 // Tests for agent/analysis-service.ts
 
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { AnalysisService, getAnalysisService } from '../analysis-service';
 import { LocalFileStore } from '../../core/storage';
-import { rmSync, existsSync } from 'fs';
+import { existsSync, rmSync } from 'fs';
 import { join } from 'path';
 import { tmpdir } from 'os';
 import type { ObserverConfig, TerminalObserverEvent } from '../../core/types';
@@ -17,16 +17,20 @@ const makeConfig = (): ObserverConfig => ({
   maxEvents: 100,
 });
 
-const makeExitStatusEvent = (commandId: string, success: boolean): TerminalObserverEvent => ({
-  id: `exit-${commandId}`,
-  type: 'exit_status',
-  timestamp: Date.now(),
-  sessionId: 'sess-1',
-  commandId,
-  exitCode: success ? 0 : 1,
-  success,
-  cwd: '/tmp',
-} as any);
+const makeExitStatusEvent = (
+  commandId: string,
+  success: boolean,
+): TerminalObserverEvent =>
+  ({
+    id: `exit-${commandId}`,
+    type: 'exit_status',
+    timestamp: Date.now(),
+    sessionId: 'sess-1',
+    commandId,
+    exitCode: success ? 0 : 1,
+    success,
+    cwd: '/tmp',
+  }) as any;
 
 describe('AnalysisService', () => {
   let service: AnalysisService;
@@ -59,7 +63,10 @@ describe('AnalysisService', () => {
     });
 
     it('should enable LLM when LLM config has enabled=true', () => {
-      const config = { ...makeConfig(), llm: { type: 'mock' as const, enabled: true } };
+      const config = {
+        ...makeConfig(),
+        llm: { type: 'mock' as const, enabled: true },
+      };
       service.initialize(store, config);
       service.setEnabled(true);
       expect(service.isEnabled()).toBe(true);

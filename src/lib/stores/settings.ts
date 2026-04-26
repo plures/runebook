@@ -29,16 +29,16 @@ const DEFAULTS: AppSettings = {
 
 export const FONT_FAMILIES = [
   { value: 'JetBrains Mono', label: 'JetBrains Mono' },
-  { value: 'Cascadia Code',  label: 'Cascadia Code'  },
-  { value: 'Fira Code',      label: 'Fira Code'      },
-  { value: 'system',         label: 'System Mono'    },
+  { value: 'Cascadia Code', label: 'Cascadia Code' },
+  { value: 'Fira Code', label: 'Fira Code' },
+  { value: 'system', label: 'System Mono' },
 ];
 
 const FONT_STACKS: Record<string, string> = {
   'JetBrains Mono': "'JetBrains Mono', ui-monospace, monospace",
-  'Cascadia Code':  "'Cascadia Code', ui-monospace, monospace",
-  'Fira Code':      "'Fira Code', ui-monospace, monospace",
-  system:           "ui-monospace, 'Courier New', monospace",
+  'Cascadia Code': "'Cascadia Code', ui-monospace, monospace",
+  'Fira Code': "'Fira Code', ui-monospace, monospace",
+  system: "ui-monospace, 'Courier New', monospace",
 };
 
 function loadFromStorage(): AppSettings {
@@ -46,19 +46,28 @@ function loadFromStorage(): AppSettings {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (raw) return { ...DEFAULTS, ...JSON.parse(raw) };
-  } catch { /* ignore */ }
+  } catch {
+    /* ignore */
+  }
   return { ...DEFAULTS };
 }
 
 function saveToStorage(s: AppSettings): void {
   if (!browser) return;
-  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(s)); } catch { /* ignore */ }
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(s));
+  } catch {
+    /* ignore */
+  }
 }
 
 function applySettings(s: AppSettings): void {
   if (!browser) return;
   const root = document.documentElement;
-  root.style.setProperty('--font-mono', FONT_STACKS[s.fontFamily] ?? FONT_STACKS['JetBrains Mono']);
+  root.style.setProperty(
+    '--font-mono',
+    FONT_STACKS[s.fontFamily] ?? FONT_STACKS['JetBrains Mono'],
+  );
   root.style.setProperty('--canvas-show-grid', s.showGrid ? '1' : '0');
   root.style.setProperty('--canvas-grid-size', `${s.gridSize}`);
   root.style.setProperty('--canvas-snap-to-grid', s.snapToGrid ? '1' : '0');
@@ -76,7 +85,7 @@ function createSettingsStore() {
     subscribe,
     /** Update one or more settings keys */
     patch(patch: Partial<AppSettings>): void {
-      update(s => {
+      update((s) => {
         const next = { ...s, ...patch };
         saveToStorage(next);
         applySettings(next);
@@ -85,7 +94,10 @@ function createSettingsStore() {
     },
     /** Apply persisted settings to CSS vars on app boot */
     init(): void {
-      update(s => { applySettings(s); return s; });
+      update((s) => {
+        applySettings(s);
+        return s;
+      });
     },
   };
 }

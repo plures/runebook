@@ -1,21 +1,21 @@
 // Tests for Praxis runtime — verifies the singleton engine instances and
 // convenience helpers work end-to-end with the RuneBook app context.
 
-import { describe, it, expect, beforeEach } from 'vitest';
+import { beforeEach, describe, expect, it } from 'vitest';
 import type { CanvasNode, Connection } from '../../types/canvas';
 
 // Import the runtime helpers under test (module-level singletons; we reset
 // state where needed between tests via engine.updateContext()).
 import {
   canvasValidationEngine,
+  componentRegistryEngine,
+  executionPolicyEngine,
+  releaseTerminal,
+  requestTerminal,
+  resourceManagementEngine,
+  scheduleExecution,
   syncValidationNodes,
   validateConnection,
-  executionPolicyEngine,
-  scheduleExecution,
-  componentRegistryEngine,
-  requestTerminal,
-  releaseTerminal,
-  resourceManagementEngine,
 } from '../runtime';
 
 // ---------------------------------------------------------------------------
@@ -33,13 +33,34 @@ function makeNode(
     position: { x: 0, y: 0 },
     label: id,
     content: '',
-    inputs: inputs.map(p => ({ id: p.id, name: p.id, type: 'input', dataType: p.dataType })),
-    outputs: outputs.map(p => ({ id: p.id, name: p.id, type: 'output', dataType: p.dataType })),
+    inputs: inputs.map((p) => ({
+      id: p.id,
+      name: p.id,
+      type: 'input',
+      dataType: p.dataType,
+    })),
+    outputs: outputs.map((p) => ({
+      id: p.id,
+      name: p.id,
+      type: 'output',
+      dataType: p.dataType,
+    })),
   };
 }
 
-function makeConn(from: string, fromPort: string, to: string, toPort: string): Connection {
-  return { id: `e-${from}-${fromPort}-${to}-${toPort}`, from, fromPort, to, toPort };
+function makeConn(
+  from: string,
+  fromPort: string,
+  to: string,
+  toPort: string,
+): Connection {
+  return {
+    id: `e-${from}-${fromPort}-${to}-${toPort}`,
+    from,
+    fromPort,
+    to,
+    toPort,
+  };
 }
 
 // ---------------------------------------------------------------------------
@@ -99,7 +120,10 @@ describe('validateConnection', () => {
 describe('scheduleExecution', () => {
   it('returns topological order for a linear graph', () => {
     const nodes = [makeNode('n1'), makeNode('n2'), makeNode('n3')];
-    const conns = [makeConn('n1', 'out', 'n2', 'in'), makeConn('n2', 'out', 'n3', 'in')];
+    const conns = [
+      makeConn('n1', 'out', 'n2', 'in'),
+      makeConn('n2', 'out', 'n3', 'in'),
+    ];
     const order = scheduleExecution(nodes, conns);
     expect(order).toHaveLength(3);
     expect(order.indexOf('n1')).toBeLessThan(order.indexOf('n2'));
@@ -108,7 +132,10 @@ describe('scheduleExecution', () => {
 
   it('returns empty array when a cycle exists', () => {
     const nodes = [makeNode('a'), makeNode('b')];
-    const conns = [makeConn('a', 'out', 'b', 'in'), makeConn('b', 'out', 'a', 'in')];
+    const conns = [
+      makeConn('a', 'out', 'b', 'in'),
+      makeConn('b', 'out', 'a', 'in'),
+    ];
     const order = scheduleExecution(nodes, conns);
     expect(order).toHaveLength(0);
   });
@@ -135,7 +162,7 @@ describe('componentRegistryEngine', () => {
 
 describe('requestTerminal / releaseTerminal', () => {
   beforeEach(() => {
-    resourceManagementEngine.updateContext(ctx => ({
+    resourceManagementEngine.updateContext((ctx) => ({
       ...ctx,
       terminalCount: 0,
       maxTerminals: 2,

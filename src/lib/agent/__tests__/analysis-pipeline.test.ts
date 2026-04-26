@@ -1,9 +1,9 @@
 // Tests for analysis pipeline
 
-import { describe, it, expect, beforeEach } from 'vitest';
+import { beforeEach, describe, expect, it } from 'vitest';
 import { AnalysisJobQueue } from '../analysis-pipeline';
 import { createHeuristicAnalyzers, createLocalSearchAnalyzer } from '../analyzers';
-import type { TerminalObserverEvent, EventStore } from '../../core/types';
+import type { EventStore, TerminalObserverEvent } from '../../core/types';
 
 /**
  * Mock event store for testing
@@ -18,41 +18,48 @@ class MockEventStore implements EventStore {
   async getEvents(
     type?: import('../../core/types').EventType,
     since?: number,
-    limit?: number
+    limit?: number,
   ): Promise<TerminalObserverEvent[]> {
     let filtered = this.events;
-    
+
     if (type) {
-      filtered = filtered.filter(e => e.type === type);
+      filtered = filtered.filter((e) => e.type === type);
     }
-    
+
     if (since) {
-      filtered = filtered.filter(e => e.timestamp >= since);
+      filtered = filtered.filter((e) => e.timestamp >= since);
     }
-    
+
     filtered.sort((a, b) => b.timestamp - a.timestamp);
-    
+
     if (limit && limit > 0) {
       filtered = filtered.slice(0, limit);
     }
-    
+
     return filtered;
   }
 
-  async getEventsByCommand(commandId: string): Promise<TerminalObserverEvent[]> {
-    return this.events.filter(e => {
-      if ('commandId' in e) {
-        return e.commandId === commandId;
-      }
-      if (e.type === 'command_start' && e.id === commandId) {
-        return true;
-      }
-      return false;
-    }).sort((a, b) => a.timestamp - b.timestamp);
+  async getEventsByCommand(
+    commandId: string,
+  ): Promise<TerminalObserverEvent[]> {
+    return this.events
+      .filter((e) => {
+        if ('commandId' in e) {
+          return e.commandId === commandId;
+        }
+        if (e.type === 'command_start' && e.id === commandId) {
+          return true;
+        }
+        return false;
+      })
+      .sort((a, b) => a.timestamp - b.timestamp);
   }
 
-  async getEventsBySession(sessionId: string, limit?: number): Promise<TerminalObserverEvent[]> {
-    let filtered = this.events.filter(e => e.sessionId === sessionId);
+  async getEventsBySession(
+    sessionId: string,
+    limit?: number,
+  ): Promise<TerminalObserverEvent[]> {
+    let filtered = this.events.filter((e) => e.sessionId === sessionId);
     filtered.sort((a, b) => b.timestamp - a.timestamp);
     if (limit && limit > 0) {
       filtered = filtered.slice(0, limit);
@@ -62,7 +69,7 @@ class MockEventStore implements EventStore {
 
   async clearEvents(olderThan?: number): Promise<void> {
     if (olderThan) {
-      this.events = this.events.filter(e => e.timestamp >= olderThan);
+      this.events = this.events.filter((e) => e.timestamp >= olderThan);
     } else {
       this.events = [];
     }
@@ -75,15 +82,18 @@ class MockEventStore implements EventStore {
   }> {
     const eventsByType: Record<string, number> = {};
     const sessions = new Set<string>();
-    
+
     for (const event of this.events) {
       eventsByType[event.type] = (eventsByType[event.type] || 0) + 1;
       sessions.add(event.sessionId);
     }
-    
+
     return {
       totalEvents: this.events.length,
-      eventsByType: eventsByType as Record<import('../../core/types').EventType, number>,
+      eventsByType: eventsByType as Record<
+        import('../../core/types').EventType,
+        number
+      >,
       sessions: sessions.size,
     };
   }
@@ -96,7 +106,7 @@ describe('Analysis Pipeline', () => {
   beforeEach(() => {
     store = new MockEventStore();
     queue = new AnalysisJobQueue(store);
-    
+
     // Register analyzers
     const heuristicAnalyzers = createHeuristicAnalyzers();
     for (const analyzer of heuristicAnalyzers) {
@@ -151,18 +161,20 @@ describe('Analysis Pipeline', () => {
       expect(jobId).toBeTruthy();
 
       // Wait for analysis
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      await new Promise((resolve) => setTimeout(resolve, 1000));
 
       const job = queue.getJob(jobId!);
       expect(job).toBeTruthy();
       expect(job!.status).toBe('completed');
 
       // Check for GitHub rate limit suggestion
-      const suggestions = job!.suggestions.filter(s => 
-        s.title.includes('GitHub Rate Limit') || s.title.includes('rate limit')
+      const suggestions = job!.suggestions.filter(
+        (s) =>
+          s.title.includes('GitHub Rate Limit') ||
+          s.title.includes('rate limit'),
       );
       expect(suggestions.length).toBeGreaterThan(0);
-      
+
       const suggestion = suggestions[0];
       expect(suggestion.confidence).toBeGreaterThan(0.8);
       expect(suggestion.actionableSnippet).toContain('GITHUB_TOKEN');
@@ -213,17 +225,19 @@ describe('Analysis Pipeline', () => {
       const jobId = await queue.enqueueFailure(commandId, events, store);
       expect(jobId).toBeTruthy();
 
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      await new Promise((resolve) => setTimeout(resolve, 1000));
 
       const job = queue.getJob(jobId!);
       expect(job).toBeTruthy();
       expect(job!.status).toBe('completed');
 
-      const suggestions = job!.suggestions.filter(s => 
-        s.title.includes('Missing Nix Attribute') || s.description.includes('cursor')
+      const suggestions = job!.suggestions.filter(
+        (s) =>
+          s.title.includes('Missing Nix Attribute') ||
+          s.description.includes('cursor'),
       );
       expect(suggestions.length).toBeGreaterThan(0);
-      
+
       const suggestion = suggestions[0];
       expect(suggestion.confidence).toBeGreaterThan(0.8);
       expect(suggestion.description).toContain('cursor');
@@ -274,17 +288,19 @@ describe('Analysis Pipeline', () => {
       const jobId = await queue.enqueueFailure(commandId, events, store);
       expect(jobId).toBeTruthy();
 
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      await new Promise((resolve) => setTimeout(resolve, 1000));
 
       const job = queue.getJob(jobId!);
       expect(job).toBeTruthy();
       expect(job!.status).toBe('completed');
 
-      const suggestions = job!.suggestions.filter(s => 
-        s.title.includes('Flake-Parts Template') || s.title.includes('template')
+      const suggestions = job!.suggestions.filter(
+        (s) =>
+          s.title.includes('Flake-Parts Template') ||
+          s.title.includes('template'),
       );
       expect(suggestions.length).toBeGreaterThan(0);
-      
+
       const suggestion = suggestions[0];
       expect(suggestion.confidence).toBeGreaterThan(0.7);
     });
@@ -334,17 +350,17 @@ describe('Analysis Pipeline', () => {
       const jobId = await queue.enqueueFailure(commandId, events, store);
       expect(jobId).toBeTruthy();
 
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      await new Promise((resolve) => setTimeout(resolve, 1000));
 
       const job = queue.getJob(jobId!);
       expect(job).toBeTruthy();
       expect(job!.status).toBe('completed');
 
-      const suggestions = job!.suggestions.filter(s => 
-        s.title.includes('Font Conflict') || s.title.includes('font')
+      const suggestions = job!.suggestions.filter(
+        (s) => s.title.includes('Font Conflict') || s.title.includes('font'),
       );
       expect(suggestions.length).toBeGreaterThan(0);
-      
+
       const suggestion = suggestions[0];
       expect(suggestion.confidence).toBeGreaterThan(0.7);
       expect(suggestion.actionableSnippet).toContain('buildEnv');
@@ -395,21 +411,20 @@ describe('Analysis Pipeline', () => {
       const jobId = await queue.enqueueFailure(commandId, events, store);
       expect(jobId).toBeTruthy();
 
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      await new Promise((resolve) => setTimeout(resolve, 1000));
 
       const job = queue.getJob(jobId!);
       expect(job).toBeTruthy();
       expect(job!.status).toBe('completed');
 
-      const suggestions = job!.suggestions.filter(s => 
-        s.title.includes('Token') || s.description.includes('GITHUB_TOKEN')
+      const suggestions = job!.suggestions.filter(
+        (s) => s.title.includes('Token') || s.description.includes('GITHUB_TOKEN'),
       );
       expect(suggestions.length).toBeGreaterThan(0);
-      
+
       const suggestion = suggestions[0];
       expect(suggestion.confidence).toBeGreaterThan(0.7);
       expect(suggestion.actionableSnippet).toContain('GITHUB_TOKEN');
     });
   });
 });
-

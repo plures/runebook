@@ -1,8 +1,8 @@
 // Tests for LLM Providers
 // Tests mock provider and provider factory
 
-import { describe, it, expect, beforeEach } from 'vitest';
-import { MockProvider, createLLMProvider, isProviderAvailable } from '../providers/index';
+import { beforeEach, describe, expect, it } from 'vitest';
+import { createLLMProvider, isProviderAvailable, MockProvider } from '../providers/index';
 import type { LLMProviderConfig, MCPToolInput, MCPToolOutput } from '../types';
 
 describe('MockProvider', () => {
@@ -76,13 +76,15 @@ describe('MockProvider', () => {
     };
 
     const presetOutput: MCPToolOutput = {
-      suggestions: [{
-        title: 'Preset Suggestion',
-        description: 'This is a preset response',
-        confidence: 0.9,
-        type: 'tip',
-        priority: 'high',
-      }],
+      suggestions: [
+        {
+          title: 'Preset Suggestion',
+          description: 'This is a preset response',
+          confidence: 0.9,
+          type: 'tip',
+          priority: 'high',
+        },
+      ],
       provenance: {
         provider: 'mock',
         timestamp: Date.now(),
@@ -169,4 +171,3 @@ describe('isProviderAvailable', () => {
     expect(await isProviderAvailable(config)).toBe(true);
   });
 });
-

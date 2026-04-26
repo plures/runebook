@@ -3,7 +3,7 @@
 
 export type ShellType = 'bash' | 'zsh' | 'nushell' | 'unknown';
 
-export type EventType = 
+export type EventType =
   | 'command_start'
   | 'command_end'
   | 'stdout_chunk'
@@ -24,7 +24,7 @@ export interface BaseTerminalEvent {
   sessionId: string;
   shellType: ShellType;
   paneId?: string; // Terminal pane/tab identifier
-  tabId?: string;  // Terminal tab identifier (if applicable)
+  tabId?: string; // Terminal tab identifier (if applicable)
 }
 
 /**
@@ -157,14 +157,12 @@ export interface EventStore {
   getEvents(
     type?: EventType,
     since?: number,
-    limit?: number
+    limit?: number,
   ): Promise<TerminalObserverEvent[]>;
-  getEventsByCommand(
-    commandId: string
-  ): Promise<TerminalObserverEvent[]>;
+  getEventsByCommand(commandId: string): Promise<TerminalObserverEvent[]>;
   getEventsBySession(
     sessionId: string,
-    limit?: number
+    limit?: number,
   ): Promise<TerminalObserverEvent[]>;
   clearEvents(olderThan?: number): Promise<void>;
   getStats(): Promise<{
@@ -173,4 +171,3 @@ export interface EventStore {
     sessions: number;
   }>;
 }
-

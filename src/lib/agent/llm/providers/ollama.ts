@@ -13,7 +13,7 @@ export class OllamaProvider extends BaseLLMProvider {
     super(
       config.safety?.requireUserReview ?? true,
       config.safety?.cacheEnabled ?? false,
-      config.safety?.cacheTtl ?? 3600
+      config.safety?.cacheTtl ?? 3600,
     );
     this.baseUrl = config.ollama?.baseUrl || 'http://localhost:11434';
     this.model = config.ollama?.model || 'llama3.2';
@@ -34,7 +34,7 @@ export class OllamaProvider extends BaseLLMProvider {
   async callLLM(input: MCPToolInput, _sanitized: any): Promise<MCPToolOutput> {
     // Build prompt
     const prompt = this.buildPrompt(input);
-    
+
     // Call Ollama API
     const response = await fetch(`${this.baseUrl}/api/generate`, {
       method: 'POST',
@@ -56,14 +56,14 @@ export class OllamaProvider extends BaseLLMProvider {
 
     const data = await response.json();
     const text = data.response || '';
-    
+
     // Parse response
     return this.parseResponse(text, input);
   }
 
   private buildPrompt(input: MCPToolInput): string {
     const { contextWindow, errorSummary, repoMetadata } = input;
-    
+
     return `You are a helpful assistant analyzing terminal command failures. Provide actionable suggestions.
 
 Command: ${contextWindow.command} ${contextWindow.args.join(' ')}
@@ -77,12 +77,21 @@ Standard Output:
 ${contextWindow.stdout.substring(0, 1000)}
 
 Previous Commands:
-${contextWindow.previousCommands.slice(-3).map(c => `  ${c.command} ${c.args.join(' ')} (exit: ${c.exitCode})`).join('\n')}
+${
+      contextWindow.previousCommands
+        .slice(-3)
+        .map((c) => `  ${c.command} ${c.args.join(' ')} (exit: ${c.exitCode})`)
+        .join('\n')
+    }
 
 Repository Context:
 ${repoMetadata.type ? `Type: ${repoMetadata.type}` : 'Unknown'}
 ${repoMetadata.language ? `Language: ${repoMetadata.language}` : ''}
-${repoMetadata.files && repoMetadata.files.length > 0 ? `Relevant files: ${repoMetadata.files.slice(0, 5).join(', ')}` : ''}
+${
+      repoMetadata.files && repoMetadata.files.length > 0
+        ? `Relevant files: ${repoMetadata.files.slice(0, 5).join(', ')}`
+        : ''
+    }
 
 Provide 1-3 actionable suggestions in JSON format:
 {
@@ -108,9 +117,9 @@ Only return valid JSON, no other text.`;
       if (!jsonMatch) {
         throw new Error('No JSON found in response');
       }
-      
+
       const parsed = JSON.parse(jsonMatch[0]);
-      
+
       // Convert to MCPToolOutput format
       const suggestions = (parsed.suggestions || []).map((s: any) => ({
         title: s.title || 'Suggestion',
@@ -120,7 +129,7 @@ Only return valid JSON, no other text.`;
         type: s.type || 'tip',
         priority: s.priority || 'medium',
       }));
-      
+
       return {
         suggestions,
         provenance: {
@@ -132,13 +141,15 @@ Only return valid JSON, no other text.`;
     } catch (error) {
       // Fallback: create a generic suggestion from the text
       return {
-        suggestions: [{
-          title: 'LLM Analysis',
-          description: text.substring(0, 500),
-          confidence: 0.5,
-          type: 'tip',
-          priority: 'medium',
-        }],
+        suggestions: [
+          {
+            title: 'LLM Analysis',
+            description: text.substring(0, 500),
+            confidence: 0.5,
+            type: 'tip',
+            priority: 'medium',
+          },
+        ],
         provenance: {
           provider: 'ollama',
           model: this.model,
@@ -148,4 +159,3 @@ Only return valid JSON, no other text.`;
     }
   }
 }
-

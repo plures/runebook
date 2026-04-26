@@ -5,6 +5,7 @@ This document describes the technical architecture of RuneBook, a reactive canva
 ## Overview
 
 RuneBook is built as a desktop application using:
+
 - **Frontend**: Svelte 5 + SvelteKit for the UI
 - **Backend**: Tauri (Rust) for native system access
 - **Data Flow**: Reactive stores with automatic propagation
@@ -65,18 +66,22 @@ RuneBook is built as a desktop application using:
 ### Frontend Components
 
 #### Canvas Component
+
 - Manages the infinite canvas workspace
 - Renders nodes and connections
 - Handles drag-and-drop for nodes
 - Delegates to specific node components
 
 #### Node Components
+
 Each node type has its own component:
+
 - **TerminalNode**: Executes commands, shows output
 - **InputNode**: Provides user input widgets
 - **DisplayNode**: Shows data from other nodes
 
 #### Toolbar Component
+
 - Provides UI for adding nodes
 - Canvas management (load, save, clear)
 - Future: Node palette, search, filters
@@ -84,12 +89,14 @@ Each node type has its own component:
 ### State Management
 
 RuneBook uses **Praxis** reactive logic engine for state management, providing:
+
 - Type-safe event-driven architecture
 - Declarative rules for state updates
 - Built-in reactivity with Svelte 5 integration
 - Improved testability and maintainability
 
 #### Canvas Context
+
 ```typescript
 CanvasContext = {
   canvas: {
@@ -105,7 +112,9 @@ CanvasContext = {
 ```
 
 #### Events
+
 State changes are driven by typed events:
+
 - `AddNodeEvent`, `RemoveNodeEvent`
 - `UpdateNodeEvent`, `UpdateNodePositionEvent`
 - `AddConnectionEvent`, `RemoveConnectionEvent`
@@ -113,11 +122,13 @@ State changes are driven by typed events:
 - `UpdateNodeDataEvent`
 
 #### Rules
+
 Each event is processed by a corresponding rule that updates the context:
+
 ```typescript
 const addNodeRule = defineRule<CanvasContext>({
-  id: 'canvas.addNode',
-  description: 'Add a new node to the canvas',
+  id: "canvas.addNode",
+  description: "Add a new node to the canvas",
   impl: (state, events) => {
     const evt = events.find(AddNodeEvent.is);
     if (!evt) return [];
@@ -128,11 +139,15 @@ const addNodeRule = defineRule<CanvasContext>({
 ```
 
 #### Store API
+
 The Praxis engine is wrapped in a Svelte store for backward compatibility:
+
 ```typescript
-canvasStore.subscribe((canvas) => { /* react to changes */ })
-canvasStore.addNode(node)  // Dispatches AddNodeEvent
-canvasStore.updateNodePosition(id, x, y)  // Dispatches UpdateNodePositionEvent
+canvasStore.subscribe((canvas) => {
+  /* react to changes */
+});
+canvasStore.addNode(node); // Dispatches AddNodeEvent
+canvasStore.updateNodePosition(id, x, y); // Dispatches UpdateNodePositionEvent
 ```
 
 Stores runtime data from node outputs. When a node produces output, it's stored here and flows to connected inputs.
@@ -148,6 +163,7 @@ User Action → Node Component → Store Update → Reactive Update → UI Updat
 ```
 
 Example flow for terminal execution:
+
 1. User clicks "Run" on TerminalNode
 2. Component calls `invoke('execute_terminal_command', ...)`
 3. Rust backend executes command via `std::process::Command`
@@ -179,12 +195,13 @@ $effect(() => {
 ```
 
 When Praxis engine processes events:
+
 1. Events are dispatched to the engine (e.g., `AddNodeEvent.create(...)`)
 2. Praxis rules match events and update the context
 3. Svelte store wrapper detects context changes
 4. Components with `$derived` or subscriptions automatically re-render
 5. UI updates reflect the new state
-4. UI re-renders with new data
+6. UI re-renders with new data
 
 ## Backend Architecture
 
@@ -207,6 +224,7 @@ async fn execute_terminal_command(
 ### Process Execution
 
 Terminal commands use Rust's `std::process::Command`:
+
 - Spawn subprocess
 - Capture stdout/stderr
 - Return results to frontend
@@ -235,6 +253,7 @@ connections:
 ```
 
 Benefits:
+
 - Human-readable and editable
 - Git-friendly (text-based)
 - Easy to version control
@@ -243,17 +262,20 @@ Benefits:
 ## Security Considerations
 
 ### Command Execution
+
 - All commands run with user permissions
 - No privilege escalation
 - Input validation on command parameters
 - Environment variable sanitization
 
 ### File Access
+
 - Limited to user's accessible directories
 - No automatic file system traversal
 - Future: Configurable permissions
 
 ### Future Security
+
 - Sandboxing for untrusted canvases
 - Permission system for sensitive operations
 - Audit logging for security events
@@ -261,17 +283,20 @@ Benefits:
 ## Performance Considerations
 
 ### Canvas Rendering
+
 - SVG for connections (scalable, crisp)
 - Virtual scrolling for large canvases (future)
 - Debounced drag operations
 - Efficient re-rendering via Svelte
 
 ### Data Flow
+
 - Minimal store updates (only changed data)
 - Selective reactive updates
 - Lazy evaluation where possible
 
 ### Process Management
+
 - Async command execution
 - Non-blocking UI during operations
 - Process cleanup on node removal (future)
@@ -279,6 +304,7 @@ Benefits:
 ## Extensibility
 
 ### Plugin System (Future)
+
 ```typescript
 interface NodePlugin {
   type: string;
@@ -288,6 +314,7 @@ interface NodePlugin {
 ```
 
 ### Custom Commands (Future)
+
 - User-defined Tauri commands
 - Dynamic command loading
 - Sandboxed execution environment
@@ -295,10 +322,12 @@ interface NodePlugin {
 ## Testing Strategy
 
 ### Current State
+
 - Manual testing via UI
 - Build verification (TypeScript check, Vite build)
 
 ### Future Testing
+
 - Unit tests for utilities and stores
 - Component tests for Svelte components
 - Integration tests for Tauri commands
@@ -307,17 +336,20 @@ interface NodePlugin {
 ## Deployment
 
 ### Build Process
+
 ```bash
 npm run build           # Build frontend
 npm run tauri build     # Build desktop app
 ```
 
 Produces:
+
 - `.deb` for Linux
 - `.dmg` for macOS
 - `.exe` for Windows
 
 ### Distribution
+
 - GitHub Releases
 - Future: Auto-updates via Tauri updater
 - Future: Package managers (Homebrew, apt, etc.)
@@ -379,12 +411,14 @@ Ambient Agent Mode provides intelligent command analysis and suggestions through
 ### Component Details
 
 #### Event Capture (`src/lib/agent/capture.ts`)
+
 - Intercepts terminal commands before execution
 - Tracks command metadata (args, env, cwd)
 - Captures results (stdout, stderr, exit code, duration)
 - Maintains session context
 
 #### Storage Layer (`src/lib/agent/memory.ts`)
+
 - **MemoryStorage**: In-memory storage for testing and headless mode
 - **PluresDBStorage**: Persistent storage using PluresDB
 - Event querying (by command, time range, limit)
@@ -392,6 +426,7 @@ Ambient Agent Mode provides intelligent command analysis and suggestions through
 - Statistics calculation
 
 #### Analysis Engine (`src/lib/agent/analysis.ts`)
+
 - **DefaultAnalyzer**: Rule-based pattern analysis
 - Detects repeated failures
 - Identifies slow commands
@@ -399,17 +434,20 @@ Ambient Agent Mode provides intelligent command analysis and suggestions through
 - Generates optimization recommendations
 
 #### Suggestion System (`src/lib/agent/suggestions.ts`)
+
 - Stores and manages suggestions
 - Formats suggestions for CLI output
 - Supports priority filtering
 - Ready for UI integration
 
 #### Integration Layer (`src/lib/agent/integration.ts`)
+
 - Connects agent to terminal execution
 - Provides simple API for enabling/disabling
 - Handles automatic event capture
 
 #### Headless CLI (`src/cli/index.ts`)
+
 - SSH-friendly interface
 - Agent management commands
 - Status and statistics display
@@ -472,93 +510,102 @@ The observer captures a canonical set of event types defined in `src/lib/core/ty
 
 **Base Event Structure:**
 All events extend `BaseTerminalEvent`:
+
 ```typescript
 interface BaseTerminalEvent {
-  id: string;                    // Unique event ID
-  type: EventType;                // Event type
-  timestamp: number;              // Unix timestamp (ms)
-  sessionId: string;              // Session identifier
-  shellType: ShellType;           // 'bash' | 'zsh' | 'nushell' | 'unknown'
-  paneId?: string;                // Terminal pane/tab identifier (optional)
-  tabId?: string;                 // Terminal tab identifier (optional)
+  id: string; // Unique event ID
+  type: EventType; // Event type
+  timestamp: number; // Unix timestamp (ms)
+  sessionId: string; // Session identifier
+  shellType: ShellType; // 'bash' | 'zsh' | 'nushell' | 'unknown'
+  paneId?: string; // Terminal pane/tab identifier (optional)
+  tabId?: string; // Terminal tab identifier (optional)
 }
 ```
 
 **Event Types:**
 
 1. **command_start**: Command begins execution
+
    ```typescript
    interface CommandStartEvent extends BaseTerminalEvent {
-     type: 'command_start';
-     command: string;              // Command name (normalized)
-     args: string[];               // Command arguments
-     cwd: string;                  // Working directory
+     type: "command_start";
+     command: string; // Command name (normalized)
+     args: string[]; // Command arguments
+     cwd: string; // Working directory
      envSummary: Record<string, string>; // Sanitized environment variables
-     pid?: number;                 // Process ID (if available)
+     pid?: number; // Process ID (if available)
    }
    ```
 
 2. **command_end**: Command completes
+
    ```typescript
    interface CommandEndEvent extends BaseTerminalEvent {
-     type: 'command_end';
-     commandId: string;            // Reference to command_start event
-     duration: number;             // Execution duration (milliseconds)
+     type: "command_end";
+     commandId: string; // Reference to command_start event
+     duration: number; // Execution duration (milliseconds)
    }
    ```
 
 3. **stdout_chunk**: Incremental stdout output
+
    ```typescript
    interface StdoutChunkEvent extends BaseTerminalEvent {
-     type: 'stdout_chunk';
-     commandId: string;            // Reference to command_start event
-     chunk: string;                // Output chunk content
-     chunkIndex: number;           // Sequential chunk number
+     type: "stdout_chunk";
+     commandId: string; // Reference to command_start event
+     chunk: string; // Output chunk content
+     chunkIndex: number; // Sequential chunk number
    }
    ```
 
 4. **stderr_chunk**: Incremental stderr output
+
    ```typescript
    interface StderrChunkEvent extends BaseTerminalEvent {
-     type: 'stderr_chunk';
-     commandId: string;            // Reference to command_start event
-     chunk: string;                // Error output chunk
-     chunkIndex: number;           // Sequential chunk number
+     type: "stderr_chunk";
+     commandId: string; // Reference to command_start event
+     chunk: string; // Error output chunk
+     chunkIndex: number; // Sequential chunk number
    }
    ```
 
 5. **exit_status**: Command exit code
+
    ```typescript
    interface ExitStatusEvent extends BaseTerminalEvent {
-     type: 'exit_status';
-     commandId: string;            // Reference to command_start event
-     exitCode: number;             // Exit code (0 = success)
-     success: boolean;             // true if exitCode === 0
+     type: "exit_status";
+     commandId: string; // Reference to command_start event
+     exitCode: number; // Exit code (0 = success)
+     success: boolean; // true if exitCode === 0
    }
    ```
 
 6. **cwd_change**: Working directory changed
+
    ```typescript
    interface CwdChangeEvent extends BaseTerminalEvent {
-     type: 'cwd_change';
-     cwd: string;                  // New working directory
-     previousCwd?: string;         // Previous working directory
+     type: "cwd_change";
+     cwd: string; // New working directory
+     previousCwd?: string; // Previous working directory
    }
    ```
 
 7. **env_change**: Environment variables changed
+
    ```typescript
    interface EnvChangeEvent extends BaseTerminalEvent {
-     type: 'env_change';
+     type: "env_change";
      envSummary: Record<string, string>; // Sanitized environment variables
-     changedKeys: string[];        // Keys that were added/modified
+     changedKeys: string[]; // Keys that were added/modified
    }
    ```
 
 8. **session_start**: Terminal session started
+
    ```typescript
    interface SessionStartEvent extends BaseTerminalEvent {
-     type: 'session_start';
+     type: "session_start";
      shellType: ShellType;
      cwd: string;
      envSummary: Record<string, string>;
@@ -568,12 +615,13 @@ interface BaseTerminalEvent {
 9. **session_end**: Terminal session ended
    ```typescript
    interface SessionEndEvent extends BaseTerminalEvent {
-     type: 'session_end';
-     duration: number;             // Session duration (milliseconds)
+     type: "session_end";
+     duration: number; // Session duration (milliseconds)
    }
    ```
 
 **Union Type:**
+
 ```typescript
 type TerminalObserverEvent =
   | CommandStartEvent
@@ -596,6 +644,7 @@ Shell adapters provide hooks for capturing events:
 - **Nushell Adapter**: (Planned for future)
 
 Adapters can work in two modes:
+
 1. **Shell Hook Mode**: Integrates into shell init files (`.bashrc`, `.zshrc`)
 2. **Programmatic Mode**: Captures commands executed via Node.js API
 
@@ -616,6 +665,7 @@ Events are stored using a pluggable storage layer:
 - **PluresDBEventStore**: Persistent storage using PluresDB (optional)
 
 Storage supports:
+
 - Event persistence
 - Query by type, time range, command, session
 - Statistics calculation
@@ -658,6 +708,7 @@ runebook observer events 20
 #### Headless Operation
 
 The observer is designed to work without GUI:
+
 - No Tauri dependencies
 - Pure Node.js implementation
 - SSH-friendly interface
@@ -868,6 +919,7 @@ npm run memory inspect
 ```
 
 This displays:
+
 - Recent sessions
 - Recent errors
 - Active suggestions (ranked by priority)
@@ -903,6 +955,7 @@ Three layers executed in order:
 ### Structured Suggestions
 
 Each suggestion includes:
+
 - Type: `command` | `optimization` | `shortcut` | `warning` | `tip`
 - Priority: `low` | `medium` | `high`
 - Confidence: 0.0 to 1.0
@@ -951,6 +1004,7 @@ Each suggestion includes:
 ## Future Architecture
 
 ### PluresDB Integration
+
 ```
 Frontend ↔ Tauri ↔ PluresDB (local)
                     ↕
@@ -958,11 +1012,13 @@ Frontend ↔ Tauri ↔ PluresDB (local)
 ```
 
 ### MCP Integration
+
 ```
 Node → MCP Client → AI Model → Response → Node
 ```
 
 ### Sudolang Integration
+
 ```
 Sudolang Script → Parser → Canvas Generator → Canvas
 ```

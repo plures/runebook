@@ -1,8 +1,8 @@
 // @vitest-environment happy-dom
 // Component tests for RuneBook canvas components
 
-import { describe, it, expect, vi, afterEach, beforeEach } from 'vitest';
-import { render, cleanup, fireEvent, waitFor } from '@testing-library/svelte';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { cleanup, fireEvent, render, waitFor } from '@testing-library/svelte';
 import { get } from 'svelte/store';
 import { canvasStore, updateNodeData } from '../../stores/canvas';
 import { canvasPraxisStore } from '../../stores/canvas-praxis';
@@ -12,9 +12,42 @@ vi.mock('@tauri-apps/api/core', () => ({
   invoke: vi.fn().mockResolvedValue('mock output'),
 }));
 vi.mock('@tauri-apps/api/window', () => ({
-  appWindow: { listen: vi.fn().mockResolvedValue(() => {}), emit: vi.fn().mockResolvedValue(undefined) },
+  appWindow: {
+    listen: vi.fn().mockResolvedValue(() => {}),
+    emit: vi.fn().mockResolvedValue(undefined),
+  },
 }));
-vi.mock('@tauri-apps/api/event', () => ({ listen: vi.fn().mockResolvedValue(() => {}) }));
+vi.mock('@tauri-apps/api/event', () => ({
+  listen: vi.fn().mockResolvedValue(() => {}),
+}));
+
+// Mock xterm.js packages (canvas/WebGL not available in happy-dom)
+const mockTerminalOpen = vi.fn();
+const mockTerminalWriteln = vi.fn();
+const mockTerminalClear = vi.fn();
+const mockTerminalReset = vi.fn();
+const mockTerminalDispose = vi.fn();
+const mockTerminalLoadAddon = vi.fn();
+vi.mock('@xterm/xterm', () => ({
+  Terminal: vi.fn().mockImplementation(() => ({
+    open: mockTerminalOpen,
+    writeln: mockTerminalWriteln,
+    clear: mockTerminalClear,
+    reset: mockTerminalReset,
+    dispose: mockTerminalDispose,
+    loadAddon: mockTerminalLoadAddon,
+  })),
+}));
+const mockFitAddonFit = vi.fn();
+vi.mock('@xterm/addon-fit', () => ({
+  FitAddon: vi.fn().mockImplementation(() => ({ fit: mockFitAddonFit })),
+}));
+vi.mock('@xterm/addon-web-links', () => ({
+  WebLinksAddon: vi.fn().mockImplementation(() => ({})),
+}));
+vi.mock('@xterm/addon-webgl', () => ({
+  WebglAddon: vi.fn().mockImplementation(() => ({})),
+}));
 
 import TextCard from '../TextCard.svelte';
 import Canvas from '../Canvas.svelte';
@@ -26,12 +59,12 @@ import TransformNode from '../TransformNode.svelte';
 import SubCanvasCard from '../SubCanvasCard.svelte';
 
 import type {
-  TextNode,
-  TerminalNode as TerminalNodeType,
-  InputNode as InputNodeType,
   DisplayNode as DisplayNodeType,
-  TransformNode as TransformNodeType,
+  InputNode as InputNodeType,
   SubCanvasNode,
+  TerminalNode as TerminalNodeType,
+  TextNode,
+  TransformNode as TransformNodeType,
 } from '../../types/canvas';
 
 const makeTextNode = (overrides: Partial<TextNode> = {}): TextNode => ({
@@ -46,7 +79,9 @@ const makeTextNode = (overrides: Partial<TextNode> = {}): TextNode => ({
   ...overrides,
 });
 
-const makeTerminalNode = (overrides: Partial<TerminalNodeType> = {}): TerminalNodeType => ({
+const makeTerminalNode = (
+  overrides: Partial<TerminalNodeType> = {},
+): TerminalNodeType => ({
   id: 'terminal-1',
   type: 'terminal',
   position: { x: 300, y: 100 },
@@ -58,7 +93,9 @@ const makeTerminalNode = (overrides: Partial<TerminalNodeType> = {}): TerminalNo
   ...overrides,
 });
 
-const makeInputNode = (overrides: Partial<InputNodeType> = {}): InputNodeType => ({
+const makeInputNode = (
+  overrides: Partial<InputNodeType> = {},
+): InputNodeType => ({
   id: 'input-1',
   type: 'input',
   position: { x: 100, y: 100 },
@@ -70,7 +107,9 @@ const makeInputNode = (overrides: Partial<InputNodeType> = {}): InputNodeType =>
   ...overrides,
 });
 
-const makeDisplayNode = (overrides: Partial<DisplayNodeType> = {}): DisplayNodeType => ({
+const makeDisplayNode = (
+  overrides: Partial<DisplayNodeType> = {},
+): DisplayNodeType => ({
   id: 'display-1',
   type: 'display',
   position: { x: 200, y: 100 },
@@ -82,7 +121,9 @@ const makeDisplayNode = (overrides: Partial<DisplayNodeType> = {}): DisplayNodeT
   ...overrides,
 });
 
-const makeTransformNode = (overrides: Partial<TransformNodeType> = {}): TransformNodeType => ({
+const makeTransformNode = (
+  overrides: Partial<TransformNodeType> = {},
+): TransformNodeType => ({
   id: 'transform-1',
   type: 'transform',
   position: { x: 400, y: 100 },
@@ -98,14 +139,20 @@ describe('TextCard', () => {
   afterEach(cleanup);
 
   it('renders the card title', () => {
-    const { container } = render(TextCard, { node: makeTextNode({ label: 'My Note' }) });
-    const titleInput = container.querySelector('.card-title') as HTMLInputElement;
+    const { container } = render(TextCard, {
+      node: makeTextNode({ label: 'My Note' }),
+    });
+    const titleInput = container.querySelector(
+      '.card-title',
+    ) as HTMLInputElement;
     expect(titleInput).toBeTruthy();
     expect(titleInput.value).toBe('My Note');
   });
 
   it('renders content in view mode', () => {
-    const { container } = render(TextCard, { node: makeTextNode({ content: 'some text' }) });
+    const { container } = render(TextCard, {
+      node: makeTextNode({ content: 'some text' }),
+    });
     // No textarea in view mode
     expect(container.querySelector('textarea')).toBeNull();
   });
@@ -115,7 +162,7 @@ describe('TextCard', () => {
     const body = container.querySelector('.card-body') as HTMLElement;
     body.dispatchEvent(new MouseEvent('dblclick', { bubbles: true }));
     // After double-click, textarea should appear
-    await new Promise(r => setTimeout(r, 0));
+    await new Promise((r) => setTimeout(r, 0));
     expect(container.querySelector('textarea')).toBeTruthy();
   });
 
@@ -174,14 +221,20 @@ describe('TerminalNode', () => {
   });
 
   describe('with Tauri context (simulated desktop)', () => {
-    beforeEach(() => { (window as any).__TAURI__ = {}; });
-    afterEach(() => { delete (window as any).__TAURI__; });
+    beforeEach(() => {
+      (window as any).__TAURI__ = {};
+    });
+    afterEach(() => {
+      delete (window as any).__TAURI__;
+    });
 
     it('should show error line with ✗ prefix after a failed command', async () => {
-      const { invoke } = await import('@tauri-apps/api/core') as any;
+      const { invoke } = (await import('@tauri-apps/api/core')) as any;
       invoke.mockRejectedValueOnce(new Error('Command failed'));
       const { container } = render(TerminalNode, { node: makeTerminalNode() });
-      const runButton = container.querySelector('.run-btn') as HTMLButtonElement;
+      const runButton = container.querySelector(
+        '.run-btn',
+      ) as HTMLButtonElement;
       await fireEvent.click(runButton);
       await waitFor(() => {
         const errorLine = container.querySelector('.error-line');
@@ -190,16 +243,40 @@ describe('TerminalNode', () => {
     });
 
     it('should announce error in the aria-live region after a failed command', async () => {
-      const { invoke } = await import('@tauri-apps/api/core') as any;
+      const { invoke } = (await import('@tauri-apps/api/core')) as any;
       invoke.mockRejectedValueOnce(new Error('Command failed'));
       const { container } = render(TerminalNode, { node: makeTerminalNode() });
-      const runButton = container.querySelector('.run-btn') as HTMLButtonElement;
+      const runButton = container.querySelector(
+        '.run-btn',
+      ) as HTMLButtonElement;
       await fireEvent.click(runButton);
       await waitFor(() => {
         const alertRegion = container.querySelector('[role="alert"]');
         expect(alertRegion?.textContent).toContain('Command failed');
       });
     });
+  });
+
+  it('should render the xterm container element', () => {
+    const { container } = render(TerminalNode, { node: makeTerminalNode() });
+    expect(container.querySelector('.xterm-container')).toBeTruthy();
+  });
+
+  it('should open the xterm terminal in the container on mount', () => {
+    render(TerminalNode, { node: makeTerminalNode() });
+    expect(mockTerminalOpen).toHaveBeenCalled();
+  });
+
+  it('should write a placeholder message to the terminal in non-Tauri context', () => {
+    render(TerminalNode, { node: makeTerminalNode() });
+    expect(mockTerminalWriteln).toHaveBeenCalledWith(
+      expect.stringContaining('desktop app'),
+    );
+  });
+
+  it('should call fitAddon.fit() after opening the terminal', () => {
+    render(TerminalNode, { node: makeTerminalNode() });
+    expect(mockFitAddonFit).toHaveBeenCalled();
   });
 });
 
@@ -213,7 +290,13 @@ describe('InputNode', () => {
 
   it('should render with number input type', () => {
     const { container } = render(InputNode, {
-      node: makeInputNode({ inputType: 'number', value: 42, min: 0, max: 100, step: 1 }),
+      node: makeInputNode({
+        inputType: 'number',
+        value: 42,
+        min: 0,
+        max: 100,
+        step: 1,
+      }),
     });
     expect(container.querySelector('input[type="number"]')).toBeTruthy();
   });
@@ -227,7 +310,13 @@ describe('InputNode', () => {
 
   it('should render with slider input type', () => {
     const { container } = render(InputNode, {
-      node: makeInputNode({ inputType: 'slider', value: 50, min: 0, max: 100, step: 1 }),
+      node: makeInputNode({
+        inputType: 'slider',
+        value: 50,
+        min: 0,
+        max: 100,
+        step: 1,
+      }),
     });
     expect(container.querySelector('input[type="range"]')).toBeTruthy();
   });
@@ -254,14 +343,20 @@ describe('DisplayNode', () => {
   });
 
   it('should render json display type with object content', () => {
-    const node = makeDisplayNode({ displayType: 'json', content: { key: 'value' } });
+    const node = makeDisplayNode({
+      displayType: 'json',
+      content: { key: 'value' },
+    });
     const { container } = render(DisplayNode, { node });
     expect(container.querySelector('.display-node')).toBeTruthy();
     expect(container.textContent).toContain('"key"');
   });
 
   it('should render json display type with string content', () => {
-    const node = makeDisplayNode({ displayType: 'json', content: '{"key":"value"}' });
+    const node = makeDisplayNode({
+      displayType: 'json',
+      content: '{"key":"value"}',
+    });
     const { container } = render(DisplayNode, { node });
     expect(container.querySelector('.display-node')).toBeTruthy();
     expect(container.textContent).toContain('"key"');
@@ -310,7 +405,12 @@ describe('TransformNode', () => {
     const transform = makeTransformNode({ id: 'err-transform' });
     canvasStore.addNode(makeInputNode({ id: 'err-input' }));
     canvasStore.addNode(transform);
-    canvasStore.addConnection({ from: 'err-input', fromPort: 'value', to: 'err-transform', toPort: 'input' });
+    canvasStore.addConnection({
+      from: 'err-input',
+      fromPort: 'value',
+      to: 'err-transform',
+      toPort: 'input',
+    });
     updateNodeData('err-input', 'value', 'not-an-array');
 
     const { container } = render(TransformNode, { node: transform });
@@ -325,7 +425,12 @@ describe('TransformNode', () => {
     const transform = makeTransformNode({ id: 'guard-transform' });
     canvasStore.addNode(makeInputNode({ id: 'guard-input' }));
     canvasStore.addNode(transform);
-    canvasStore.addConnection({ from: 'guard-input', fromPort: 'value', to: 'guard-transform', toPort: 'input' });
+    canvasStore.addConnection({
+      from: 'guard-input',
+      fromPort: 'value',
+      to: 'guard-transform',
+      toPort: 'input',
+    });
     updateNodeData('guard-input', 'value', [1, 2, 3]);
 
     const { container } = render(TransformNode, { node: transform });
@@ -355,42 +460,66 @@ describe('Canvas', () => {
 
   it('renders text cards for nodes in the store', async () => {
     canvasStore.addNode(makeTextNode());
-    await new Promise(r => setTimeout(r, 0));
+    await new Promise((r) => setTimeout(r, 0));
     const { container } = render(Canvas);
-    await new Promise(r => setTimeout(r, 10));
+    await new Promise((r) => setTimeout(r, 10));
     expect(container.querySelector('.node-wrapper')).toBeTruthy();
   });
 
   it('node-wrapper has selected class when node is clicked', async () => {
     canvasPraxisStore.clear();
     canvasStore.addNode(makeTextNode({ id: 'text-sel' }));
-    await new Promise(r => setTimeout(r, 0));
+    await new Promise((r) => setTimeout(r, 0));
     const { container } = render(Canvas);
-    await new Promise(r => setTimeout(r, 10));
+    await new Promise((r) => setTimeout(r, 10));
     const wrapper = container.querySelector('.node-wrapper') as HTMLElement;
     expect(wrapper).toBeTruthy();
-    wrapper.dispatchEvent(new MouseEvent('mousedown', { bubbles: true, shiftKey: false, button: 0 }));
-    await new Promise(r => setTimeout(r, 10));
+    wrapper.dispatchEvent(
+      new MouseEvent('mousedown', {
+        bubbles: true,
+        shiftKey: false,
+        button: 0,
+      }),
+    );
+    await new Promise((r) => setTimeout(r, 10));
     expect(wrapper.classList.contains('selected')).toBe(true);
   });
 
   it('shift+click selects multiple nodes', async () => {
     canvasPraxisStore.clear();
     canvasStore.addNode(makeTextNode({ id: 'text-a' }));
-    canvasStore.addNode(makeTextNode({ id: 'text-b', position: { x: 400, y: 100 } }));
-    await new Promise(r => setTimeout(r, 0));
+    canvasStore.addNode(
+      makeTextNode({ id: 'text-b', position: { x: 400, y: 100 } }),
+    );
+    await new Promise((r) => setTimeout(r, 0));
     const { container } = render(Canvas);
-    await new Promise(r => setTimeout(r, 10));
+    await new Promise((r) => setTimeout(r, 10));
     const wrappers = container.querySelectorAll('.node-wrapper');
     expect(wrappers.length).toBe(2);
-    (wrappers[0] as HTMLElement).dispatchEvent(new MouseEvent('mousedown', { bubbles: true, shiftKey: false, button: 0 }));
-    await new Promise(r => setTimeout(r, 10));
-    expect((wrappers[0] as HTMLElement).classList.contains('selected')).toBe(true);
-    expect((wrappers[1] as HTMLElement).classList.contains('selected')).toBe(false);
-    (wrappers[1] as HTMLElement).dispatchEvent(new MouseEvent('mousedown', { bubbles: true, shiftKey: true, button: 0 }));
-    await new Promise(r => setTimeout(r, 10));
-    expect((wrappers[0] as HTMLElement).classList.contains('selected')).toBe(true);
-    expect((wrappers[1] as HTMLElement).classList.contains('selected')).toBe(true);
+    (wrappers[0] as HTMLElement).dispatchEvent(
+      new MouseEvent('mousedown', {
+        bubbles: true,
+        shiftKey: false,
+        button: 0,
+      }),
+    );
+    await new Promise((r) => setTimeout(r, 10));
+    expect((wrappers[0] as HTMLElement).classList.contains('selected')).toBe(
+      true,
+    );
+    expect((wrappers[1] as HTMLElement).classList.contains('selected')).toBe(
+      false,
+    );
+    (wrappers[1] as HTMLElement).dispatchEvent(
+      new MouseEvent('mousedown', { bubbles: true, shiftKey: true, button: 0 }),
+    );
+    await new Promise((r) => setTimeout(r, 10));
+    expect((wrappers[0] as HTMLElement).classList.contains('selected')).toBe(
+      true,
+    );
+    expect((wrappers[1] as HTMLElement).classList.contains('selected')).toBe(
+      true,
+    );
   });
 
   it('should render all node types without crashing', () => {
@@ -435,7 +564,9 @@ describe('Toolbar', () => {
     canvasStore.clear();
     const { container } = render(Toolbar);
     const buttons = Array.from(container.querySelectorAll('button'));
-    const terminalBtn = buttons.find((b) => b.getAttribute('title') === 'Add Terminal');
+    const terminalBtn = buttons.find(
+      (b) => b.getAttribute('title') === 'Add Terminal',
+    );
     expect(terminalBtn).toBeTruthy();
     await fireEvent.click(terminalBtn!);
     const canvas = get(canvasStore);
@@ -446,7 +577,9 @@ describe('Toolbar', () => {
     canvasStore.clear();
     const { container } = render(Toolbar);
     const buttons = Array.from(container.querySelectorAll('button'));
-    const inputBtn = buttons.find((b) => b.getAttribute('title') === 'Add Input');
+    const inputBtn = buttons.find(
+      (b) => b.getAttribute('title') === 'Add Input',
+    );
     expect(inputBtn).toBeTruthy();
     await fireEvent.click(inputBtn!);
     const canvas = get(canvasStore);
@@ -457,7 +590,9 @@ describe('Toolbar', () => {
     canvasStore.clear();
     const { container } = render(Toolbar);
     const buttons = Array.from(container.querySelectorAll('button'));
-    const displayBtn = buttons.find((b) => b.getAttribute('title') === 'Add Display');
+    const displayBtn = buttons.find(
+      (b) => b.getAttribute('title') === 'Add Display',
+    );
     expect(displayBtn).toBeTruthy();
     await fireEvent.click(displayBtn!);
     const canvas = get(canvasStore);
@@ -468,7 +603,9 @@ describe('Toolbar', () => {
     canvasStore.clear();
     const { container } = render(Toolbar);
     const buttons = Array.from(container.querySelectorAll('button'));
-    const transformBtn = buttons.find((b) => b.getAttribute('title') === 'Add Transform');
+    const transformBtn = buttons.find(
+      (b) => b.getAttribute('title') === 'Add Transform',
+    );
     expect(transformBtn).toBeTruthy();
     await fireEvent.click(transformBtn!);
     const canvas = get(canvasStore);
@@ -496,22 +633,39 @@ describe('Graph execution layer', () => {
     canvasStore.clear();
     canvasStore.addNode(makeInputNode({ id: 'src', value: 'hello' }));
     canvasStore.addNode(makeDisplayNode({ id: 'dst', content: '' }));
-    canvasStore.addConnection({ from: 'src', fromPort: 'value', to: 'dst', toPort: 'input' });
+    canvasStore.addConnection({
+      from: 'src',
+      fromPort: 'value',
+      to: 'dst',
+      toPort: 'input',
+    });
 
     render(Canvas);
 
     await waitFor(() => {
       const canvas = get(canvasStore);
-      const dst = canvas.nodes.find((n) => n.id === 'dst') as DisplayNodeType | undefined;
+      const dst = canvas.nodes.find((n) => n.id === 'dst') as
+        | DisplayNodeType
+        | undefined;
       expect(dst?.content).toBe('hello');
     });
   });
 
   it('should propagate TerminalNode output to connected DisplayNode after source update', async () => {
     canvasStore.clear();
-    canvasStore.addNode(makeTerminalNode({ id: 'term-src', outputs: [{ id: 'stdout', name: 'stdout', type: 'output' }] }));
+    canvasStore.addNode(
+      makeTerminalNode({
+        id: 'term-src',
+        outputs: [{ id: 'stdout', name: 'stdout', type: 'output' }],
+      }),
+    );
     canvasStore.addNode(makeDisplayNode({ id: 'disp-dst', content: '' }));
-    canvasStore.addConnection({ from: 'term-src', fromPort: 'stdout', to: 'disp-dst', toPort: 'input' });
+    canvasStore.addConnection({
+      from: 'term-src',
+      fromPort: 'stdout',
+      to: 'disp-dst',
+      toPort: 'input',
+    });
 
     updateNodeData('term-src', 'stdout', 'terminal output');
 
@@ -519,7 +673,9 @@ describe('Graph execution layer', () => {
 
     await waitFor(() => {
       const canvas = get(canvasStore);
-      const dst = canvas.nodes.find((n) => n.id === 'disp-dst') as DisplayNodeType | undefined;
+      const dst = canvas.nodes.find((n) => n.id === 'disp-dst') as
+        | DisplayNodeType
+        | undefined;
       expect(dst?.content).toBe('terminal output');
     });
   });
@@ -527,7 +683,9 @@ describe('Graph execution layer', () => {
   it('should not update DisplayNode content when no connection exists', () => {
     canvasStore.clear();
     canvasStore.addNode(makeInputNode({ id: 'isolated-input' }));
-    canvasStore.addNode(makeDisplayNode({ id: 'isolated-display', content: 'original' }));
+    canvasStore.addNode(
+      makeDisplayNode({ id: 'isolated-display', content: 'original' }),
+    );
     // No connection added
 
     updateNodeData('isolated-input', 'value', 'should not appear');
@@ -544,7 +702,9 @@ describe('Graph execution layer', () => {
   });
 });
 
-const makeSubCanvasNode = (overrides: Partial<SubCanvasNode> = {}): SubCanvasNode => ({
+const makeSubCanvasNode = (
+  overrides: Partial<SubCanvasNode> = {},
+): SubCanvasNode => ({
   id: 'sub-1',
   type: 'sub-canvas',
   position: { x: 100, y: 100 },
@@ -579,7 +739,9 @@ describe('SubCanvasCard', () => {
       node: makeSubCanvasNode({ label: 'Agent Workflow' }),
       onnavigate: () => {},
     });
-    const titleInput = container.querySelector('.card-title') as HTMLInputElement;
+    const titleInput = container.querySelector(
+      '.card-title',
+    ) as HTMLInputElement;
     expect(titleInput).toBeTruthy();
     expect(titleInput.value).toBe('Agent Workflow');
   });
@@ -600,10 +762,28 @@ describe('SubCanvasCard', () => {
         name: 'Inner',
         description: '',
         nodes: [
-          { id: 'n1', type: 'text', position: { x: 0, y: 0 }, label: 'A', content: '', inputs: [], outputs: [] },
-          { id: 'n2', type: 'text', position: { x: 100, y: 0 }, label: 'B', content: '', inputs: [], outputs: [] },
+          {
+            id: 'n1',
+            type: 'text',
+            position: { x: 0, y: 0 },
+            label: 'A',
+            content: '',
+            inputs: [],
+            outputs: [],
+          },
+          {
+            id: 'n2',
+            type: 'text',
+            position: { x: 100, y: 0 },
+            label: 'B',
+            content: '',
+            inputs: [],
+            outputs: [],
+          },
         ],
-        connections: [{ id: 'c1', from: 'n1', to: 'n2', fromPort: 'out', toPort: 'in' }],
+        connections: [
+          { id: 'c1', from: 'n1', to: 'n2', fromPort: 'out', toPort: 'in' },
+        ],
         version: '1.0.0',
       },
     });
@@ -616,7 +796,9 @@ describe('SubCanvasCard', () => {
     let navigatedTo: string | null = null;
     const { container } = render(SubCanvasCard, {
       node: makeSubCanvasNode({ id: 'sub-click' }),
-      onnavigate: (id: string) => { navigatedTo = id; },
+      onnavigate: (id: string) => {
+        navigatedTo = id;
+      },
     });
     const btn = container.querySelector('.navigate-btn') as HTMLButtonElement;
     expect(btn).toBeTruthy();
@@ -631,7 +813,15 @@ describe('SubCanvasCard', () => {
         name: 'Inner',
         description: '',
         nodes: [
-          { id: 'n1', type: 'text', position: { x: 0, y: 0 }, label: 'A', content: '', inputs: [], outputs: [] },
+          {
+            id: 'n1',
+            type: 'text',
+            position: { x: 0, y: 0 },
+            label: 'A',
+            content: '',
+            inputs: [],
+            outputs: [],
+          },
         ],
         connections: [],
         version: '1.0.0',
@@ -643,7 +833,9 @@ describe('SubCanvasCard', () => {
 });
 
 describe('Canvas with sub-canvas node', () => {
-  beforeEach(() => { canvasPraxisStore.clear(); });
+  beforeEach(() => {
+    canvasPraxisStore.clear();
+  });
   afterEach(cleanup);
 
   it('renders sub-canvas node type without crashing', () => {
@@ -654,4 +846,3 @@ describe('Canvas with sub-canvas node', () => {
     expect(container.querySelector('.node-wrapper')).toBeTruthy();
   });
 });
-

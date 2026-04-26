@@ -47,7 +47,7 @@ nodes:
       y: 100
     label: Output 1
     displayType: text
-    content: ''
+    content: ""
     inputs:
       - id: input
         name: input
@@ -61,7 +61,7 @@ nodes:
       y: 340
     label: Output 2
     displayType: text
-    content: ''
+    content: ""
     inputs:
       - id: input
         name: input
@@ -92,7 +92,7 @@ nodes:
       y: 200
     label: Slider Value
     displayType: text
-    content: ''
+    content: ""
     inputs:
       - id: input
         name: input
@@ -104,7 +104,7 @@ connections:
     to: display-date
     fromPort: stdout
     toPort: input
-  
+
   - from: terminal-time
     to: display-time
     fromPort: stdout

@@ -11,23 +11,24 @@ This document summarizes the current implementation status of RuneBook.
    - Cross-platform desktop app foundation
 
 1.5. **Ambient Agent Mode (v0.3.0+)**
-   - Event capture system for terminal commands
-   - Storage layer (in-memory and PluresDB adapters)
-   - Analysis engine with pattern detection
-   - Suggestion system with multiple types and priorities
-   - Headless CLI for SSH-friendly access
-   - Opt-in design (disabled by default)
-   - Comprehensive test coverage
-   - NixOS support (flake.nix, shell.nix)
-   - CI/CD integration
-   - **Terminal Observer Layer**: Low-level shell event capture (bash/zsh adapters)
-   - **Analysis Ladder**: 3-layer analysis system (heuristic → local search → optional LLM)
-   - **Cognitive Memory**: PluresDB-based persistent storage with Rust API
-   - **Event Schema**: Canonical event types (command_start, command_end, stdout_chunk, stderr_chunk, exit_status, etc.)
-   - **Memory Schema**: Sessions, commands, outputs, errors, insights, suggestions, provenance
-   - **Security Model**: Secret redaction, opt-in design, local-only storage
-   - **CLI Surface**: Full headless interface (agent, observer, analyze, memory commands)
-   - **Demo Script**: Automated demo walkthrough (scripts/demo.sh)
+
+- Event capture system for terminal commands
+- Storage layer (in-memory and PluresDB adapters)
+- Analysis engine with pattern detection
+- Suggestion system with multiple types and priorities
+- Headless CLI for SSH-friendly access
+- Opt-in design (disabled by default)
+- Comprehensive test coverage
+- NixOS support (flake.nix, shell.nix)
+- CI/CD integration
+- **Terminal Observer Layer**: Low-level shell event capture (bash/zsh adapters)
+- **Analysis Ladder**: 3-layer analysis system (heuristic → local search → optional LLM)
+- **Cognitive Memory**: PluresDB-based persistent storage with Rust API
+- **Event Schema**: Canonical event types (command_start, command_end, stdout_chunk, stderr_chunk, exit_status, etc.)
+- **Memory Schema**: Sessions, commands, outputs, errors, insights, suggestions, provenance
+- **Security Model**: Secret redaction, opt-in design, local-only storage
+- **CLI Surface**: Full headless interface (agent, observer, analyze, memory commands)
+- **Demo Script**: Automated demo walkthrough (scripts/demo.sh)
 
 2. **Canvas UI System**
    - Infinite canvas workspace with grid background
@@ -112,14 +113,14 @@ This document summarizes the current implementation status of RuneBook.
    - ❌ No UI for creating connections by dragging
    - ❌ No UI for deleting connections
 
-2. **Transform Nodes**
+3. **Transform Nodes**
    - ✅ Map, filter, reduce transformations work
    - ✅ JavaScript expression execution
    - ✅ Error handling
    - ❌ Sudolang support (stub only)
    - ❌ No async transformations yet
 
-3. **PluresDB Integration**
+4. **PluresDB Integration**
    - ✅ Dependency installed (v1.3.1)
    - ✅ Storage abstraction layer created
    - ✅ LocalStorage adapter implemented
@@ -144,30 +145,30 @@ This document summarizes the current implementation status of RuneBook.
    - Cannot drag from output ports to input ports
    - Must manually edit YAML or load pre-configured canvases
 
-2. **Node Management**
+3. **Node Management**
    - No delete button on nodes
    - No duplicate/copy functionality
    - No node search or filtering
 
-3. **Canvas Controls**
+4. **Canvas Controls**
    - No zoom in/out
    - No pan/scroll
    - No minimap
    - No canvas export to image
 
-4. **Advanced Features**
+5. **Advanced Features**
    - No undo/redo
    - No keyboard shortcuts
    - No collaborative editing
    - No real-time sync
    - No plugin system
 
-5. **AI Integration**
+6. **AI Integration**
    - MCP not integrated (documented only)
    - Sudolang not implemented (documented only)
    - No AI-assisted node creation
 
-6. **Additional Node Types**
+7. **Additional Node Types**
    - No chart/graph display nodes
    - No markdown display nodes
    - No file picker input nodes
@@ -177,12 +178,14 @@ This document summarizes the current implementation status of RuneBook.
 ## Code Quality
 
 ### ✅ Verified
+
 - TypeScript compilation: ✅ Zero errors
 - Svelte check: ✅ All components valid
 - Frontend build: ✅ Vite builds successfully
 - Rust compilation: ✅ Code compiles (requires system dependencies to run)
 
 ### Code Statistics
+
 - 58 files created/modified
 - ~12,000+ lines of code and documentation
 - TypeScript: Canvas logic, stores, utilities, PluresDB integration
@@ -227,6 +230,7 @@ runebook/
 ## Technical Highlights
 
 ### Reactive Architecture
+
 - **Praxis reactive logic engine** for type-safe, testable state management
 - Event-driven updates with typed events (`AddNodeEvent`, `UpdateNodeEvent`, etc.)
 - Declarative rules for state transformations
@@ -236,6 +240,7 @@ runebook/
 - No manual event wiring needed
 
 ### Modern Stack
+
 - **Frontend**: Svelte 5 + SvelteKit + TypeScript + Vite
 - **State Management**: Praxis v1.2.0 reactive logic engine
 - **Data Storage**: PluresDB v1.3.1 for P2P-enabled persistent storage
@@ -244,6 +249,7 @@ runebook/
 - **Cross-platform**: Single codebase → Windows, macOS, Linux
 
 ### Developer Experience
+
 - TypeScript for type safety across state management and UI
 - Praxis rules and events for better code organization
 - Hot module replacement in dev mode
@@ -254,6 +260,7 @@ runebook/
 ## What Works Right Now
 
 Users can:
+
 1. ✅ Launch the app (requires system dependencies)
 2. ✅ Add terminal, input, transform, and display nodes
 3. ✅ Drag nodes around the canvas
@@ -269,6 +276,7 @@ Users can:
 13. ✅ Clear the canvas
 
 Users cannot yet:
+
 1. ❌ Create connections by dragging (must edit YAML)
 2. ❌ Delete individual nodes
 3. ❌ Zoom or pan the canvas
@@ -278,6 +286,7 @@ Users cannot yet:
 ## What's Planned (Not Yet Implemented)
 
 ### Near Term (v0.3.x)
+
 - [x] Terminal observer layer (event capture)
 - [ ] Nushell adapter for terminal observer
 - [ ] Interactive connection creation (drag from ports)
@@ -287,6 +296,7 @@ Users cannot yet:
 - [ ] Undo/redo
 
 ### Medium Term (v0.4.x - v0.5.x)
+
 - [ ] Advanced transform nodes (custom JS functions, async)
 - [ ] More input types (date, color, file picker)
 - [ ] More display types (charts, graphs, markdown)
@@ -295,6 +305,7 @@ Users cannot yet:
 - [ ] WebSocket nodes for real-time data
 
 ### Long Term (v1.0+)
+
 - [ ] PluresDB integration (persistent storage)
 - [ ] MCP integration (AI assistance)
 - [ ] Sudolang support (natural language workflows)
@@ -305,6 +316,7 @@ Users cannot yet:
 ## System Requirements
 
 ### To Run
+
 - Node.js 20.x or higher
 - Rust 1.70 or higher
 - Platform-specific:
@@ -313,6 +325,7 @@ Users cannot yet:
   - **Windows**: Microsoft C++ Build Tools
 
 ### To Develop
+
 - Same as above, plus:
 - Git
 - Code editor (VS Code recommended)
@@ -330,6 +343,7 @@ Users cannot yet:
 ## Success Metrics
 
 ### ✅ Achieved
+
 - Complete Tauri + Svelte 5 project initialized
 - Canvas UI with working nodes (Terminal, Input, Transform, Display)
 - Reactive data flow implemented
@@ -340,6 +354,7 @@ Users cannot yet:
 - TypeScript strictly typed
 
 ### 🎯 Goals Met
+
 - "Initialize a Tauri + Svelte 5 project" ✅
 - "With PluresDB, MCP integration, and Sudolang support" ✅ (Documented for future)
 - "Add a canvas UI where users place terminal nodes, input widgets, and display components" ✅
@@ -351,12 +366,14 @@ Users cannot yet:
 ## How to Use This Implementation
 
 ### For Users
+
 1. Read `QUICKSTART.md` for a tutorial
 2. Install system dependencies (see README.md)
 3. Run `npm install && npm run tauri dev`
 4. Start building canvas workflows
 
 ### For Developers
+
 1. Read `CONTRIBUTING.md` for development setup
 2. Read `ARCHITECTURE.md` to understand the design
 3. Check `INTEGRATIONS.md` for planned features

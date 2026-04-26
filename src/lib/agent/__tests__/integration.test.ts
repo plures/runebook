@@ -1,12 +1,12 @@
 // Tests for agent/integration.ts
 
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import {
-  initAgent,
-  getAgent,
-  isAgentEnabled,
-  captureCommandStart,
   captureCommandResult,
+  captureCommandStart,
+  getAgent,
+  initAgent,
+  isAgentEnabled,
   stopAgent,
 } from '../integration';
 
@@ -17,7 +17,12 @@ describe('agent integration', () => {
 
   describe('initAgent', () => {
     it('should create and return an agent instance', () => {
-      const agent = initAgent({ enabled: true, captureEvents: true, analyzePatterns: false, suggestImprovements: false });
+      const agent = initAgent({
+        enabled: true,
+        captureEvents: true,
+        analyzePatterns: false,
+        suggestImprovements: false,
+      });
       expect(agent).not.toBeNull();
       expect(getAgent()).toBe(agent);
     });
@@ -35,7 +40,12 @@ describe('agent integration', () => {
     });
 
     it('should return the agent after init', () => {
-      initAgent({ enabled: true, captureEvents: true, analyzePatterns: false, suggestImprovements: false });
+      initAgent({
+        enabled: true,
+        captureEvents: true,
+        analyzePatterns: false,
+        suggestImprovements: false,
+      });
       expect(getAgent()).not.toBeNull();
     });
   });
@@ -46,12 +56,22 @@ describe('agent integration', () => {
     });
 
     it('should return false when agent is disabled', () => {
-      initAgent({ enabled: false, captureEvents: true, analyzePatterns: false, suggestImprovements: false });
+      initAgent({
+        enabled: false,
+        captureEvents: true,
+        analyzePatterns: false,
+        suggestImprovements: false,
+      });
       expect(isAgentEnabled()).toBe(false);
     });
 
     it('should return true when agent is enabled', () => {
-      initAgent({ enabled: true, captureEvents: true, analyzePatterns: false, suggestImprovements: false });
+      initAgent({
+        enabled: true,
+        captureEvents: true,
+        analyzePatterns: false,
+        suggestImprovements: false,
+      });
       expect(isAgentEnabled()).toBe(true);
     });
   });
@@ -63,7 +83,12 @@ describe('agent integration', () => {
     });
 
     it('should return a terminal event when agent is enabled', async () => {
-      initAgent({ enabled: true, captureEvents: true, analyzePatterns: false, suggestImprovements: false });
+      initAgent({
+        enabled: true,
+        captureEvents: true,
+        analyzePatterns: false,
+        suggestImprovements: false,
+      });
       const event = await captureCommandStart('echo', ['hello'], {}, '/tmp');
       expect(event).not.toBeNull();
       expect(event!.command).toBe('echo');
@@ -72,24 +97,45 @@ describe('agent integration', () => {
 
   describe('captureCommandResult', () => {
     it('should do nothing when agent is not enabled', async () => {
-      await expect(captureCommandResult(null, 'out', 'err', 0)).resolves.toBeUndefined();
+      await expect(
+        captureCommandResult(null, 'out', 'err', 0),
+      ).resolves.toBeUndefined();
     });
 
     it('should do nothing when event is null', async () => {
-      initAgent({ enabled: true, captureEvents: true, analyzePatterns: false, suggestImprovements: false });
-      await expect(captureCommandResult(null, 'out', 'err', 0)).resolves.toBeUndefined();
+      initAgent({
+        enabled: true,
+        captureEvents: true,
+        analyzePatterns: false,
+        suggestImprovements: false,
+      });
+      await expect(
+        captureCommandResult(null, 'out', 'err', 0),
+      ).resolves.toBeUndefined();
     });
 
     it('should process a command result when agent is enabled', async () => {
-      initAgent({ enabled: true, captureEvents: true, analyzePatterns: false, suggestImprovements: false });
+      initAgent({
+        enabled: true,
+        captureEvents: true,
+        analyzePatterns: false,
+        suggestImprovements: false,
+      });
       const event = await captureCommandStart('echo', ['hello'], {}, '/tmp');
-      await expect(captureCommandResult(event, 'hello\n', '', 0)).resolves.toBeUndefined();
+      await expect(
+        captureCommandResult(event, 'hello\n', '', 0),
+      ).resolves.toBeUndefined();
     });
   });
 
   describe('stopAgent', () => {
     it('should stop and clear the agent', () => {
-      initAgent({ enabled: true, captureEvents: true, analyzePatterns: false, suggestImprovements: false });
+      initAgent({
+        enabled: true,
+        captureEvents: true,
+        analyzePatterns: false,
+        suggestImprovements: false,
+      });
       stopAgent();
       expect(getAgent()).toBeNull();
     });

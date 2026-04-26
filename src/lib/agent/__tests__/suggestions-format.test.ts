@@ -1,10 +1,10 @@
 // Golden tests for CLI output formatting
 
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import {
   formatSuggestion,
-  formatSuggestionsForCLI,
   formatSuggestionCompact,
+  formatSuggestionsForCLI,
   formatTopSuggestion,
 } from '../suggestions';
 import type { Suggestion } from '../../types/agent';
@@ -46,7 +46,9 @@ describe('Suggestion Formatting (Golden Tests)', () => {
       const output = formatSuggestion(sampleSuggestion);
       expect(output).toContain('⚠️');
       expect(output).toContain('Repeated Command Failures');
-      expect(output).toContain('The command "invalid-command" has failed 3 times recently.');
+      expect(output).toContain(
+        'The command "invalid-command" has failed 3 times recently.',
+      );
     });
 
     it('should format suggestion with command', () => {
@@ -82,20 +84,20 @@ describe('Suggestion Formatting (Golden Tests)', () => {
         sampleSuggestionWithCommand, // medium
         sampleTip, // low
       ];
-      
+
       const output = formatSuggestionsForCLI(suggestions);
-      
+
       // Check structure
       expect(output).toContain('=== Suggestions (3) ===');
       expect(output).toContain('HIGH PRIORITY:');
       expect(output).toContain('MEDIUM PRIORITY:');
       expect(output).toContain('LOW PRIORITY:');
-      
+
       // Check order (high before medium before low)
       const highIndex = output.indexOf('HIGH PRIORITY:');
       const mediumIndex = output.indexOf('MEDIUM PRIORITY:');
       const lowIndex = output.indexOf('LOW PRIORITY:');
-      
+
       expect(highIndex).toBeLessThan(mediumIndex);
       expect(mediumIndex).toBeLessThan(lowIndex);
     });
@@ -142,7 +144,7 @@ describe('Suggestion Formatting (Golden Tests)', () => {
       const suggestions = [sampleSuggestion, sampleSuggestionWithCommand];
       const output1 = formatSuggestionsForCLI(suggestions);
       const output2 = formatSuggestionsForCLI(suggestions);
-      
+
       // Output should be deterministic
       expect(output1).toBe(output2);
     });
@@ -156,11 +158,10 @@ describe('Suggestion Formatting (Golden Tests)', () => {
         description: 'Description with "quotes" and \'apostrophes\'',
         timestamp: Date.now(),
       };
-      
+
       const output = formatSuggestion(specialSuggestion);
       expect(output).toContain('Test with "quotes"');
       expect(output).toContain('Description with "quotes"');
     });
   });
 });
-

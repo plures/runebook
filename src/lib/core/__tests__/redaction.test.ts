@@ -1,11 +1,11 @@
 // Unit tests for secret redaction utilities
 
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import {
-  sanitizeEnv,
-  redactSecretsFromText,
   isSecretKey,
+  redactSecretsFromText,
   redactValue,
+  sanitizeEnv,
   validateRedaction,
 } from '../redaction';
 
@@ -125,4 +125,3 @@ describe('redaction', () => {
     });
   });
 });
-

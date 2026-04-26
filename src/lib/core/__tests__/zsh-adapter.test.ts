@@ -1,9 +1,9 @@
 // Tests for core/shell-adapters/zsh.ts
 
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { ZshAdapter } from '../shell-adapters/zsh';
 import { LocalFileStore } from '../storage';
-import { rmSync, existsSync } from 'fs';
+import { existsSync, rmSync } from 'fs';
 import { join } from 'path';
 import { tmpdir } from 'os';
 import type { ObserverConfig } from '../types';
@@ -73,7 +73,12 @@ describe('ZshAdapter', () => {
     await adapter.initialize(makeConfig(), store);
     await adapter.start();
 
-    const commandId = await adapter.captureCommand('echo', ['hello'], '/tmp', {});
+    const commandId = await adapter.captureCommand(
+      'echo',
+      ['hello'],
+      '/tmp',
+      {},
+    );
     expect(typeof commandId).toBe('string');
     expect(commandId.length).toBeGreaterThan(0);
   });
@@ -82,7 +87,12 @@ describe('ZshAdapter', () => {
     await adapter.initialize(makeConfig(), store);
     await adapter.start();
 
-    const commandId = await adapter.captureCommand('echo', ['hello'], '/tmp', {});
+    const commandId = await adapter.captureCommand(
+      'echo',
+      ['hello'],
+      '/tmp',
+      {},
+    );
     await adapter.captureCommandResult(commandId, 'hello\n', '', 0);
 
     const events = await store.getEvents();

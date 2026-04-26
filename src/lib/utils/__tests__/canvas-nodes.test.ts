@@ -1,11 +1,11 @@
 // Tests for canvas-nodes utility
 
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import { resolvePortIndex } from '../canvas-nodes';
 import type { Port } from '../../types/canvas';
 
 const makePorts = (...ids: string[]): Port[] =>
-  ids.map(id => ({ id, name: id, type: 'output' as const }));
+  ids.map((id) => ({ id, name: id, type: 'output' as const }));
 
 describe('resolvePortIndex', () => {
   it('returns 0 for the first port', () => {

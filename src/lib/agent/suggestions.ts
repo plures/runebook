@@ -23,7 +23,7 @@ export class MemorySuggestionStore implements SuggestionStore {
 
   add(suggestion: Suggestion): void {
     // Avoid duplicates
-    if (!this.suggestions.find(s => s.id === suggestion.id)) {
+    if (!this.suggestions.find((s) => s.id === suggestion.id)) {
       this.suggestions.push(suggestion);
       // Keep only recent suggestions (last 100)
       if (this.suggestions.length > 100) {
@@ -33,7 +33,7 @@ export class MemorySuggestionStore implements SuggestionStore {
   }
 
   remove(id: string): void {
-    this.suggestions = this.suggestions.filter(s => s.id !== id);
+    this.suggestions = this.suggestions.filter((s) => s.id !== id);
   }
 
   clear(): void {
@@ -41,17 +41,16 @@ export class MemorySuggestionStore implements SuggestionStore {
   }
 
   getByPriority(priority: 'low' | 'medium' | 'high'): Suggestion[] {
-    return this.suggestions.filter(s => s.priority === priority);
+    return this.suggestions.filter((s) => s.priority === priority);
   }
 
   getByType(type: Suggestion['type']): Suggestion[] {
-    return this.suggestions.filter(s => s.type === type);
+    return this.suggestions.filter((s) => s.type === type);
   }
 
   getForCommand(command: string): Suggestion[] {
-    return this.suggestions.filter(s => 
-      s.context?.command === command || 
-      s.command === command
+    return this.suggestions.filter(
+      (s) => s.context?.command === command || s.command === command,
     );
   }
 
@@ -96,7 +95,7 @@ export function formatSuggestion(suggestion: Suggestion): string {
   const emoji = `${priorityEmoji[suggestion.priority]} ${typeEmoji[suggestion.type]}`;
   let output = `${emoji} ${suggestion.title}\n`;
   output += `   ${suggestion.description}\n`;
-  
+
   if (suggestion.command) {
     const args = suggestion.args ? suggestion.args.join(' ') : '';
     output += `   Command: ${suggestion.command} ${args}\n`;
@@ -114,29 +113,29 @@ export function formatSuggestionsForCLI(suggestions: Suggestion[]): string {
   }
 
   let output = `\n=== Suggestions (${suggestions.length}) ===\n\n`;
-  
+
   // Group by priority
-  const high = suggestions.filter(s => s.priority === 'high');
-  const medium = suggestions.filter(s => s.priority === 'medium');
-  const low = suggestions.filter(s => s.priority === 'low');
+  const high = suggestions.filter((s) => s.priority === 'high');
+  const medium = suggestions.filter((s) => s.priority === 'medium');
+  const low = suggestions.filter((s) => s.priority === 'low');
 
   if (high.length > 0) {
     output += 'HIGH PRIORITY:\n';
-    high.forEach(s => {
+    high.forEach((s) => {
       output += formatSuggestion(s) + '\n';
     });
   }
 
   if (medium.length > 0) {
     output += 'MEDIUM PRIORITY:\n';
-    medium.forEach(s => {
+    medium.forEach((s) => {
       output += formatSuggestion(s) + '\n';
     });
   }
 
   if (low.length > 0) {
     output += 'LOW PRIORITY:\n';
-    low.forEach(s => {
+    low.forEach((s) => {
       output += formatSuggestion(s) + '\n';
     });
   }
@@ -153,7 +152,7 @@ export function formatSuggestionCompact(suggestion: Suggestion): string {
     medium: '▲',
     high: '⚠',
   };
-  
+
   return `${prioritySymbol[suggestion.priority]} ${suggestion.title}`;
 }
 
@@ -166,4 +165,3 @@ export function formatTopSuggestion(suggestion: Suggestion | null): string {
   }
   return formatSuggestionCompact(suggestion);
 }
-
