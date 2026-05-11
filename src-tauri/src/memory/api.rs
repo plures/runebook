@@ -77,7 +77,7 @@ impl MemoryStore {
         }
 
         // Sort by started_at descending
-        sessions.sort_by(|a, b| b.started_at.cmp(&a.started_at));
+        sessions.sort_by_key(|session| std::cmp::Reverse(session.started_at));
 
         Ok(sessions)
     }
@@ -122,7 +122,7 @@ impl MemoryStore {
         }
 
         // Sort by timestamp descending
-        errors.sort_by(|a, b| b.timestamp.cmp(&a.timestamp));
+        errors.sort_by_key(|error| std::cmp::Reverse(error.timestamp));
 
         // Apply limit
         if let Some(limit) = limit {
@@ -175,7 +175,7 @@ impl MemoryStore {
                 }
             }
         }
-        commands.sort_by(|a, b| a.started_at.cmp(&b.started_at));
+        commands.sort_by_key(|command| command.started_at);
 
         // Get outputs for these commands
         let output_keys = self.client.list("memory:output:").await?;
@@ -197,7 +197,7 @@ impl MemoryStore {
                 }
             }
         }
-        outputs.sort_by(|a, b| a.chunk_index.cmp(&b.chunk_index));
+        outputs.sort_by_key(|output| output.chunk_index);
 
         // Get errors in time window
         let error_keys = self.client.list("memory:error:").await?;
@@ -220,7 +220,7 @@ impl MemoryStore {
                 }
             }
         }
-        errors.sort_by(|a, b| a.timestamp.cmp(&b.timestamp));
+        errors.sort_by_key(|error| error.timestamp);
 
         // Get insights
         let insight_keys = self.client.list("memory:insight:").await?;
@@ -243,7 +243,7 @@ impl MemoryStore {
                 }
             }
         }
-        insights.sort_by(|a, b| a.generated_at.cmp(&b.generated_at));
+        insights.sort_by_key(|insight| insight.generated_at);
 
         Ok(ContextWindow {
             session_id: session_id.to_string(),
