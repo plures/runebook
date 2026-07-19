@@ -7,7 +7,6 @@ import {
   defineRule,
   defineModule,
   PraxisRegistry,
-  RuleResult,
 } from '@plures/praxis';
 import type { Canvas, CanvasNode, Connection, SubCanvasNode } from '../types/canvas';
 
@@ -53,16 +52,16 @@ export function makeConnectionId(from: string, fromPort: string, to: string, toP
   return `e-${from}-${fromPort}-${to}-${toPort}`;
 }
 
-// Define rules for canvas operations using RuleResult typed returns
+// Define rules for canvas operations (impl returns an array of events; [] = no new events)
 const addNodeRule = defineRule<CanvasContext>({
   id: 'canvas.addNode',
   description: 'Add a new node to the canvas',
   eventTypes: 'ADD_NODE',
   impl: (state, events) => {
     const evt = events.find(AddNodeEvent.is);
-    if (!evt) return RuleResult.skip('no ADD_NODE event');
+    if (!evt) return [];
     state.context.canvas.nodes.push(evt.payload.node);
-    return RuleResult.noop('node added');
+    return [];
   },
 });
 
@@ -72,7 +71,7 @@ const removeNodeRule = defineRule<CanvasContext>({
   eventTypes: 'REMOVE_NODE',
   impl: (state, events) => {
     const evt = events.find(RemoveNodeEvent.is);
-    if (!evt) return RuleResult.skip('no REMOVE_NODE event');
+    if (!evt) return [];
 
     const { nodeId } = evt.payload;
     state.context.canvas.nodes = state.context.canvas.nodes.filter(n => n.id !== nodeId);
@@ -86,7 +85,7 @@ const removeNodeRule = defineRule<CanvasContext>({
       Object.entries(state.context.nodeData).filter(([key]) => !key.startsWith(prefix)),
     );
 
-    return RuleResult.noop('node removed');
+    return [];
   },
 });
 
@@ -96,7 +95,7 @@ const updateNodeRule = defineRule<CanvasContext>({
   eventTypes: 'UPDATE_NODE',
   impl: (state, events) => {
     const evt = events.find(UpdateNodeEvent.is);
-    if (!evt) return RuleResult.skip('no UPDATE_NODE event');
+    if (!evt) return [];
 
     const { nodeId, updates } = evt.payload;
     const nodeIndex = state.context.canvas.nodes.findIndex(n => n.id === nodeId);
@@ -107,7 +106,7 @@ const updateNodeRule = defineRule<CanvasContext>({
       } as CanvasNode;
     }
 
-    return RuleResult.noop('node updated');
+    return [];
   },
 });
 
@@ -117,7 +116,7 @@ const updateNodePositionRule = defineRule<CanvasContext>({
   eventTypes: 'UPDATE_NODE_POSITION',
   impl: (state, events) => {
     const evt = events.find(UpdateNodePositionEvent.is);
-    if (!evt) return RuleResult.skip('no UPDATE_NODE_POSITION event');
+    if (!evt) return [];
 
     const { nodeId, x, y } = evt.payload;
     const nodeIndex = state.context.canvas.nodes.findIndex(n => n.id === nodeId);
@@ -125,7 +124,7 @@ const updateNodePositionRule = defineRule<CanvasContext>({
       state.context.canvas.nodes[nodeIndex].position = { x, y };
     }
 
-    return RuleResult.noop('node position updated');
+    return [];
   },
 });
 
@@ -135,7 +134,7 @@ const addConnectionRule = defineRule<CanvasContext>({
   eventTypes: 'ADD_CONNECTION',
   impl: (state, events) => {
     const evt = events.find(AddConnectionEvent.is);
-    if (!evt) return RuleResult.skip('no ADD_CONNECTION event');
+    if (!evt) return [];
 
     const conn = evt.payload.connection;
     // Auto-generate a handle-based ID when not provided
@@ -154,7 +153,7 @@ const addConnectionRule = defineRule<CanvasContext>({
       state.context.canvas.connections.push(connection);
     }
 
-    return RuleResult.noop('connection added');
+    return [];
   },
 });
 
@@ -164,14 +163,14 @@ const removeConnectionRule = defineRule<CanvasContext>({
   eventTypes: 'REMOVE_CONNECTION',
   impl: (state, events) => {
     const evt = events.find(RemoveConnectionEvent.is);
-    if (!evt) return RuleResult.skip('no REMOVE_CONNECTION event');
+    if (!evt) return [];
 
     const { from, to, fromPort, toPort } = evt.payload;
     state.context.canvas.connections = state.context.canvas.connections.filter(
       c => !(c.from === from && c.to === to && c.fromPort === fromPort && c.toPort === toPort),
     );
 
-    return RuleResult.noop('connection removed');
+    return [];
   },
 });
 
@@ -181,11 +180,11 @@ const loadCanvasRule = defineRule<CanvasContext>({
   eventTypes: 'LOAD_CANVAS',
   impl: (state, events) => {
     const evt = events.find(LoadCanvasEvent.is);
-    if (!evt) return RuleResult.skip('no LOAD_CANVAS event');
+    if (!evt) return [];
 
     state.context.canvas = evt.payload.canvas;
     state.context.navStack = [];
-    return RuleResult.noop('canvas loaded');
+    return [];
   },
 });
 
@@ -195,7 +194,7 @@ const clearCanvasRule = defineRule<CanvasContext>({
   eventTypes: 'CLEAR_CANVAS',
   impl: (state, events) => {
     const evt = events.find(ClearCanvasEvent.is);
-    if (!evt) return RuleResult.skip('no CLEAR_CANVAS event');
+    if (!evt) return [];
 
     state.context.canvas = {
       id: 'default',
@@ -208,7 +207,7 @@ const clearCanvasRule = defineRule<CanvasContext>({
     state.context.nodeData = {};
     state.context.navStack = [];
 
-    return RuleResult.noop('canvas cleared');
+    return [];
   },
 });
 
@@ -218,12 +217,12 @@ const updateNodeDataRule = defineRule<CanvasContext>({
   eventTypes: 'UPDATE_NODE_DATA',
   impl: (state, events) => {
     const evt = events.find(UpdateNodeDataEvent.is);
-    if (!evt) return RuleResult.skip('no UPDATE_NODE_DATA event');
+    if (!evt) return [];
 
     const { nodeId, portId, data } = evt.payload;
     state.context.nodeData[`${nodeId}:${portId}`] = data;
 
-    return RuleResult.noop('node data updated');
+    return [];
   },
 });
 
@@ -233,11 +232,11 @@ const navigateIntoSubCanvasRule = defineRule<CanvasContext>({
   eventTypes: 'NAVIGATE_INTO_SUB_CANVAS',
   impl: (state, events) => {
     const evt = events.find(NavigateIntoSubCanvasEvent.is);
-    if (!evt) return RuleResult.skip('no NAVIGATE_INTO_SUB_CANVAS event');
+    if (!evt) return [];
 
     const { nodeId, label } = evt.payload;
     const node = state.context.canvas.nodes.find(n => n.id === nodeId);
-    if (!node || node.type !== 'sub-canvas') return RuleResult.skip('not a sub-canvas node');
+    if (!node || node.type !== 'sub-canvas') return [];
 
     // Push current canvas onto the stack and descend into the children canvas.
     state.context.navStack.push({
@@ -248,7 +247,7 @@ const navigateIntoSubCanvasRule = defineRule<CanvasContext>({
     state.context.canvas = (node as SubCanvasNode).children;
     state.context.nodeData = {};
 
-    return RuleResult.noop('navigated into sub-canvas');
+    return [];
   },
 });
 
@@ -258,8 +257,8 @@ const navigateUpRule = defineRule<CanvasContext>({
   eventTypes: 'NAVIGATE_UP',
   impl: (state, events) => {
     const evt = events.find(NavigateUpEvent.is);
-    if (!evt) return RuleResult.skip('no NAVIGATE_UP event');
-    if (state.context.navStack.length === 0) return RuleResult.skip('already at root');
+    if (!evt) return [];
+    if (state.context.navStack.length === 0) return [];
 
     const entry = state.context.navStack.pop()!;
     const modifiedChildren = state.context.canvas;
@@ -273,7 +272,7 @@ const navigateUpRule = defineRule<CanvasContext>({
     state.context.canvas = entry.canvas;
     state.context.nodeData = {};
 
-    return RuleResult.noop('navigated up');
+    return [];
   },
 });
 

@@ -7,10 +7,12 @@ import {
   defineRule,
   defineConstraint,
   defineModule,
-  RuleResult,
-  fact,
 } from '@plures/praxis';
-import type { PraxisModule } from '@plures/praxis';
+import type { PraxisModule, PraxisFact } from '@plures/praxis';
+
+// Local fact constructor: build a PraxisFact literal.
+// (@plures/praxis browser build no longer re-exports the act helper.)
+const fact = (tag: string, payload: unknown): PraxisFact => ({ tag, payload });
 
 // ---------------------------------------------------------------------------
 // Context
@@ -121,17 +123,17 @@ const scheduleExecutionRule = defineRule<ExecutionPolicyContext>({
   eventTypes: 'SCHEDULE_EXECUTION',
   impl: (state, events) => {
     const evt = events.find(ScheduleExecutionEvent.is);
-    if (!evt) return RuleResult.skip('no SCHEDULE_EXECUTION event');
+    if (!evt) return [];
 
     const { order, hasCycles } = topologicalSort(state.context.nodes, state.context.edges);
     state.context.executionOrder = order;
     state.context.hasCycles = hasCycles;
 
     if (hasCycles) {
-      return RuleResult.emit([fact(CYCLE_DETECTED_FACT, { triggeredBy: evt.payload.changedNodeId })]);
+      return ([fact(CYCLE_DETECTED_FACT, { triggeredBy: evt.payload.changedNodeId })]);
     }
 
-    return RuleResult.emit([fact(EXECUTION_ORDER_FACT, { order })]);
+    return ([fact(EXECUTION_ORDER_FACT, { order })]);
   },
 });
 
@@ -146,16 +148,16 @@ const detectCyclesRule = defineRule<ExecutionPolicyContext>({
   eventTypes: 'DETECT_CYCLES',
   impl: (state, events) => {
     const evt = events.find(DetectCyclesEvent.is);
-    if (!evt) return RuleResult.skip('no DETECT_CYCLES event');
+    if (!evt) return [];
 
     const { hasCycles } = topologicalSort(state.context.nodes, state.context.edges);
     state.context.hasCycles = hasCycles;
 
     if (hasCycles) {
-      return RuleResult.emit([fact(CYCLE_DETECTED_FACT, {})]);
+      return ([fact(CYCLE_DETECTED_FACT, {})]);
     }
 
-    return RuleResult.emit([fact(GRAPH_ACYCLIC_FACT, {})]);
+    return ([fact(GRAPH_ACYCLIC_FACT, {})]);
   },
 });
 
@@ -171,19 +173,19 @@ const timeoutEnforcementRule = defineRule<ExecutionPolicyContext>({
   eventTypes: 'REPORT_ELAPSED',
   impl: (state, events) => {
     const evt = events.find(ReportElapsedEvent.is);
-    if (!evt) return RuleResult.skip('no REPORT_ELAPSED event');
+    if (!evt) return [];
 
     const { nodeId, elapsedMs } = evt.payload;
     state.context.elapsed[nodeId] = elapsedMs;
 
     const budget = state.context.timeouts[nodeId] ?? 0;
     if (budget > 0 && elapsedMs > budget) {
-      return RuleResult.emit([
+      return ([
         fact(TIMEOUT_EXCEEDED_FACT, { nodeId, elapsedMs, budget }),
       ]);
     }
 
-    return RuleResult.noop('within timeout budget');
+    return [];
   },
 });
 

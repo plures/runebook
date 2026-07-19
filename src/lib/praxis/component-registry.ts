@@ -6,10 +6,12 @@ import {
   defineEvent,
   defineRule,
   defineModule,
-  RuleResult,
-  fact,
 } from '@plures/praxis';
-import type { PraxisModule } from '@plures/praxis';
+import type { PraxisModule, PraxisFact } from '@plures/praxis';
+
+// Local fact constructor: build a PraxisFact literal.
+// (@plures/praxis browser build no longer re-exports the act helper.)
+const fact = (tag: string, payload: unknown): PraxisFact => ({ tag, payload });
 
 // ---------------------------------------------------------------------------
 // Context
@@ -92,7 +94,7 @@ const registerComponentRule = defineRule<ComponentRegistryContext>({
   eventTypes: 'REGISTER_COMPONENT',
   impl: (state, events) => {
     const evt = events.find(RegisterComponentEvent.is);
-    if (!evt) return RuleResult.skip('no REGISTER_COMPONENT event');
+    if (!evt) return [];
 
     const capability = evt.payload;
     state.context.components[capability.type] = {
@@ -100,7 +102,7 @@ const registerComponentRule = defineRule<ComponentRegistryContext>({
       lifecycle: 'registered',
     };
 
-    return RuleResult.emit([fact(COMPONENT_REGISTERED_FACT, { type: capability.type })]);
+    return ([fact(COMPONENT_REGISTERED_FACT, { type: capability.type })]);
   },
 });
 
@@ -113,14 +115,14 @@ const unregisterComponentRule = defineRule<ComponentRegistryContext>({
   eventTypes: 'UNREGISTER_COMPONENT',
   impl: (state, events) => {
     const evt = events.find(UnregisterComponentEvent.is);
-    if (!evt) return RuleResult.skip('no UNREGISTER_COMPONENT event');
+    if (!evt) return [];
 
     const { type } = evt.payload;
     if (state.context.components[type]) {
       state.context.components[type].lifecycle = 'removed';
     }
 
-    return RuleResult.emit([fact(COMPONENT_UNREGISTERED_FACT, { type })]);
+    return ([fact(COMPONENT_UNREGISTERED_FACT, { type })]);
   },
 });
 
@@ -140,7 +142,7 @@ const checkPortCompatibilityRule = defineRule<ComponentRegistryContext>({
   eventTypes: 'CHECK_PORT_COMPATIBILITY',
   impl: (state, events) => {
     const evt = events.find(CheckPortCompatibilityEvent.is);
-    if (!evt) return RuleResult.skip('no CHECK_PORT_COMPATIBILITY event');
+    if (!evt) return [];
 
     const { fromComponentType, fromPortId, toComponentType, toPortId } = evt.payload;
 
@@ -152,7 +154,7 @@ const checkPortCompatibilityRule = defineRule<ComponentRegistryContext>({
         compatible: false,
         reason: `Unknown or removed component: ${fromComponentType}`,
       };
-      return RuleResult.emit([
+      return ([
         fact(PORT_INCOMPATIBLE_FACT, {
           reason: 'unknown-from-component',
           ...evt.payload,
@@ -165,7 +167,7 @@ const checkPortCompatibilityRule = defineRule<ComponentRegistryContext>({
         compatible: false,
         reason: `Unknown or removed component: ${toComponentType}`,
       };
-      return RuleResult.emit([
+      return ([
         fact(PORT_INCOMPATIBLE_FACT, {
           reason: 'unknown-to-component',
           ...evt.payload,
@@ -181,7 +183,7 @@ const checkPortCompatibilityRule = defineRule<ComponentRegistryContext>({
         compatible: false,
         reason: `Output port '${fromPortId}' not found on ${fromComponentType}`,
       };
-      return RuleResult.emit([
+      return ([
         fact(PORT_INCOMPATIBLE_FACT, { reason: 'missing-output-port', ...evt.payload }),
       ]);
     }
@@ -191,7 +193,7 @@ const checkPortCompatibilityRule = defineRule<ComponentRegistryContext>({
         compatible: false,
         reason: `Input port '${toPortId}' not found on ${toComponentType}`,
       };
-      return RuleResult.emit([
+      return ([
         fact(PORT_INCOMPATIBLE_FACT, { reason: 'missing-input-port', ...evt.payload }),
       ]);
     }
@@ -202,7 +204,7 @@ const checkPortCompatibilityRule = defineRule<ComponentRegistryContext>({
         compatible: false,
         reason: `Type mismatch: ${srcPort.dataType} → ${dstPort.dataType}`,
       };
-      return RuleResult.emit([
+      return ([
         fact(PORT_INCOMPATIBLE_FACT, {
           reason: 'type-mismatch',
           fromType: srcPort.dataType,
@@ -213,7 +215,7 @@ const checkPortCompatibilityRule = defineRule<ComponentRegistryContext>({
     }
 
     state.context.portCompatibilityResult = { compatible: true, reason: 'compatible' };
-    return RuleResult.emit([fact(PORT_COMPATIBLE_FACT, evt.payload)]);
+    return ([fact(PORT_COMPATIBLE_FACT, evt.payload)]);
   },
 });
 
