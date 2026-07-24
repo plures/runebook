@@ -1,3 +1,19 @@
+## [0.17.0] — 2026-07-24
+
+- ci(release): trigger release pipeline on merge to main (#165) (4fa9033)
+- fix: resolve rust CI clippy failures in memory API sorting (#163) (d9d3ed5)
+- fix(ci): migrate praxis rules off removed RuleResult/fact API (#164) (8f839fb)
+- ci: migrate Tech Doc Writer to shared reusable (eb89a26)
+- fix(ci): repair tech-doc-writer YAML indentation / remove empty workflow (3f0ae42)
+- ci(dependabot): v3 - do not auto-merge pre-1.0 (0.x) breaking bumps (0.x minor is breaking; aes-gcm 0.10->0.11 broke main) (401e295)
+- ci(dependabot): auto-merge security advisories regardless of semver bump (security over function) (40f6ead)
+- ci: change release trigger from push-to-main to tag-only (d3109f7)
+- refactor: replace inline lifecycle with reusable workflow call (1e93bdf)
+- docs: refresh ROADMAP.md with OASIS strategic alignment (f3b4590)
+- docs: update copilot-instructions with praxis, design-dojo, automation rules (8db9b3c)
+- feat(release): add target_version input for milestone-driven releases (8b39190)
+- feat(lifecycle): milestone-close triggers roadmap-aware release (26eb633)
+
 ## [0.15.0] — 2026-04-18
 
 - feat(lifecycle v12): auto-release when milestone completes (0a2013a)
