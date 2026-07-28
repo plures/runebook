@@ -13,23 +13,17 @@ name: Dependabot Auto-Merge
 
 
 on:
-jobs:
-  auto-merge:
-    if: ${{ github.actor == 'dependabot[bot]' }}
-    uses: plures/.github/.github/workflows/dependabot-auto-merge.yml@main
-
+  pull_request_target:
+    types: [opened, synchronize, reopened, ready_for_review]
+    if: ${{ github.actor == 'dependabot[bot]' }}
 
 
 permissions:
 
-  contents: write
-
   pull-requests: write
 
-
-
+    if: ${{ github.actor == 'dependabot[bot]' }}
 jobs:
-
   auto-merge:
 
     uses: plures/.github/.github/workflows/dependabot-auto-merge.yml@main
