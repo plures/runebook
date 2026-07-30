@@ -15,6 +15,17 @@ const makeTextNode = (id: string): CanvasNode => ({
   outputs: [],
 });
 
+/** Create a node with standard in/out ports for connection tests */
+const makeWiredNode = (id: string): CanvasNode => ({
+  id,
+  type: 'text',
+  position: { x: 0, y: 0 },
+  label: `Node ${id}`,
+  content: '',
+  inputs: [{ id: 'in', name: 'in', type: 'input', dataType: undefined }],
+  outputs: [{ id: 'out', name: 'out', type: 'output', dataType: undefined }],
+});
+
 describe('canvasStore', () => {
   beforeEach(() => {
     // Use canvasStore.clear() so praxisStore.currentState is reset via dispatch
@@ -143,8 +154,8 @@ describe('getNodeInputData helper', () => {
   });
 
   it('should return data from the connected source', () => {
-    canvasStore.addNode(makeTextNode('n1'));
-    canvasStore.addNode(makeTextNode('n2'));
+    canvasStore.addNode(makeWiredNode('n1'));
+    canvasStore.addNode(makeWiredNode('n2'));
     canvasStore.addConnection({ from: 'n1', to: 'n2', fromPort: 'out', toPort: 'in' });
     updateNodeData('n1', 'out', 'value');
     const result = getNodeInputData(
@@ -185,6 +196,8 @@ describe('canvasStore connection deduplication', () => {
   });
 
   it('should deduplicate connections with the same endpoints', () => {
+    canvasStore.addNode(makeWiredNode('n1'));
+    canvasStore.addNode(makeWiredNode('n2'));
     const conn: Connection = { from: 'n1', to: 'n2', fromPort: 'out', toPort: 'in' };
     canvasStore.addConnection(conn);
     canvasStore.addConnection(conn);
@@ -195,6 +208,8 @@ describe('canvasStore connection deduplication', () => {
   });
 
   it('should auto-generate a handle-based ID for connections', () => {
+    canvasStore.addNode(makeWiredNode('n1'));
+    canvasStore.addNode(makeWiredNode('n2'));
     const conn: Connection = { from: 'n1', to: 'n2', fromPort: 'out', toPort: 'in' };
     canvasStore.addConnection(conn);
     const values: any[] = [];
