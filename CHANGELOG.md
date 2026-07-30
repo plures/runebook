@@ -1,3 +1,8 @@
+## [0.18.0] — 2026-07-30
+
+- feat: praxis-first store layer — add fact emission and rule-level connection validation (#167) (afef140)
+- chore: delegate dependabot-auto-merge.yml to org reusable template (#166) (f7a3b0e)
+
 ## [0.17.0] — 2026-07-24
 
 - ci(release): trigger release pipeline on merge to main (#165) (4fa9033)
