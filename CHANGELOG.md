@@ -1,3 +1,7 @@
+## [0.19.0] — 2026-08-08
+
+- feat: terminal ports stdin + stdout graph integration (#168) (4e1e12a)
+
 ## [0.18.0] — 2026-07-30
 
 - feat: praxis-first store layer — add fact emission and rule-level connection validation (#167) (afef140)
