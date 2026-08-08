@@ -1,7 +1,7 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import type { TerminalNode } from '../types/canvas';
-  import { updateNodeData } from '../stores/canvas';
+  import { canvasStore, nodeDataStore, getNodeInputData, updateNodeData } from '../stores/canvas';
   import { requestTerminal, releaseTerminal } from '../praxis/runtime';
   import { captureCommandStart, captureCommandResult, isAgentEnabled } from '../agent/integration';
   import type { TerminalEvent } from '../types/agent';
@@ -17,6 +17,33 @@
   let output = $state<string[]>([]);
   let isRunning = $state(false);
   let error = $state<string | null>(null);
+  let lastStdinValue: string | undefined = undefined;
+
+  // Watch for stdin input from connected nodes and write to PTY
+  $effect(() => {
+    const canvas = $canvasStore;
+    const nodeData = $nodeDataStore;
+
+    if (node.inputs && node.inputs.length > 0) {
+      const stdinPort = node.inputs.find(p => p.id === 'stdin');
+      if (!stdinPort) return;
+      const inputData = getNodeInputData(node.id, stdinPort.id, canvas.connections, nodeData);
+      if (inputData !== undefined && inputData !== lastStdinValue) {
+        lastStdinValue = inputData;
+        writeToStdin(String(inputData));
+      }
+    }
+  });
+
+  async function writeToStdin(data: string) {
+    if (!isTauriContext()) return;
+    try {
+      const { invoke } = await import('@tauri-apps/api/core');
+      await invoke('write_terminal_stdin', { nodeId: node.id, data });
+    } catch {
+      // stdin write is best-effort; terminal may not be running
+    }
+  }
 
   function isTauriContext(): boolean {
     return typeof window !== 'undefined' && '__TAURI__' in window;

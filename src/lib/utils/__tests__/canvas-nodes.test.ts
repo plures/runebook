@@ -1,7 +1,7 @@
 // Tests for canvas-nodes utility
 
 import { describe, it, expect } from 'vitest';
-import { resolvePortIndex } from '../canvas-nodes';
+import { resolvePortIndex, createTerminalNode } from '../canvas-nodes';
 import type { Port } from '../../types/canvas';
 
 const makePorts = (...ids: string[]): Port[] =>
@@ -35,5 +35,22 @@ describe('resolvePortIndex', () => {
   it('works with a single-port array', () => {
     const ports = makePorts('out');
     expect(resolvePortIndex(ports, 'out')).toBe(0);
+  });
+});
+
+describe('createTerminalNode', () => {
+  it('creates a terminal node with stdin input port', () => {
+    const node = createTerminalNode({ id: 'term-1', x: 10, y: 20 });
+    expect(node.type).toBe('terminal');
+    expect(node.inputs).toHaveLength(1);
+    expect(node.inputs[0].id).toBe('stdin');
+    expect(node.inputs[0].type).toBe('input');
+  });
+
+  it('creates a terminal node with stdout output port', () => {
+    const node = createTerminalNode({ id: 'term-2', x: 0, y: 0 });
+    expect(node.outputs).toHaveLength(1);
+    expect(node.outputs[0].id).toBe('stdout');
+    expect(node.outputs[0].type).toBe('output');
   });
 });
