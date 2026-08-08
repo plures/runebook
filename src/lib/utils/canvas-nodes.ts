@@ -41,7 +41,7 @@ export function createTerminalNode({ id, x, y, label = 'Terminal' }: CreateNodeO
     command: 'echo',
     args: ['Hello, RuneBook!'],
     autoStart: false,
-    inputs: [],
+    inputs: [{ id: 'stdin', name: 'stdin', type: 'input' }],
     outputs: [{ id: 'stdout', name: 'stdout', type: 'output' }],
   };
 }
