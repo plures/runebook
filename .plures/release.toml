@@ -1,0 +1,5 @@
+# RuneBook is a desktop product. Odd-minor releases produce workflow-only
+# installer candidates; even-minor releases attach installers to the release.
+parityLaw = true
+publishPlatformInstallers = true
+platformTargets = ["windows", "macos", "linux", "nixos"]
