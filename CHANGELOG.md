@@ -1,3 +1,7 @@
+## [0.19.1] — 2026-09-09
+
+- fix(ci): restore RuneBook release contract (#169) (af7c399)
+
 ## [0.19.0] — 2026-08-08
 
 - feat: terminal ports stdin + stdout graph integration (#168) (4e1e12a)
