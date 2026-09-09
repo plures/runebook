@@ -39,8 +39,15 @@ function syncJsonVersion(path, version, updated) {
   if (!existsSync(path)) return;
   const json = readJson(path);
   json.version = version;
-  if (json.packages && json.packages['']) {
-    json.packages[''].version = version;
+  if (json.packages) {
+    for (const [packagePath, metadata] of Object.entries(json.packages)) {
+      if (
+        packagePath === '' ||
+        (!packagePath.startsWith('node_modules/') && metadata.version && metadata.version !== '0.0.0')
+      ) {
+        metadata.version = version;
+      }
+    }
   }
   writeJson(path, json);
   updated.push(path);
