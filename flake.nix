@@ -61,7 +61,7 @@
         # Build the Rust backend (Tauri)
         runebook = pkgs.rustPlatform.buildRustPackage {
           pname = "runebook";
-          version = "0.2.0";
+          version = packageJson.version;
           
           # Point src directly to src-tauri directory
           src = ./src-tauri;
