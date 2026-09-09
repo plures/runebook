@@ -1,6 +1,6 @@
 {
   "name": "@plures/design-dojo",
-  "version": "0.19.1",
+  "version": "0.19.2",
   "description": "Design tokens and UI component library for the Plures ecosystem",
   "type": "module",
   "main": "./index.js",

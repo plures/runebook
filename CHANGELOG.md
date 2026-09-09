@@ -1,3 +1,7 @@
+## [0.19.2] — 2026-09-09
+
+- fix(nix): migrate RuneBook to libsoup3 (#171) (c53d689)
+
 ## [0.19.1] — 2026-09-09
 
 - fix(ci): restore RuneBook release contract (#169) (af7c399)
