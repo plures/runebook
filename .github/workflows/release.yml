@@ -31,6 +31,7 @@ jobs:
       target_version: ${{ inputs.target_version || '' }}
       build_development_candidates: true
       frontend_install: npm ci
+      frontend_build: npm run build
       tauri_script: npx tauri
       publish_npm: true
     secrets: inherit
